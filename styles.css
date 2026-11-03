@@ -880,6 +880,11 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
 .island-list .island { align-items: center; }
 .island-text { display: flex; flex-direction: column; line-height: 1.25; }
 .island-text .muted { font-size: 0.85em; }
+.legend-list .check-row { display: grid; grid-template-columns: 20px auto 1fr; }
+.legend-list .legend-icons { display: flex; width: 72px; }
+.legend-list .legend-icons > * + * { margin-left: -24px; }
+.legend-text { display: flex; flex-direction: column; line-height: 1.25; }
+.legend-text .muted { font-size: 0.85em; }
 .decorations details > button { margin: 2px 0 10px; }
 .secret-base select[aria-label="Secret base spot"] { margin-bottom: 12px; }
 .base-view { overflow-x: auto; margin-bottom: 10px; }

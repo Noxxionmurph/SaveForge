@@ -19,6 +19,7 @@ import { enableDrag } from '../../drag.ts';
 import { dexTab as sharedDexTab } from '../../dexTab.ts';
 import { choiceRow, stepRow } from '../../gameChoice.ts';
 import { itemList } from '../../itemList.ts';
+import { legendsCard } from '../../legendsCard.ts';
 import { badgeIcon, itemIcon, itemIconUrl, setIconSrc } from '../../sprites.ts';
 import { tabBar, tabPanel } from '../../tabs.ts';
 import { typeChips } from '../../typeChip.ts';
@@ -223,6 +224,7 @@ export const mountGen2Editor: MountEditor<Gen2Save> = (container, s, host) => {
         h('h3', {}, 'Badges'),
         badgeCard('Johto badges', JOHTO_BADGES, 'johto', () => s.johtoBadges, (v) => { s.johtoBadges = v; }),
         badgeCard('Kanto badges', KANTO_BADGES, 'kanto', () => s.kantoBadges, (v) => { s.kantoBadges = v; })),
+      legendsCard(s, markDirty),
       optionsCard(),
     );
   }

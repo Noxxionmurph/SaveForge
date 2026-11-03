@@ -2,6 +2,7 @@
 // Compares two models of the same save (as first loaded vs. now). Nothing here touches bytes.
 
 import type { ChangeGroup } from '../types.ts';
+import { legendLines } from '../legends.ts';
 import {
   ABILITY_NAMES, BUTTON_MODES, DEX_COUNT, HOENN_BADGES, MOVE_NAMES, NATURE_NAMES, TEXT_SPEEDS, TMHM_LABELS, TMHM_MOVES, UNOWN,
   genderOf, isShiny, itemName, natureOf, speciesName, unownForm,
@@ -407,6 +408,7 @@ export function describeGen3Changes(before: Gen3Save, after: Gen3Save): ChangeGr
       ? [after.eggWaiting ? 'The old man has an egg waiting for you' : 'No egg waiting'] : []),
     group('Box names', boxNameLines(before, after)),
     group('Pokédex', dexLines(before, after)),
+    group('Legendary Pokémon', legendLines(after)),
     group('Game stats', statLines(before, after)),
     group('Options', optionLines(before, after)),
   ].filter((g): g is ChangeGroup => g !== null);

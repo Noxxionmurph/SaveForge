@@ -6,6 +6,7 @@ import type { ChangeGroup, EditableSave, SummaryLine } from '../types.ts';
 import { baseStatsFor, speciesName, TYPE_BYTE } from './data.ts';
 import { describeGen1Changes } from './diff.ts';
 import { decodeText, encodeText } from './text.ts';
+import { GEN1_LEGENDS, bringBackGen1Legend, gen1LegendGone } from './legends.ts';
 
 export const SAVE_SIZE = 0x8000;
 
@@ -368,6 +369,9 @@ export class Gen1Save implements EditableSave {
   dayCare: Gen1Mon[];
   dexOwned: Uint8Array;
   dexSeen: Uint8Array;
+  readonly legends = GEN1_LEGENDS;
+  /** Per legend (see legends.ts), whether saving brings it back. */
+  bringBack: boolean[] = GEN1_LEGENDS.map(() => false);
 
   private original: Uint8Array;
   private nameRaw: Uint8Array;
@@ -408,6 +412,11 @@ export class Gen1Save implements EditableSave {
       if (i === this.currentBoxIndex) this.boxes.push(readMonList(d, OFF.currentBoxData, false));
       else this.boxes.push(this.boxesReady ? readMonList(d, this.boxOffset(i), false) : []);
     }
+  }
+
+  /** Whether a legend was gone (battled and hidden) in the file as opened. */
+  legendGone(i: number): boolean {
+    return gen1LegendGone(this.original, GEN1_LEGENDS[i], this.isYellow);
   }
 
   private boxOffset(i: number): number {
@@ -519,6 +528,8 @@ export class Gen1Save implements EditableSave {
       if (i === this.currentBoxIndex) writeMonList(d, OFF.currentBoxData, this.boxes[i] ?? [], false);
       else if (this.boxesReady || setUp) writeMonList(d, this.boxOffset(i), this.boxes[i] ?? [], false);
     }
+
+    GEN1_LEGENDS.forEach((l, i) => { if (this.bringBack[i]) bringBackGen1Legend(d, l, this.isYellow); });
 
     // Main checksum.
     d[OFF.checksum] = checksum8(d, OFF.checksumStart, OFF.checksumEnd);
