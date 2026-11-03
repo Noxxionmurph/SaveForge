@@ -11,7 +11,7 @@ const BASE = artUrl('sprites');
 export const pokemonIconUrl = (dex: number, form = '', shiny = false) =>
   `${BASE}/pokemon/${shiny ? 'shiny/' : ''}${dex}${form ? `-${form}` : ''}.png`;
 export const itemIconUrl = (path: string) => `${BASE}/items/${path}.png`;
-export type BadgeRegion = 'kanto' | 'johto' | 'hoenn';
+export type BadgeRegion = 'kanto' | 'johto' | 'hoenn' | 'frlg';
 export const badgeIconUrl = (n: number, region: BadgeRegion = 'kanto') => `${BASE}/badges/${region === 'kanto' ? '' : `${region}/`}${n}.png`;
 /** The type icon for a type name ("Fire"); Gen 2's ??? type (Curse) has its own. */
 export const typeIconUrl = (type: string) => `${BASE}/types/${type === '???' ? 'unknown' : type.toLowerCase()}.png`;

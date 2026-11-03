@@ -4,11 +4,12 @@
 
 import { popcount } from '../../../core/bytes.ts';
 import {
-  BUTTON_MODES, DEX_COUNT, DEX_NAMES, FRAME_COUNT, HM_COUNT, HOENN_BADGES, TEXT_SPEEDS, TMHM_LABELS, TMHM_MOVES, TM_COUNT,
+  BUTTON_MODES, DEX_COUNT, DEX_NAMES, HM_COUNT, frameCount, TEXT_SPEEDS, badgeNames, TMHM_LABELS, TMHM_MOVES, TM_COUNT,
   NATURE_NAMES, baseStatsFor, calcStats, findPid, genderOf, isShiny, itemChoices, itemName, moveInfo, natureOf, speciesName, type Pocket,
 } from '../../../core/gen3/data.ts';
 import { DECORS_BY_CATEGORY, DECOR_CATEGORIES } from '../../../core/gen3/decorations.ts';
 import { EVENT_ISLANDS } from '../../../core/gen3/events.ts';
+import { FAME_FACTS, FAME_PEOPLE, FAME_STATES, FLY_SPOTS, VS_SEEKER_FULL } from '../../../core/gen3/kanto.ts';
 import { LEVELS, STREAK_MAX, STREAK_ROWS } from '../../../core/gen3/frontier.ts';
 import { FEEL_MAX, FLAVORS, FLAVOR_MAX, POKEBLOCK_COLORS, POKEBLOCK_SLOTS } from '../../../core/gen3/pokeblocks.ts';
 import { REMATCH_TRAINERS } from '../../../core/gen3/rematches.ts';
@@ -53,9 +54,10 @@ type Options = { value: number; label: string }[];
 const RARE_CANDY = 68;
 const ULTRA_BALL = 2;
 const MACH_BIKE = 259;
+const BICYCLE = 360;
 const ORAN_BERRY = 139;
-/** Wurmple, a Hoenn starting point for a new Pokémon. */
-const NEW_MON_SPECIES = 265;
+/** Where a new Pokémon starts: Wurmple in Hoenn, Pidgey in Kanto. */
+const newMonSpecies = (game: string) => (game === 'frlg' ? 16 : 265);
 
 
 export const mountGen3Editor: MountEditor<Gen3Save> = (container, s, host) => {
@@ -74,6 +76,9 @@ export const mountGen3Editor: MountEditor<Gen3Save> = (container, s, host) => {
   const of = (...pockets: Pocket[]): Options => itemChoices(pockets, s.game).map((c) => ({ value: c.id, label: c.name }));
   const OPTIONS = { item: of('item'), ball: of('ball'), key: of('key'), berry: of('berry'), pc: of('item', 'ball', 'key', 'berry', 'tmhm') };
   const SIZES = pocketSizes(s.game);
+  const BADGES = badgeNames(s.game);
+  const region = s.game === 'frlg' ? 'frlg' : 'hoenn';
+  const NEW_MON_SPECIES = newMonSpecies(s.game);
   const markDirty = () => host.markDirty();
   let refreshers: (() => void)[] = [];
   const edited = () => { markDirty(); refreshers.forEach((f) => f()); };
@@ -108,7 +113,7 @@ export const mountGen3Editor: MountEditor<Gen3Save> = (container, s, host) => {
     const time = stat('Time');
     const badges = stat('Badges');
     const row = h('div', { class: 'tcard-badges', role: 'img' },
-      Array.from({ length: 8 }, (_, i) => h('span', { class: 'badge-slot' }, badgeIcon(i + 1, '', 'hoenn'))));
+      Array.from({ length: 8 }, (_, i) => h('span', { class: 'badge-slot' }, badgeIcon(i + 1, '', region))));
     const strip = h('div', { class: 'party-strip', role: 'group', 'aria-label': 'Party' });
 
     const paintCard = () => {
@@ -154,14 +159,14 @@ export const mountGen3Editor: MountEditor<Gen3Save> = (container, s, host) => {
   function badgeCard(): Node {
     const caption = h('p', { class: 'muted badge-caption', 'aria-live': 'polite' });
     const paintCaption = () => {
-      const earned = HOENN_BADGES.filter((_, i) => (s.badges >> i) & 1);
+      const earned = BADGES.filter((_, i) => (s.badges >> i) & 1);
       caption.textContent = earned.length === 0 ? 'No badges earned yet.'
         : earned.length === 8 ? 'All eight badges earned.' : `Earned: ${earned.join(', ')}.`;
     };
     paintCaption();
-    const buttons = HOENN_BADGES.map((name, i) => {
+    const buttons = BADGES.map((name, i) => {
       const btn = h('button', { class: 'badge-btn', title: `${name} Badge`, 'aria-pressed': String(Boolean((s.badges >> i) & 1)) },
-        h('span', { class: 'gem', 'aria-hidden': 'true' }, badgeIcon(i + 1, '', 'hoenn')), h('span', { class: 'badge-name' }, name));
+        h('span', { class: 'gem', 'aria-hidden': 'true' }, badgeIcon(i + 1, '', region)), h('span', { class: 'badge-name' }, name));
       btn.addEventListener('click', () => {
         s.badges ^= 1 << i;
         btn.setAttribute('aria-pressed', String(Boolean((s.badges >> i) & 1)));
@@ -219,9 +224,12 @@ export const mountGen3Editor: MountEditor<Gen3Save> = (container, s, host) => {
           h('input', { type: 'checkbox', checked: s.nationalDex, onchange: (e: Event) => { s.nationalDex = (e.target as HTMLInputElement).checked; markDirty(); } }),
           h('span', {}, 'National Pokédex'),
           h('span', { class: 'muted' }, ' Unlocked after the Hall of Fame.')),
+        kantoRows(),
         rescueRow(s, markDirty)),
       badgeCard(),
       frontierCard(),
+      flyCard(),
+      fameCard(),
       islandCard(),
       legendsCard(s, markDirty, (title, ...body) => h('section', { class: 'card legends' }, fold('legends', title, ...body))),
       roamerCard(),
@@ -291,10 +299,71 @@ export const mountGen3Editor: MountEditor<Gen3Save> = (container, s, host) => {
           }))))));
   }
 
-  const LATIAS = 380, LATIOS = 381;
+  /** Who can roam: Latias or Latios in Hoenn, one of the three legendary beasts in Kanto. */
+  const ROAMERS = s.game === 'frlg' ? [243, 244, 245] : [380, 381];
   const IV_LABELS = { hp: 'HP', atk: 'Atk', def: 'Def', spa: 'SpA', spd: 'SpD', spe: 'Spe' } as const;
 
-  /** The roaming Latios or Latias, once the game has made one. */
+  /** FireRed and LeafGreen: the Vs. Seeker's battery and the recap that plays on Continue. */
+  function kantoRows(): Node | null {
+    const k = s.kanto;
+    if (!k) return null;
+    return h('div', {},
+      h('label', { class: 'check-row' },
+        h('input', { type: 'checkbox', checked: k.vsSeeker >= VS_SEEKER_FULL, onchange: (e: Event) => {
+          k.vsSeeker = (e.target as HTMLInputElement).checked ? VS_SEEKER_FULL : 0; markDirty(); } }),
+        h('span', {}, 'Vs. Seeker charged'),
+        h('span', { class: 'muted' }, ` ${Math.min(k.vsSeeker, VS_SEEKER_FULL)} of 100 steps now.`)),
+      s.questLogScenes ? h('label', { class: 'check-row' },
+        h('input', { type: 'checkbox', checked: s.clearQuestLog, onchange: (e: Event) => { s.clearQuestLog = (e.target as HTMLInputElement).checked; markDirty(); } }),
+        h('span', {}, 'Skip "Previously on your quest"'),
+        h('span', { class: 'muted' }, ' The recap of your last session that plays on Continue.')) : null);
+  }
+
+  /** FireRed and LeafGreen: where Fly can take you, Sevii Islands included. */
+  function flyCard(): Node | null {
+    const k = s.kanto;
+    if (!k) return null;
+    const boxes: HTMLInputElement[] = [];
+    const group = (title: string, region: 'kanto' | 'sevii') => h('div', { class: 'subgroup' },
+      h('h4', {}, title),
+      h('div', { class: 'rematch-grid' }, FLY_SPOTS.map((p, i) => {
+        if (p.region !== region) return null;
+        const box = h('input', { type: 'checkbox', checked: k.fly[i], onchange: () => { k.fly[i] = box.checked; markDirty(); } });
+        boxes[i] = box;
+        return h('label', { class: 'check-row' }, box, h('span', {}, p.name));
+      })));
+    return h('section', { class: 'card fly' }, fold('fly', 'Fly destinations',
+      group('Kanto', 'kanto'),
+      group('Sevii Islands', 'sevii'),
+      h('p', { class: 'muted section-note' }, 'Fly reaches the islands only from the islands.'),
+      h('div', { class: 'button-row' },
+        h('button', { onclick: () => { k.fly = k.fly.map(() => true); boxes.forEach((b) => { b.checked = true; }); markDirty(); } }, 'Everywhere'))));
+  }
+
+  /** FireRed and LeafGreen: the people in the Fame Checker and the facts found about each. */
+  function fameCard(): Node | null {
+    const k = s.kanto;
+    if (!k) return null;
+    const wrap = h('section', { class: 'card fame' });
+    const all = (1 << FAME_FACTS) - 1;
+    const draw = () => {
+      clear(wrap);
+      const count = (n: number) => { let c = 0; for (let v = n; v; v &= v - 1) c++; return c; };
+      wrap.append(fold('fame', ['Fame Checker', h('span', { class: 'muted count' }, `${k.fame.filter((p) => p.state === 2).length}/${FAME_PEOPLE.length}`)],
+        h('div', { class: 'fame-list' }, FAME_PEOPLE.map((name, i) => {
+          const p = k.fame[i];
+          return h('div', { class: 'grid pair' },
+            field(name, selectInput(FAME_STATES.map((t) => ({ value: t.value, label: t.label })), p.state, (v) => { p.state = Number(v); markDirty(); draw(); })),
+            field('Facts found', numberInput(count(p.facts), 0, FAME_FACTS, (v) => { p.facts = (1 << v) - 1; markDirty(); draw(); })));
+        })),
+        h('div', { class: 'button-row' },
+          h('button', { onclick: () => { k.fame = k.fame.map(() => ({ state: 2, facts: all })); markDirty(); draw(); } }, 'Everyone, every fact'))));
+    };
+    draw();
+    return wrap;
+  }
+
+  /** The roaming Pokémon (Latios or Latias, or a legendary beast), once the game has made one. */
   function roamerCard(): Node | null {
     const ro = s.roamer;
     if (!ro) return null;
@@ -313,7 +382,7 @@ export const mountGen3Editor: MountEditor<Gen3Save> = (container, s, host) => {
         h('div', { class: 'roamer-head' },
           pokemonIcon(ro.species, '', '', shiny),
           h('div', { class: 'grid pair' },
-            field('Pokémon', selectInput([{ value: LATIAS, label: 'Latias' }, { value: LATIOS, label: 'Latios' }], ro.species,
+            field('Pokémon', selectInput(ROAMERS.map((d) => ({ value: d, label: speciesName(d) })), ro.species,
               (v) => { ro.species = Number(v); ro.pid = findPid(ro.species, otId(), ro.pid, {}); changed(); })),
             field('Level', numberInput(ro.level, 1, 100, (v) => { ro.level = v; changed(); })),
             field('Nature', selectInput(NATURE_NAMES.map((n, i) => ({ value: i, label: n })), natureOf(ro.pid),
@@ -344,7 +413,8 @@ export const mountGen3Editor: MountEditor<Gen3Save> = (container, s, host) => {
       clear(wrap);
       const isles = EVENT_ISLANDS[s.game];
       wrap.append(fold('islands', 'Event islands',
-        s.gameCleared ? null : h('p', { class: 'muted section-note' }, 'The ferry from Lilycove only sails after the Hall of Fame.'),
+        s.ferryReady ? null : h('p', { class: 'muted section-note' }, s.game === 'frlg'
+          ? 'The Seagallop from Vermilion only sails there once you have the Rainbow Pass.' : 'The ferry from Lilycove only sails after the Hall of Fame.'),
         h('div', { class: 'island-list' }, isles.map((isle, i) => h('label', { class: 'check-row island' },
           h('input', { type: 'checkbox', checked: s.islands[i], onchange: (e: Event) => {
             const box = e.target as HTMLInputElement;
@@ -427,7 +497,7 @@ export const mountGen3Editor: MountEditor<Gen3Save> = (container, s, host) => {
         choiceRow('Sound', [{ value: 'mono', label: 'Mono' }, { value: 'stereo', label: 'Stereo' }], o.stereo ? 'stereo' : 'mono',
           (v) => { o.stereo = v === 'stereo'; edited(); }),
         choiceRow('Button mode', keep(BUTTON_MODES, o.buttonMode), String(o.buttonMode), (v) => { o.buttonMode = Number(v); edited(); }),
-        stepRow('Frame', Array.from({ length: FRAME_COUNT }, (_, i) => ({ value: String(i), label: `Type ${i + 1}` })), String(o.frame),
+        stepRow('Frame', Array.from({ length: Math.max(frameCount(s.game), o.frame + 1) }, (_, i) => ({ value: String(i), label: `Type ${i + 1}` })), String(o.frame),
           (v) => { o.frame = Number(v); showFrame(s.game, o.frame); edited(); }),
       ));
   }
@@ -479,14 +549,14 @@ export const mountGen3Editor: MountEditor<Gen3Save> = (container, s, host) => {
     h('div', { class: 'two-col' },
       bagCard('Items pocket', s.pockets.item, SIZES.item, OPTIONS.item, () => RARE_CANDY),
       bagCard('Poké Balls pocket', s.pockets.ball, SIZES.ball, OPTIONS.ball, () => ULTRA_BALL),
-      bagCard('Key Items pocket', s.pockets.key, SIZES.key, OPTIONS.key, () => MACH_BIKE),
+      bagCard('Key Items pocket', s.pockets.key, SIZES.key, OPTIONS.key, () => (s.game === 'frlg' ? BICYCLE : MACH_BIKE)),
       bagCard('Berries pocket', s.pockets.berry, SIZES.berry, OPTIONS.berry, () => ORAN_BERRY),
       bagCard('PC item storage', s.pcItems, SIZES.pc, OPTIONS.pc, () => RARE_CANDY),
     ),
     tmhmCard(),
-    pokeblockCard(),
-    decorationCard(),
-    secretBaseCard(s, markDirty, fold, (redraw) => { redrawBase = redraw; }));
+    s.hoenn ? pokeblockCard() : null,
+    s.hoenn ? decorationCard() : null,
+    s.hoenn ? secretBaseCard(s, markDirty, fold, (redraw) => { redrawBase = redraw; }) : null);
   /** The secret base offers what the PC has spare, so it redraws when the PC's decorations change. */
   let redrawBase = () => {};
   const decorEdited = () => { markDirty(); redrawBase(); };
@@ -773,6 +843,6 @@ export const mountGen3Editor: MountEditor<Gen3Save> = (container, s, host) => {
   }
 
   // A frame number past the last TYPE (the game has no picture for it) shows as TYPE 1, like the Options card does.
-  showFrame(s.game, s.options.frame < FRAME_COUNT ? s.options.frame : 0);
+  showFrame(s.game, s.options.frame < frameCount(s.game) ? s.options.frame : 0);
   render();
 };

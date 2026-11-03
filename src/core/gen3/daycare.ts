@@ -6,6 +6,8 @@
 //   Emerald, SaveBlock1 0x3030: per Pokémon 0x8C bytes (Pokémon, mail at +0x50, steps at +0x88), egg (u32) at +0x118.
 //   Ruby and Sapphire, 0x2F9C: both Pokémon first (0x50 each), both letters at +0xA0 (0x38 each), both step counts at
 //   +0x110, egg (u16) at +0x118.
+//   FireRed and LeafGreen (the Four Island Day-Care, pokefirered include/global.h), 0x2F80: laid out as Emerald's, but
+//   the egg is a u16. Route 5's one-Pokémon Day-Care is kept elsewhere (route5DayCareMon) and left as it is.
 
 import { le } from '../bytes.ts';
 import { EGG_GROUPS } from './tables.ts';
@@ -24,10 +26,11 @@ export interface DayCareLayout {
 export const DAYCARE: Record<Gen3Game, DayCareLayout> = {
   emerald: { mon: (i) => 0x3030 + i * 0x8c, mail: (i) => 0x3030 + i * 0x8c + 0x50, steps: (i) => 0x3030 + i * 0x8c + 0x88, egg: 0x3148, eggBytes: 4 },
   rs: { mon: (i) => 0x2f9c + i * 0x50, mail: (i) => 0x2f9c + 0xa0 + i * 0x38, steps: (i) => 0x2f9c + 0x110 + i * 4, egg: 0x30b4, eggBytes: 2 },
+  frlg: { mon: (i) => 0x2f80 + i * 0x8c, mail: (i) => 0x2f80 + i * 0x8c + 0x50, steps: (i) => 0x2f80 + i * 0x8c + 0x88, egg: 0x3098, eggBytes: 2 },
 };
 
-/** FLAG_PENDING_DAYCARE_EGG: the old man waits outside with an egg (same number in all three games). */
-export const PENDING_EGG_FLAG = 0x86;
+/** FLAG_PENDING_DAYCARE_EGG: the old man waits outside with an egg (the same number in Ruby, Sapphire and Emerald). */
+export const PENDING_EGG_FLAG: Record<Gen3Game, number> = { rs: 0x86, emerald: 0x86, frlg: 0x266 };
 /** The mail fields the games check: a letter is there when its item (struct Mail itemId, at +0x20) isn't 0. */
 export const MAIL_ITEM = 0x20;
 const MAIL_BYTES = 0x22;

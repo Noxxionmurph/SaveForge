@@ -5,6 +5,7 @@
 //   rb-footer.sav  rb.sav with the 44-byte footer some emulators add (32,812 bytes)
 //   gold.sav       the Crystal sample's trainer as a Gold save (the landing page only offers the Crystal one)
 //   ruby.sav       a Ruby / Sapphire save, and emerald.sav the same trainer in Emerald (no Gen 3 sample on the landing page)
+//   firered.sav    a FireRed / LeafGreen save (Leaf in Pallet Town)
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { buildSampleSave } from '../src/core/gen1/sample.ts';
 import { GEN1_OFFSETS as O, checksum8 } from '../src/core/gen1/save.ts';
@@ -27,4 +28,5 @@ writeFileSync(`${out}/rb-footer.sav`, Buffer.concat([rb, footer]));
 writeFileSync(`${out}/gold.sav`, buildGen2Sample('gs'));
 writeFileSync(`${out}/ruby.sav`, buildGen3Sample('rs'));
 writeFileSync(`${out}/emerald.sav`, buildGen3Sample('emerald'));
-console.log(`wrote sample.sav, rb.sav, rb-footer.sav, gold.sav, ruby.sav and emerald.sav to ${out}`);
+writeFileSync(`${out}/firered.sav`, buildGen3Sample('frlg'));
+console.log(`wrote sample.sav, rb.sav, rb-footer.sav, gold.sav, ruby.sav, emerald.sav and firered.sav to ${out}`);

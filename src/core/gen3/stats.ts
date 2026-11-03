@@ -1,5 +1,5 @@
 // The game's own counters (pokeemerald include/constants/game_stat.h, pokeruby the same up to 49). Each is a u32 in
-// SaveBlock1, XORed with the key in Emerald. The game stops counting at 16,777,215. Stat 1 is the play time of the
+// SaveBlock1, XORed with the key in Emerald, FireRed and LeafGreen. The game stops counting at 16,777,215. Stat 1 is the play time of the
 // first Hall of Fame entry, packed as hours << 16 | minutes << 8 | seconds; stats 22 and 31 are never used.
 
 import type { Gen3Game } from './data.ts';
@@ -14,6 +14,21 @@ export interface GameStat { index: number; name: string }
 export function gameStatGroups(game: Gen3Game): { title: string; stats: GameStat[] }[] {
   const em = game === 'emerald';
   const s = (index: number, name: string): GameStat => ({ index, name });
+  // FireRed and LeafGreen keep Emerald's list but only count these (the IncrementGameStat calls in pokefirered).
+  if (game === 'frlg') return [
+    { title: 'Battles', stats: [s(7, 'Battles'), s(8, 'Wild battles'), s(9, 'Trainer battles'), s(10, 'Hall of Fame entries'), s(26, 'Splash used'), s(27, 'Struggle used')] },
+    { title: 'Pokémon', stats: [
+      s(11, 'Pokémon caught'), s(12, 'Fishing encounters'), s(13, 'Eggs hatched'), s(14, 'Pokémon evolved'), s(21, 'Trades'),
+      s(47, 'Day-Care visits'), s(42, 'Ribbons received'), s(41, 'Pokédex checks'),
+    ] },
+    { title: 'Getting around', stats: [
+      s(5, 'Steps'), s(43, 'Ledges jumped'), s(18, 'Cut used'), s(19, 'Rock Smash used'), s(17, 'Safari Zone visits'),
+      s(40, 'Times rained on'), s(39, 'Itemfinder uses'),
+    ] },
+    { title: 'Everyday', stats: [s(0, 'Times saved'), s(15, 'Pokémon Center visits'), s(38, 'Shopping trips')] },
+    { title: 'Games', stats: [s(28, 'Slot jackpots'), s(51, 'Berry Crush games')] },
+    { title: 'Link', stats: [s(23, 'Link battle wins'), s(24, 'Link battle losses'), s(25, 'Link battle draws'), s(50, 'Union Room battles')] },
+  ];
   return [
     { title: 'Battles', stats: [
       s(7, 'Battles'), s(8, 'Wild battles'), s(9, 'Trainer battles'), s(10, 'Hall of Fame entries'),
@@ -45,8 +60,8 @@ export function gameStatGroups(game: Gen3Game): { title: string; stats: GameStat
   ];
 }
 
-/** How many counters the game keeps (Ruby and Sapphire 50, Emerald 52). */
-export const gameStatCount = (game: Gen3Game) => (game === 'emerald' ? 52 : 50);
+/** How many counters the game keeps (Ruby and Sapphire 50, Emerald, FireRed and LeafGreen 52). */
+export const gameStatCount = (game: Gen3Game) => (game === 'rs' ? 50 : 52);
 
 /** Stat 1 as hours, minutes and seconds. */
 export const unpackHofTime = (v: number) => ({ hours: v >>> 16, minutes: (v >>> 8) & 0xff, seconds: v & 0xff });

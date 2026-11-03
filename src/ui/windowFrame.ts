@@ -12,8 +12,8 @@ import { artUrl } from './art.ts';
 /** The big windows (keep in step with the stylesheet's frame rules). */
 const BIG = '.lcd:is(.tcard, .stats, .review-list, .save-window, .options-window, .dex-summary)';
 
-/** Which games' frames: Gold/Silver/Crystal share eight; Emerald redrew some of Ruby and Sapphire's twenty. */
-export type FrameSet = 'gen2' | 'rs' | 'emerald';
+/** Which games' frames: Gold/Silver/Crystal share eight; Emerald redrew some of Ruby and Sapphire's twenty; FireRed and LeafGreen have ten of their own. */
+export type FrameSet = 'gen2' | 'rs' | 'emerald' | 'frlg';
 
 let current: { set: FrameSet; img: HTMLImageElement } | null = null;
 

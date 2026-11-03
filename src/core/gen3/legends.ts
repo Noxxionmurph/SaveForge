@@ -1,4 +1,4 @@
-// Ruby, Sapphire and Emerald's one-off Pokémon (pret/pokeruby and pokeemerald data/maps/*/scripts.inc).
+// Gen 3's one-off Pokémon (pret/pokeruby, pokeemerald and pokefirered data/maps/*/scripts.inc).
 //
 // Ruby and Sapphire hide each one with its object's flag, set as the battle starts, so running away loses it as well.
 // Emerald sets a "defeated" flag when you win or catch (and a "caught" one for the event-island Pokémon); the map's
@@ -48,4 +48,20 @@ const EMERALD: readonly Gen3Legend[] = [
   { name: 'Ho-Oh', place: 'Navel Rock', dex: [250], gone: [0x92, 0x1dc], clear: [0x92, 0x1dc, 0x321], note: 'Needs the Mystic Ticket.' },
 ];
 
-export const GEN3_LEGENDS: Record<Gen3Game, readonly Gen3Legend[]> = { rs: RS, emerald: EMERALD };
+// FireRed and LeafGreen (pokefirered data/maps/*/scripts.inc) set FLAG_FOUGHT_* when you win or catch, and the map's
+// script shows the Pokémon again while it's clear. Running from Lugia, Ho-Oh or Deoxys sets a "flew away" flag that hides
+// it as well. Each Snorlax hides with its object's flag as the battle starts, win, lose or run (FLAG_WOKE_UP_ROUTE_12_SNORLAX
+// only changes what the binoculars on Route 11 show).
+const FRLG: readonly Gen3Legend[] = [
+  { name: 'Snorlax', place: 'Route 12', dex: [143], gone: [0x54], clear: [0x54, 0x253], note: 'Needs the Poké Flute.' },
+  { name: 'Snorlax', place: 'Route 16', dex: [143], gone: [0x80], clear: [0x80], note: 'Needs the Poké Flute.' },
+  { name: 'Articuno', place: 'Seafoam Islands', dex: [144], gone: [0x2be], clear: [0x2be, 0x82] },
+  { name: 'Zapdos', place: 'Power Plant', dex: [145], gone: [0x2bf], clear: [0x2bf, 0x5d] },
+  { name: 'Moltres', place: 'Mt. Ember', dex: [146], gone: [0x2bd], clear: [0x2bd, 0x52] },
+  { name: 'Mewtwo', place: 'Cerulean Cave', dex: [150], gone: [0x2bc], clear: [0x2bc, 0x81] },
+  { name: 'Lugia', place: 'Navel Rock', dex: [249], gone: [0x2f2, 0x2f5], clear: [0x2f2, 0x2f5, 0x9b], note: 'Needs the Mystic Ticket.' },
+  { name: 'Ho-Oh', place: 'Navel Rock', dex: [250], gone: [0x2f3, 0x2f6], clear: [0x2f3, 0x2f6, 0x9c], note: 'Needs the Mystic Ticket.' },
+  { name: 'Deoxys', place: 'Birth Island', dex: [386], gone: [0x2e4, 0x2f7], clear: [0x2e4, 0x2f7, 0x99], note: 'Needs the Aurora Ticket.' },
+];
+
+export const GEN3_LEGENDS: Record<Gen3Game, readonly Gen3Legend[]> = { rs: RS, emerald: EMERALD, frlg: FRLG };
