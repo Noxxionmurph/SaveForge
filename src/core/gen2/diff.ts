@@ -1,6 +1,7 @@
 // Turns "what the user edited" into plain sentences for the review dialog shown before Save.
 // Compares two models of the same save (as first loaded vs. now). Nothing here touches bytes.
 
+import { WEEKDAYS } from './clock.ts';
 import type { ChangeGroup } from '../types.ts';
 import {
   DEX_COUNT, JOHTO_BADGES, KANTO_BADGES, MOVE_NAMES, PRINT_SHADES, TEXT_SPEEDS, TMHM_LABELS, TMHM_MOVES, genderOf, isShiny, itemName as nameOf,
@@ -54,6 +55,11 @@ function trainerLines(b: Gen2Save, a: Gen2Save): string[] {
   if (b.momsMoney !== a.momsMoney) out.push(`Mom’s savings: ${money(b.momsMoney)} → ${money(a.momsMoney)}`);
   if (b.coins !== a.coins) out.push(`Coins: ${b.coins.toLocaleString('en-US')} → ${a.coins.toLocaleString('en-US')}`);
   if (clock(b) !== clock(a)) out.push(`Play time: ${clock(b)} → ${clock(a)}`);
+  if (a.clockSetTo && a.startTime.some((v, i) => v !== b.startTime[i])) {
+    const t = a.clockSetTo;
+    out.push(`Clock: set to ${WEEKDAYS[t.weekday]} ${String(t.hour).padStart(2, '0')}:${String(t.minute).padStart(2, '0')}`);
+  }
+  if (b.resetClock !== a.resetClock) out.push(a.resetClock ? 'Clock: the game asks for the day and time on Continue' : 'Clock: no longer asks for the day and time on Continue');
   out.push(...badgeLines(JOHTO_BADGES, b.johtoBadges, a.johtoBadges), ...badgeLines(KANTO_BADGES, b.kantoBadges, a.kantoBadges));
   return out;
 }

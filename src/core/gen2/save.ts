@@ -16,6 +16,7 @@ import type { ChangeGroup, EditableSave, SummaryLine } from '../types.ts';
 import {
   DEX_COUNT, EGG_SPECIES, HM_COUNT, TM_COUNT, baseStatsFor, hpDv, maxPp, speciesName, type Dvs,
 } from './data.ts';
+import { START_TIME, gameTimeAt, readRtcFooter, startFor, type GameTime, type RtcFooter } from './clock.ts';
 import { describeGen2Changes } from './diff.ts';
 import {
   CHECK_VALUE_2, GEN2_LAYOUTS, SAVE_SIZE, backupValid, detectGen2, mainValid, sum16, type Gen2Game, type Layout,
@@ -32,6 +33,9 @@ export const BOX_NAME_LEN = 9;
 const PARTY_MON_SIZE = 48;
 const BOX_MON_SIZE = 32;
 const MAIL_SIZE = 47;
+/** sRTCStatusFlags (SRAM bank 0, 0xAC60) and its RTC_RESET bit: Continue asks for the day and time again. */
+const RTC_STATUS = 0x0c60;
+const RTC_RESET = 0x80;
 export const PARTY_MAX = 6;
 export const BOX_MAX = 20;
 export const BOX_COUNT = 14;
@@ -284,6 +288,17 @@ export class Gen2Save implements EditableSave {
   boxes: Gen2Mon[][];
   dexCaught: Uint8Array;
   dexSeen: Uint8Array;
+  /**
+   * The game asks for the day and time again on the next Continue, as after its own clock-reset password. This is
+   * sRTCStatusFlags bit 7 (RTC_RESET), the same flag the game sets itself when the cartridge clock stops.
+   */
+  resetClock: boolean;
+  /** The emulator's clock footer after the save data (see clock.ts), or null: without it the time can't be set. */
+  readonly rtc: RtcFooter | null;
+  /** wStartDay, wStartHour, wStartMinute, wStartSecond: what the game adds to the cartridge clock. */
+  startTime: Uint8Array;
+  /** The time last chosen with setGameTime, for the review list. */
+  clockSetTo: GameTime | null = null;
 
   /** Which layout the file uses. */
   readonly game: Gen2Game;
@@ -343,6 +358,9 @@ export class Gen2Save implements EditableSave {
     this.tmhm = Array.from(d.slice(L.tmhm, L.tmhm + TM_COUNT + HM_COUNT));
     this.dexCaught = d.slice(L.dexCaught, L.dexCaught + DEX_BYTES);
     this.dexSeen = d.slice(L.dexSeen, L.dexSeen + DEX_BYTES);
+    this.resetClock = !!(d[RTC_STATUS] & RTC_RESET);
+    this.rtc = readRtcFooter(d);
+    this.startTime = d.slice(START_TIME, START_TIME + 4);
     this.party = readMonList(d, L.party, true);
     this.party.forEach((mon, i) => { mon.mail = d.slice(L.partyMail + i * MAIL_SIZE, L.partyMail + (i + 1) * MAIL_SIZE); });
     this.boxes = Array.from({ length: BOX_COUNT }, (_, i) =>
@@ -382,6 +400,19 @@ export class Gen2Save implements EditableSave {
   setSeen(dex: number, on: boolean): void {
     this.setBit(this.dexSeen, dex, on);
     if (!on) this.setOwned(dex, false);
+  }
+
+  /** The weekday and time the game shows at `now` (Unix seconds), or null without the emulator's clock footer. */
+  gameTime(now = Date.now() / 1000): GameTime | null {
+    return this.rtc ? gameTimeAt(this.rtc, this.startTime, now) : null;
+  }
+
+  /** Makes the game show `want` at `now` (and from then on run as a clock does). Needs the clock footer. */
+  setGameTime(want: GameTime, now = Date.now() / 1000): void {
+    if (!this.rtc) throw new Error('This save has no emulator clock data, so its time cannot be set.');
+    this.startTime = Uint8Array.from(startFor(this.rtc, want, now));
+    this.clockSetTo = { ...want };
+    this.resetClock = false;
   }
 
   /** The rows the game's own save window shows (PLAYER, BADGES, POKéDEX, TIME), for the top of the review dialog. */
@@ -454,6 +485,13 @@ export class Gen2Save implements EditableSave {
       d.set(mon.mail, L.partyMail + i * MAIL_SIZE);
       d.set(mon.mail, L.partyMailBackup + i * MAIL_SIZE);
     });
+
+    d.set(this.startTime, START_TIME);
+
+    // Outside the checksummed data, in the same place in all three games (pret ram/sram.asm sRTCStatusFlags).
+    if (this.resetClock !== !!(this.original[RTC_STATUS] & RTC_RESET)) {
+      d[RTC_STATUS] = this.resetClock ? d[RTC_STATUS] | RTC_RESET : d[RTC_STATUS] & ~RTC_RESET;
+    }
 
     // Crystal's player gender lives outside the checksummed data, and the game reads it back on Continue.
     if (L.playerGender !== undefined && this.playerGender) {

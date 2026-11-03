@@ -145,6 +145,11 @@ Everything runs client-side; saves never leave the browser. **Back up your real 
 - Trainer: name, rival, ID, money, Mom's savings, coins, play time (to 999 hours), all 16 badges (Johto and Kanto, shown
   on the trainer card in the game's own badge art), and every OPTION setting: text speed, battle scene, battle style,
   sound, Game Boy Printer shade, menu account and text box frame.
+- Day and time: set the weekday, hour and minute the game shows, when the file carries the emulator's clock data
+  (the 44 or 48-byte footer VBA-M, mGBA, BGB and SameBoy write after the save). SaveForge works out what the clock
+  chip reads now and sets the offset the game adds to it (wStartDay to wStartSecond), as Prof. Oak's clock setting
+  does. Without the footer, a switch makes the game ask for the day and time on the next Continue (sRTCStatusFlags
+  bit 7, as its own reset password does). Both checked in Gold and Crystal.
 - All four bag pockets (Items, Balls, Key Items, TM/HM with a count for each of the 57, and a switch to hide the ones you already have) and PC item storage. Each picker
   only offers what the game files in that pocket.
 - Party and all 14 boxes, with box names. Moving works as in Gen 1 (arrows, drag and drop, the action menu) and follows

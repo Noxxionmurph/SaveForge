@@ -7,6 +7,7 @@ import {
 } from '../src/core/gen2/data.ts';
 import { hpBarColour, hpBarPixels } from '../src/core/gen2/hp.ts';
 import { PARTY, copyMon, dropMon, moveMon, partyLeaveRefusal, removeMon } from '../src/core/gen2/roster.ts';
+import { gameTimeAt, readRtcFooter, startFor } from '../src/core/gen2/clock.ts';
 import { GEN2_LAYOUTS, Gen2Save, SAVE_SIZE, calcStats, newMon, sum16 } from '../src/core/gen2/save.ts';
 import { blankGen2Save, buildSampleSave } from '../src/core/gen2/sample.ts';
 import { decodeText, encodeText, nameProblems } from '../src/core/gen2/text.ts';
@@ -302,4 +303,62 @@ test('a real Gold or Silver save round-trips byte for byte', { skip: real && exi
   const found = await openSave(raw);
   assert.equal(found?.module.id, 'pokemon-gen2');
   assert.deepEqual(found!.save.serialize().subarray(0, SAVE_SIZE), raw.subarray(0, SAVE_SIZE));
+});
+
+test('clock reset: Continue asks for the day and time again (sRTCStatusFlags bit 7)', () => {
+  for (const game of ['gs', 'crystal'] as const) {
+    const raw = buildSampleSave(game);
+    raw[0x0c60] = 0x20; // keep the other RTC bits as they are
+    const s = new Gen2Save(raw, game);
+    assert.equal(s.resetClock, false);
+    s.resetClock = true;
+    const out = s.serialize();
+    assert.equal(out[0x0c60], 0xa0);
+    const back = new Gen2Save(out, game);
+    assert.equal(back.resetClock, true);
+    assert.ok(back.describeChanges(new Gen2Save(raw, game)).flatMap((g) => g.lines).some((l) => l.startsWith('Clock:')));
+    back.resetClock = false;
+    assert.equal(back.serialize()[0x0c60], 0x20);
+  }
+});
+
+/** An emulator clock footer: registers, latched registers, then the time the file was written (VBA-M/mGBA format). */
+function withRtc(raw: Uint8Array, [sec, min, hr, days]: number[], savedAt: number, long = true): Uint8Array {
+  const out = new Uint8Array(raw.length + (long ? 48 : 44));
+  out.set(raw);
+  const v = new DataView(out.buffer, raw.length);
+  [sec, min, hr, days & 0xff, days >> 8].forEach((x, i) => { v.setUint32(i * 4, x, true); v.setUint32(20 + i * 4, x, true); });
+  if (long) v.setBigUint64(40, BigInt(savedAt), true); else v.setUint32(40, savedAt, true);
+  return out;
+}
+
+test('day and time: worked out from the emulator clock footer as the game does', () => {
+  const raw = buildSampleSave('crystal');
+  assert.equal(new Gen2Save(raw).gameTime(), null, 'no footer, no time');
+  const T = 1_700_000_000;
+  // Chip at day 3, 10:20:30; the save adds 2 days 5:50:40. Game: day 5 (Friday) 16:11:10.
+  const edit = new Gen2Save(withRtc(raw, [30, 20, 10, 3], T));
+  edit.startTime = Uint8Array.from([2, 5, 50, 40]);
+  const file = edit.serialize();
+  const s = new Gen2Save(file);
+  assert.deepEqual(s.gameTime(T), { weekday: 5, hour: 16, minute: 11 });
+  assert.deepEqual(s.gameTime(T + 3600 * 9), { weekday: 6, hour: 1, minute: 11 }, 'runs on with real time');
+  assert.deepEqual(new Gen2Save(withRtc(file.subarray(0, 0x8000), [30, 20, 10, 3], T, false)).gameTime(T), { weekday: 5, hour: 16, minute: 11 }, '44-byte footer');
+
+  // Set it, read it back at the same moment and a minute later, through a save and reload.
+  for (const want of [{ weekday: 0, hour: 0, minute: 0 }, { weekday: 2, hour: 9, minute: 5 }, { weekday: 6, hour: 23, minute: 59 }]) {
+    s.setGameTime(want, T + 100);
+    const back = new Gen2Save(s.serialize());
+    assert.deepEqual(back.gameTime(T + 100), want);
+    assert.equal(back.serialize().length, file.length, 'the footer is kept');
+  }
+  assert.ok(s.describeChanges(new Gen2Save(file)).flatMap((g) => g.lines).includes('Clock: set to Saturday 23:59'));
+});
+
+test('day and time: a chip past 140 days wraps as the game wraps it', () => {
+  const rtc = readRtcFooter(withRtc(buildSampleSave('gs'), [0, 0, 12, 300], 0))!;
+  assert.equal(rtc.days, 300);
+  const start = Uint8Array.from(startFor(rtc, { weekday: 3, hour: 8, minute: 30 }, 0));
+  assert.deepEqual(gameTimeAt(rtc, start, 0), { weekday: 3, hour: 8, minute: 30 });
+  assert.ok(start[0] < 140);
 });
