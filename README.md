@@ -95,6 +95,10 @@ python3 e2e/run.py    # browser checks in a real Chromium (see e2e/README.md; ne
 node scripts/make-sample.ts sample.sav   # the same made-up Yellow save the "Try a Yellow sample" button opens
 node scripts/gen-moves.mjs <pokered checkout>   # regenerates src/core/gen1/moves.ts (type, power, accuracy, PP)
 node scripts/verify-against-rom.mjs rom.gb      # checks the Gen 1 tables below against a Red/Blue ROM you own (copies nothing)
+node scripts/verify-gen2-rom.mjs rom.gbc        # the same for the Gen 2 tables, against Gold, Silver or Crystal
+node scripts/verify-gen3-rom.mjs rom.gba        # the same for the Gen 3 tables, against Ruby, Sapphire or Emerald
+python3 scripts/gbrun.py rom.gb edited.sav out 'w1500; p start; ...; s shot'   # plays a Gen 1 or Gen 2 save from a script of button presses (PyBoy)
+gcc -O2 scripts/gbarun.c -o gbarun -lmgba       # the same for Gen 3 (mGBA's library; see the file's header)
 node scripts/measure-icons.mjs                  # regenerates src/ui/spriteOffsets.ts after changing the Pokémon icons
 node scripts/gen-gen2-data.mjs <pokegold checkout>   # regenerates src/core/gen2/tables.ts (species, base stats, moves, items)
 node scripts/gen-crystal-data.mjs <pokecrystal checkout>   # regenerates src/core/gen2/crystalTables.ts (Crystal's items and place names)
@@ -306,11 +310,17 @@ Every screen explains itself in plain words, so keep it that way when you add a 
 
 ## Known limitations
 
-- Tested against synthetic saves built from documented offsets and against two real saves (a Yellow and a Blue, both from
-  emulators): they load, save back byte for byte, and every stored party stat and experience value matches the editor's
-  formulas. A Red save hasn't been tried, but Red and Blue share one layout. Try copies of your own and report mismatches.
+- Tested against synthetic saves built from documented offsets and against real saves: a Yellow and a Blue from
+  emulators, and a Red and a Yellow started in the real games (checked with `scripts/gbrun.py`, 2026-11-03). They load,
+  save back byte for byte, and every stored party stat and experience value matches the editor's formulas. An edited
+  copy of the new Red save (money, coins, all badges, options, bag, PC items, a full Pokédex, three new party Pokémon
+  with DVs, stat experience and PP Ups, and Pokémon in boxes 1 and 5 of a file that had never changed box) loads and
+  plays: the game's own PC works out the same stats as the editor for the boxed Pokémon, box 5 shows its Pokémon after
+  CHANGE BOX, and the file the game saves afterwards opens in the editor with only the expected changes. An edited copy
+  of the Yellow save (Pikachu's friendship and mood, a nickname, an added Pokémon) loads with Pikachu following, and
+  talking to it shows the reaction the editor predicts. The Yellow sample loads in your bedroom.
 - The built-in tables (base stats, types, growth curves, species ids, every move's type/power/accuracy/PP and name, item
-  names) were checked against Pokémon Red and Pokémon Yellow ROMs with `scripts/verify-against-rom.mjs`: all match.
+  names) were checked against Pokémon Red, Blue and Yellow ROMs with `scripts/verify-against-rom.mjs`: all match.
   The same script finds the game code behind the rules the editor relies on: which bits of the options byte hold text
   speed, battle style and animation (and Yellow's sound setting), and the PP Up bonus (one fifth of the base PP each,
   at most 7). Against Yellow it also checks Pikachu's reaction table (friendship and mood limits, which reactions
@@ -321,11 +331,19 @@ Every screen explains itself in plain words, so keep it that way when you add a 
   back byte for byte, and an edited copy (playing as the girl, money, a held item, a nickname, the GS Ball) loads and
   plays in the real game, as does the Crystal sample. Offsets come from the pokecrystal disassembly's symbol file. The
   Battle Tower, Mobile Adapter data and Mystery Gift are left untouched, as are the things listed for Gold and Silver below.
+- Gen 2 tables (base stats, types, gender ratios, growth, catch rates, egg cycles, every move, item names and pockets,
+  TM/HM moves, the experience curves) match Gold, Silver and Crystal ROMs (`scripts/verify-gen2-rom.mjs`), and the
+  Gold and Crystal samples load and play in Gold, Silver, Crystal 1.0 and Crystal 1.1.
 - Gold / Silver: English only. Tested against one real Gold save:
   it loads and saves back byte for byte, and an edited copy (badges, money, a shiny Pokémon holding an item, a renamed
   box, a Pokémon moved out of a box) loads and plays in the real game (checked in an emulator with
   `scripts/boot-gen2-save.py`), as does the sample. Offsets come from the pokegold disassembly's symbol file. Event
   flags, map position, the clock, the Day-Care and the Pokégear are left untouched.
+- Gen 3 tables (base stats, types, gender ratios, growth, egg cycles, abilities, friendship, species, move, ability and item
+  names, item pockets, every move, TM/HM moves, the nature table and the experience tables) match Ruby, Sapphire and
+  Emerald ROMs (`scripts/verify-gen3-rom.mjs`). The samples load in Ruby 1.0, Sapphire and Emerald, and the game's PC
+  shows the same stats as the editor for six awkward Pokémon (level 1 and 100, Shedinja, raised and lowered natures,
+  odd IVs and EVs) in all three.
 - Ruby / Sapphire / Emerald: English only. Tested against one real Ruby save and one real Emerald save: both load and
   save back byte for byte. The Ruby and Emerald samples, edited copies of both real saves (a new name, money, a TM
   count, a nickname, nature, shininess, EVs, a box name, a Pokémon added and one moved out of a box), and edited copies
@@ -343,6 +361,8 @@ Every screen explains itself in plain words, so keep it that way when you add a 
 - Gold and Silver saves are identical inside, so the site asks which one yours is.
 - Which bit is which in the options byte, and the PP Up rule, are confirmed in the game code (see above). The save
   offsets themselves come from the pokered and pokeyellow disassemblies and match the two real saves.
+- Pikachu's pictures: talking to Pikachu in the real game at friendship and mood values from every row of the reaction
+  table (2026-11-03) shows the same pictures as the editor, Jump and Heart included.
 - Yellow's Pikachu offsets (friendship at 0x271C, mood at 0x271D) come from the pokeyellow disassembly. The ROM check
   finds the game copying the friendship byte to 0x271C, and the offsets match one real Yellow save.
 - Mood only changes how Pikachu reacts when you talk to it (the editor shows which reaction, worked out from the game's
