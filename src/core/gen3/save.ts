@@ -35,6 +35,7 @@ import { REMATCHES_AT, REMATCH_TRAINERS, TRAINER_FLAGS_START, nextRematchTeam, r
 import { RIBBON_MASK } from './ribbons.ts';
 import { GAME_STAT_MAX, HOF_TIME_STAT, gameStatCount } from './stats.ts';
 import { decodeText, encodeText } from './text.ts';
+import { EVENT_ISLANDS } from './events.ts';
 
 
 /** How many different items each pocket (and the PC) holds, and how many of one item fits in a slot. */
@@ -349,7 +350,7 @@ export interface Gen3Options {
 }
 
 /** The blocks that are written back only when edited, so unedited ones keep their exact bytes. */
-const TRACKED = ['pockets', 'pcItems', 'frontier', 'gameStats', 'pokeblocks', 'decorations', 'secretBase', 'roamer', 'rematches'] as const;
+const TRACKED = ['islands', 'pockets', 'pcItems', 'frontier', 'gameStats', 'pokeblocks', 'decorations', 'secretBase', 'roamer', 'rematches'] as const;
 type Tracked = typeof TRACKED[number];
 
 export class Gen3Save implements EditableSave {
@@ -376,6 +377,9 @@ export class Gen3Save implements EditableSave {
   /** Emerald's rematches, one per trainer in rematches.ts: whether the game could ask them at all (rematchAvailable),
    * the team they'd bring now (`next`), and `team`, the saved byte (0 = not asking for a rematch). */
   rematches: { available: boolean; next: number; team: number }[] | null;
+  /** One per island in EVENT_ISLANDS[game]: whether the ferry will take you (the ticket in Key Items and its flag). Change
+   * with setIsland, which keeps the ticket and the flag together. */
+  islands: boolean[];
   /** The decorations in the PC, one id list per category (decorations.ts). */
   decorations: number[][];
   /** The player's secret base (bases.ts), or null before they've made one. */
@@ -478,6 +482,7 @@ export class Gen3Save implements EditableSave {
       berry: readItems(sb1, L.berries, L.berriesMax, key16),
     };
     this.pcItems = readItems(sb1, SB1.pcItems, PC_ITEMS_MAX, 0);
+    this.islands = EVENT_ISLANDS[this.game].map((isle) => this.flag(isle.flag) && this.pockets.key.some((it) => it.id === isle.item));
 
     const count = Math.min(sb1[SB1.partyCount], PARTY_MAX);
     this.party = [];
@@ -502,6 +507,32 @@ export class Gen3Save implements EditableSave {
   /** Which game a file is from, or null if it isn't a Gen 3 save this can read. */
   static detect(data: Uint8Array): Gen3Game | null {
     return detectGen3(data);
+  }
+
+  /** Whether the game has been cleared (the Hall of Fame): the ferry to the event islands only sails after it. */
+  get gameCleared(): boolean {
+    return this.flag(this.L.badgeFlag - 7 + 4);
+  }
+
+  /** Whether the legendary on an event island has been met already (all of them, for Navel Rock's two). */
+  islandMet(i: number): boolean {
+    return EVENT_ISLANDS[this.game][i].met.every((any) => any.some((f) => this.flag(f)));
+  }
+
+  /**
+   * Give or take an event island's ticket: the item in Key Items and the flag the ferry checks with it. Returns false
+   * (and changes nothing) when the ticket is wanted but the Key Items pocket is full.
+   */
+  setIsland(i: number, on: boolean): boolean {
+    const isle = EVENT_ISLANDS[this.game][i];
+    const has = this.pockets.key.some((it) => it.id === isle.item);
+    if (on && !has) {
+      if (this.pockets.key.length >= this.L.keyItemsMax) return false;
+      this.pockets.key = [...this.pockets.key, { id: isle.item, count: 1 }];
+    }
+    if (!on && has) this.pockets.key = this.pockets.key.filter((it) => it.id !== isle.item);
+    this.islands[i] = on;
+    return true;
   }
 
   private flag(n: number): boolean {
@@ -619,6 +650,9 @@ export class Gen3Save implements EditableSave {
       writeItems(sb1, L.tmhm, this.pockets.tmhm, L.tmhmMax, key16, 99);
       writeItems(sb1, L.berries, this.pockets.berry, L.berriesMax, key16, 999);
     }
+    EVENT_ISLANDS[this.game].forEach((isle, i) => {
+      if (this.islands[i] !== this.loaded.islands[i]) this.setFlagIn(sb1, isle.flag, this.islands[i]);
+    });
     const rm0 = this.loaded.rematches;
     this.rematches?.forEach((m, i) => { if (m.team !== rm0![i].team) sb1[REMATCHES_AT + i] = clamp(m.team, 0, 5); });
     const ro = this.roamer;

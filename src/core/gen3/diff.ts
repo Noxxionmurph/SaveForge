@@ -11,6 +11,7 @@ import { baseSpotLabel, type SecretBase } from './bases.ts';
 import { DECOR_CATEGORIES, decorName } from './decorations.ts';
 import { STREAK_ROWS, rowLabel } from './frontier.ts';
 import { pokeblockLevel, pokeblockName, type Pokeblock } from './pokeblocks.ts';
+import { EVENT_ISLANDS } from './events.ts';
 import { REMATCH_TRAINERS } from './rematches.ts';
 import { ribbonNames } from './ribbons.ts';
 import { HOF_TIME_STAT, gameStatGroups, unpackHofTime } from './stats.ts';
@@ -284,6 +285,17 @@ function rematchLines(b: Gen3Save, a: Gen3Save): string[] {
   return [on.length ? `Want a rematch: ${on.join(', ')}` : '', off.length ? `No longer want a rematch: ${off.join(', ')}` : ''].filter(Boolean);
 }
 
+// ---------- event islands ----------
+
+function islandLines(b: Gen3Save, a: Gen3Save): string[] {
+  const out: string[] = [];
+  EVENT_ISLANDS[a.game].forEach((isle, i) => {
+    if (b.islands[i] !== a.islands[i]) out.push(`${isle.name}: ${a.islands[i] ? 'the ferry will sail there' : 'ticket taken away'}`);
+  });
+  if (out.length && a.islands.some(Boolean) && !a.gameCleared) out.push('Warning: the ferry only sails after the Hall of Fame.');
+  return out;
+}
+
 // ---------- the roamer ----------
 
 function roamerLines(b: Gen3Save, a: Gen3Save): string[] {
@@ -382,6 +394,7 @@ export function describeGen3Changes(before: Gen3Save, after: Gen3Save): ChangeGr
     group('TMs and HMs', tmLines(before.tmCounts(), after.tmCounts())),
     group('Berries pocket', itemLines(before.pockets.berry, after.pockets.berry)),
     group('PC items', itemLines(before.pcItems, after.pcItems)),
+    group('Event islands', islandLines(before, after)),
     group('Roaming Pokémon', roamerLines(before, after)),
     group('Trainer rematches', rematchLines(before, after)),
     group('Secret base', baseLines(before.secretBase, after.secretBase)),

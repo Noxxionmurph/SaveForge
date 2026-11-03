@@ -497,3 +497,23 @@ test("Emerald's rematches: asking trainers get the team the game would pick; Rub
   const lines = s.describeChanges(new Gen3Save(buildSampleSave('emerald'))).flatMap((g) => g.lines);
   assert.ok(lines.includes('Want a rematch: Dusty'), lines.join('\n'));
 });
+
+test('event island tickets: the item and the flag the ferry checks go together, and survive a save', () => {
+  for (const game of ['rs', 'emerald'] as const) {
+    const s = new Gen3Save(buildSampleSave(game));
+    assert.ok(s.islands.every((on) => !on));
+    s.islands.forEach((_, i) => assert.ok(s.setIsland(i, true)));
+    const t = new Gen3Save(s.serialize());
+    assert.ok(t.islands.every(Boolean), `${game}: all tickets read back`);
+    assert.ok(t.pockets.key.some((it) => it.id === 275), 'the Eon Ticket is in Key Items');
+    assert.ok(t.describeChanges(new Gen3Save(buildSampleSave(game))).some((g) => g.title === 'Event islands'));
+    t.setIsland(0, false);
+    const u = new Gen3Save(t.serialize());
+    assert.equal(u.islands[0], false);
+    assert.ok(!u.pockets.key.some((it) => it.id === 275), 'taking the ticket away removes the item');
+  }
+  // Only the item, without the Mystery Gift flag, doesn't count: the ferry would refuse.
+  const s = new Gen3Save(buildSampleSave('emerald'));
+  s.pockets.key = [...s.pockets.key, { id: 275, count: 1 }];
+  assert.equal(new Gen3Save(s.serialize()).islands[0], false);
+});

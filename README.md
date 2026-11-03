@@ -176,6 +176,11 @@ the same editor (`GEN3_LAYOUTS` in `src/core/gen3/save.ts`).
   setting: text speed, battle scene, battle style, sound, button mode and the 20 frames. Emerald adds Battle Points,
   Berry Powder, the seven Battle Frontier symbols (none, silver or gold), and every facility's current and record streaks
   for each mode and level (plus Dome championships, Factory rentals and the trainer card's BP won).
+- Event islands: the tickets the S.S. Tidal needs (Mystery Gift items in the real games), each given with the flag the
+  ferry attendant checks alongside it. Ruby and Sapphire have the Eon Ticket (Southern Island); Emerald adds the
+  AuroraTicket (Birth Island), the Old Sea Map (Faraway Island) and the MysticTicket (Navel Rock). The card says whether
+  each island's legendary has already been met, and that the ferry only sails after the Hall of Fame. Checked in the
+  real games: Emerald's ferry sails to Faraway Island and Ruby's to Southern Island.
 - The roaming Latios or Latias (once the game has made it): which one, level, nature, IVs, shininess and whether it still
   roams.
 - Emerald's trainer rematches: which registered trainers (and, after the Hall of Fame, gym leaders) are asking for one,

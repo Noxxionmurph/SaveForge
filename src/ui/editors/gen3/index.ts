@@ -8,6 +8,7 @@ import {
   NATURE_NAMES, baseStatsFor, calcStats, findPid, genderOf, isShiny, itemChoices, itemName, moveInfo, natureOf, speciesName, type Pocket,
 } from '../../../core/gen3/data.ts';
 import { DECORS_BY_CATEGORY, DECOR_CATEGORIES } from '../../../core/gen3/decorations.ts';
+import { EVENT_ISLANDS } from '../../../core/gen3/events.ts';
 import { LEVELS, STREAK_MAX, STREAK_ROWS } from '../../../core/gen3/frontier.ts';
 import { FEEL_MAX, FLAVORS, FLAVOR_MAX, POKEBLOCK_COLORS, POKEBLOCK_SLOTS } from '../../../core/gen3/pokeblocks.ts';
 import { REMATCH_TRAINERS } from '../../../core/gen3/rematches.ts';
@@ -218,6 +219,7 @@ export const mountGen3Editor: MountEditor<Gen3Save> = (container, s, host) => {
           h('span', { class: 'muted' }, ' Unlocked after the Hall of Fame.'))),
       badgeCard(),
       frontierCard(),
+      islandCard(),
       roamerCard(),
       rematchCard(),
       statsCard(),
@@ -328,6 +330,34 @@ export const mountGen3Editor: MountEditor<Gen3Save> = (container, s, host) => {
     };
     draw();
     refreshers.push(draw); // its shininess follows the Trainer ID and Secret ID
+    return wrap;
+  }
+
+  /** The event islands: their tickets (the item and the flag the ferry checks with it). */
+  function islandCard(): Node {
+    const wrap = h('section', { class: 'card islands' });
+    const draw = () => {
+      clear(wrap);
+      const isles = EVENT_ISLANDS[s.game];
+      wrap.append(fold('islands', 'Event islands',
+        s.gameCleared ? null : h('p', { class: 'muted section-note' }, 'The ferry from Lilycove only sails after the Hall of Fame.'),
+        h('div', { class: 'island-list' }, isles.map((isle, i) => h('label', { class: 'check-row island' },
+          h('input', { type: 'checkbox', checked: s.islands[i], onchange: (e: Event) => {
+            const box = e.target as HTMLInputElement;
+            if (!s.setIsland(i, box.checked)) { box.checked = false; toast('Key Items is full: make room for the ticket first.'); return; }
+            markDirty(); draw();
+          } }),
+          itemIcon(itemSpritePath(isle.item)),
+          h('span', { class: 'island-text' },
+            h('span', {}, `${itemName(isle.item)} to ${isle.name}`),
+            h('span', { class: 'muted' }, s.islandMet(i) ? `${isle.legend}: already met` : isle.legend))))),
+        isles.length > 1 ? h('div', { class: 'button-row' },
+          h('button', { onclick: () => {
+            isles.forEach((_, i) => { if (!s.setIsland(i, true)) toast('Key Items is full: make room for the tickets first.'); });
+            markDirty(); draw();
+          } }, 'All tickets')) : null));
+    };
+    draw();
     return wrap;
   }
 
