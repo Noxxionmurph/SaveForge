@@ -36,6 +36,11 @@ const MAIL_SIZE = 47;
 /** sRTCStatusFlags (SRAM bank 0, 0xAC60) and its RTC_RESET bit: Continue asks for the day and time again. */
 const RTC_STATUS = 0x0c60;
 const RTC_RESET = 0x80;
+/** Offsets inside the Day-Care block (Layout.dayCare). */
+const DC = { man: 0, manMon: 1, lady: 55, steps: 56, mother: 57, ladyMon: 58, egg: 112 } as const;
+const DC_HAS_MON = 0x01;
+const DC_COMPATIBLE = 0x20;
+const DC_HAS_EGG = 0x40;
 export const PARTY_MAX = 6;
 export const BOX_MAX = 20;
 export const BOX_COUNT = 14;
@@ -299,6 +304,10 @@ export class Gen2Save implements EditableSave {
   startTime: Uint8Array;
   /** The time last chosen with setGameTime, for the review list. */
   clockSetTo: GameTime | null = null;
+  /** The Pokémon at the Route 34 Day-Care: the old man's, then the old woman's (up to two). */
+  dayCare: Gen2Mon[];
+  /** The old man is holding an egg for you (he has found one outside). */
+  eggWaiting: boolean;
 
   /** Which layout the file uses. */
   readonly game: Gen2Game;
@@ -308,6 +317,8 @@ export class Gen2Save implements EditableSave {
   readonly loadedFrom: 'main' | 'backup' | 'neither';
 
   private L: Layout;
+  /** Which carer had each Day-Care Pokémon when the file was opened (0 the man, 1 the woman). */
+  private dayCareCarer = new Map<Gen2Mon, 0 | 1>();
   private original: Uint8Array;
   private raw: { name: Uint8Array; rival: Uint8Array; mom: Uint8Array; boxNames: Uint8Array[] };
 
@@ -362,11 +373,58 @@ export class Gen2Save implements EditableSave {
     this.rtc = readRtcFooter(d);
     this.startTime = d.slice(START_TIME, START_TIME + 4);
     this.party = readMonList(d, L.party, true);
+    this.dayCare = [];
+    for (const [flag, at, carer] of [[DC.man, DC.manMon, 0], [DC.lady, DC.ladyMon, 1]] as const) {
+      if (!(d[L.dayCare + flag] & DC_HAS_MON)) continue;
+      const o = L.dayCare + at;
+      const mon = readMon(d, o + 2 * NAME_LEN, false, 0, d.slice(o + NAME_LEN, o + 2 * NAME_LEN), d.slice(o, o + NAME_LEN));
+      this.dayCare.push(mon);
+      this.dayCareCarer.set(mon, carer);
+    }
+    this.eggWaiting = !!(d[L.dayCare + DC.man] & DC_HAS_EGG);
     this.party.forEach((mon, i) => { mon.mail = d.slice(L.partyMail + i * MAIL_SIZE, L.partyMail + (i + 1) * MAIL_SIZE); });
     this.boxes = Array.from({ length: BOX_COUNT }, (_, i) =>
       readMonList(d, i === this.currentBoxIndex ? L.currentBox : Gen2Save.boxOffset(i), false));
   }
 
+
+  /** Can the old man have an egg waiting? Only for a pair the game itself started breeding (it made the egg then). */
+  get canHaveEgg(): boolean {
+    const o = this.original, L = this.L;
+    return this.dayCare.length === 2 && !this.dayCareChanged() && o[L.dayCare + DC.egg + 2 * NAME_LEN] !== 0
+      && !!(o[L.dayCare + DC.man] & (DC_COMPATIBLE | DC_HAS_EGG));
+  }
+
+  /** Has anyone been left or taken back since the file was opened? */
+  private dayCareChanged(): boolean {
+    return this.dayCare.length !== this.dayCareCarer.size || this.dayCare.some((m) => !this.dayCareCarer.has(m));
+  }
+
+  /**
+   * Each Pokémon keeps the carer it had; a new one goes to whoever is free (the man first). When the pair changes,
+   * breeding stops as it does when you take one back in the game (the egg made for the old pair no longer fits), and
+   * it starts again the next time the game itself takes a Pokémon in.
+   */
+  private writeDayCare(d: Uint8Array): void {
+    const L = this.L, base = L.dayCare;
+    const slots: (Gen2Mon | undefined)[] = [undefined, undefined];
+    for (const m of this.dayCare) { const c = this.dayCareCarer.get(m); if (c !== undefined && !slots[c]) slots[c] = m; }
+    for (const m of this.dayCare) if (!slots.includes(m)) slots[slots[0] ? 1 : 0] = m;
+    [[DC.man, DC.manMon], [DC.lady, DC.ladyMon]].forEach(([flag, at], i) => {
+      const mon = slots[i];
+      d[base + flag] = mon ? d[base + flag] | DC_HAS_MON : d[base + flag] & ~DC_HAS_MON;
+      if (!mon) return;
+      const o = base + at;
+      d.set(encodeText(mon.nickname, NAME_LEN, mon.nickRaw), o);
+      d.set(encodeText(mon.otName, NAME_LEN, mon.otRaw, 0, PLAYER_NAME_MAX), o + NAME_LEN);
+      writeMon(d, o + 2 * NAME_LEN, mon, false);
+    });
+    if (this.dayCareChanged()) d[base + DC.man] &= ~(DC_COMPATIBLE | DC_HAS_EGG);
+    else if (this.eggWaiting !== !!(this.original[base + DC.man] & DC_HAS_EGG)) {
+      // The game clears "compatible" when it finds an egg and sets it again once you take the egg.
+      d[base + DC.man] = this.eggWaiting ? (d[base + DC.man] & ~DC_COMPATIBLE) | DC_HAS_EGG : (d[base + DC.man] & ~DC_HAS_EGG) | DC_COMPATIBLE;
+    }
+  }
 
   static boxOffset(i: number): number {
     return (i < BOXES_PER_BANK ? 0x4000 : 0x6000) + (i % BOXES_PER_BANK) * BOX_BYTES;
@@ -474,6 +532,7 @@ export class Gen2Save implements EditableSave {
     d.set(this.dexSeen, L.dexSeen);
 
     writeMonList(d, L.party, this.party, true);
+    this.writeDayCare(d);
     d[L.curBox] = this.currentBoxIndex;
     for (let i = 0; i < BOX_COUNT; i++) {
       writeMonList(d, i === this.currentBoxIndex ? L.currentBox : Gen2Save.boxOffset(i), this.boxes[i] ?? [], false);

@@ -44,6 +44,11 @@ export interface Layout {
   currentBox: number; // the open PC box (its own slot in the box banks is only updated when you change box)
   partyMail: number; // 6 × 47 bytes, then the same again as a backup
   partyMailBackup: number;
+  /**
+   * wDayCareMan: flags, then the man's Pokémon (nickname, OT, 32-byte box Pokémon); wDayCareLady's flags, the steps to
+   * the next egg check, the mother-or-non-Ditto byte, the lady's Pokémon, then the egg made when breeding started.
+   */
+  dayCare: number;
   /** Crystal only: wPlayerGender (bit 0 set for a girl), kept outside the checksummed data. */
   playerGender?: number;
   /**
@@ -63,7 +68,7 @@ const GOLD: Layout = {
   money: 0x23db, momsMoney: 0x23de, coins: 0x23e2, johtoBadges: 0x23e4, kantoBadges: 0x23e5, tmhm: 0x23e6,
   items: 0x241f, keyItems: 0x2449, balls: 0x2464, pcItems: 0x247e,
   curBox: 0x2724, boxNames: 0x2727, party: 0x288a, dexCaught: 0x2a4c, dexSeen: 0x2a6c,
-  checksum: 0x2d69, checkValue2: 0x2d6b, currentBox: 0x2d6c, partyMail: 0x0600, partyMailBackup: 0x071a,
+  checksum: 0x2d69, checkValue2: 0x2d6b, currentBox: 0x2d6c, partyMail: 0x0600, partyMailBackup: 0x071a, dayCare: 0x2aa8,
   backup: [
     [0x2000, 0x2009, 0x7e30], // options and the first check byte
     [0x2009, 0x222f, 0x15c7], // wPlayerData1
@@ -85,7 +90,7 @@ const CRYSTAL: Layout = {
   money: 0x23dc, momsMoney: 0x23df, coins: 0x23e3, johtoBadges: 0x23e5, kantoBadges: 0x23e6, tmhm: 0x23e7,
   items: 0x2420, keyItems: 0x244a, balls: 0x2465, pcItems: 0x247f,
   curBox: 0x2700, boxNames: 0x2703, party: 0x2865, dexCaught: 0x2a27, dexSeen: 0x2a47,
-  checksum: 0x2d0d, checkValue2: 0x2d0f, currentBox: 0x2d10, partyMail: 0x0600, partyMailBackup: 0x071a,
+  checksum: 0x2d0d, checkValue2: 0x2d0f, currentBox: 0x2d10, partyMail: 0x0600, partyMailBackup: 0x071a, dayCare: 0x2a83,
   playerGender: 0x3e3d, // sCrystalData
   backup: [
     [0x2000, 0x2009, 0x1200], // options and the first check byte

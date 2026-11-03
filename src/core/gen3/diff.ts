@@ -145,7 +145,8 @@ function boxNameLines(b: Gen3Save, a: Gen3Save): string[] {
 interface Slot { mon: Gen3Mon; box: number; index: number }
 interface Pair { b: Slot; a: Slot }
 
-const place = (s: { box: number; index: number }) => (s.box < 0 ? `Party ${s.index + 1}` : `Box ${s.box + 1}, slot ${s.index + 1}`);
+const place = (s: { box: number; index: number }) =>
+  (s.box === -2 ? 'Day-Care' : s.box < 0 ? `Party ${s.index + 1}` : `Box ${s.box + 1}, slot ${s.index + 1}`);
 
 function label(m: Gen3Mon): string {
   if (m.bad) return 'Bad Egg';
@@ -163,6 +164,7 @@ const signature = (m: Gen3Mon) => JSON.stringify([
 
 function slots(save: Gen3Save): Slot[] {
   const out: Slot[] = save.party.map((mon, index) => ({ mon, box: -1, index }));
+  save.dayCare.forEach((mon, index) => out.push({ mon, box: -2, index }));
   save.boxes.forEach((list, box) => list.forEach((mon, index) => { if (mon) out.push({ mon, box, index }); }));
   return out;
 }
@@ -261,7 +263,7 @@ function pokemonLines(b: Gen3Save, a: Gen3Save): string[] {
     const moved = sb.box !== sa.box || sb.index !== sa.index;
     const crossed = sb.box !== sa.box;
     // Moving between the party and a box heals the Pokémon or refills its PP, as the game does; that isn't an edit.
-    const edits = monChanges(sb.mon, sa.mon, sb.box < 0 && sa.box < 0).filter((e) => !crossed || !/^(HP |status |PP changed|stats )/.test(e));
+    const edits = monChanges(sb.mon, sa.mon, sb.box === -1 && sa.box === -1).filter((e) => !crossed || !/^(HP |status |PP changed|stats )/.test(e));
     if (!moved && !edits.length) continue;
     lines.push(moved
       ? `${label(sa.mon)}: ${[`${place(sb)} → ${place(sa)}`, ...edits].join(', ')}`
@@ -401,6 +403,8 @@ export function describeGen3Changes(before: Gen3Save, after: Gen3Save): ChangeGr
     group('Decorations', decorationLines(before, after)),
     group('Pokéblock case', pokeblockLines(before.pokeblocks, after.pokeblocks)),
     group('Pokémon', pokemonLines(before, after), 14),
+    group('Day-Care', before.eggWaiting !== after.eggWaiting
+      ? [after.eggWaiting ? 'The old man has an egg waiting for you' : 'No egg waiting'] : []),
     group('Box names', boxNameLines(before, after)),
     group('Pokédex', dexLines(before, after)),
     group('Game stats', statLines(before, after)),

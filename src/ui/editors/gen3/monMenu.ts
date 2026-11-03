@@ -10,7 +10,7 @@ import { monIcon, monLabel, shinyMark } from './monBits.ts';
 const ROSTER: Roster<Gen3Save, Gen3Mon> = {
   ...roster,
   // Boxes keep their gaps, so a box Pokémon can move down to the box's last slot.
-  lastIndex: (s, where) => (where === roster.PARTY ? s.party.length - 1 : roster.capacityOf(where) - 1),
+  lastIndex: (s, where) => (where === roster.PARTY ? s.party.length - 1 : where === roster.DAYCARE ? s.dayCare.length - 1 : roster.capacityOf(where) - 1),
 };
 
 const LOOK: MonLook<Gen3Mon> = {

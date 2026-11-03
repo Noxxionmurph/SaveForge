@@ -137,8 +137,9 @@ function boxNameLines(b: Gen2Save, a: Gen2Save): string[] {
 interface Slot { mon: Gen2Mon; box: number; index: number }
 interface Pair { b: Slot; a: Slot }
 
-const place = (s: { box: number; index: number }) => (s.box < 0 ? `Party ${s.index + 1}` : `Box ${s.box + 1}, slot ${s.index + 1}`);
-const containerName = (box: number) => (box < 0 ? 'Party' : `Box ${box + 1}`);
+const place = (s: { box: number; index: number }) =>
+  (s.box === -2 ? 'Day-Care' : s.box < 0 ? `Party ${s.index + 1}` : `Box ${s.box + 1}, slot ${s.index + 1}`);
+const containerName = (box: number) => (box === -2 ? 'Day-Care' : box < 0 ? 'Party' : `Box ${box + 1}`);
 
 function label(m: Gen2Mon): string {
   if (m.isEgg) return `Egg (${speciesName(m.species)})`;
@@ -154,6 +155,7 @@ const signature = (m: Gen2Mon) => JSON.stringify([
 
 function slots(save: Gen2Save): Slot[] {
   const out: Slot[] = save.party.map((mon, index) => ({ mon, box: -1, index }));
+  save.dayCare.forEach((mon, index) => out.push({ mon, box: -2, index }));
   save.boxes.forEach((list, box) => list.forEach((mon, index) => out.push({ mon, box, index })));
   return out;
 }
@@ -237,7 +239,7 @@ function pokemonLines(b: Gen2Save, a: Gen2Save): string[] {
   for (const { b: sb, a: sa } of [...pairs].sort((p, q) => order(p.a, q.a))) {
     const crossed = sb.box !== sa.box;
     // Moving between the party and a box heals the Pokémon or refills its PP, as the game does; that isn't an edit.
-    const edits = monChanges(sb.mon, sa.mon, a.game, sb.box < 0 && sa.box < 0).filter((e) => !crossed || !/^(HP |status |PP changed)/.test(e));
+    const edits = monChanges(sb.mon, sa.mon, a.game, sb.box === -1 && sa.box === -1).filter((e) => !crossed || !/^(HP |status |PP changed)/.test(e));
     if (!crossed && !edits.length) continue;
     lines.push(crossed
       ? `${label(sa.mon)}: ${[`${place(sb)} → ${place(sa)}`, ...edits].join(', ')}`
@@ -262,6 +264,8 @@ export function describeGen2Changes(before: Gen2Save, after: Gen2Save): ChangeGr
     group('TMs and HMs', tmLines(before.tmhm, after.tmhm)),
     group('PC items', itemLines(before.pcItems, after.pcItems, after.game)),
     group('Pokémon', pokemonLines(before, after), 14),
+    group('Day-Care', before.eggWaiting !== after.eggWaiting
+      ? [after.eggWaiting ? 'The old man has an egg waiting for you' : 'No egg waiting'] : []),
     group('Box names', boxNameLines(before, after)),
     group('Pokédex', dexLines(before, after)),
     group('Options', optionLines(before, after)),

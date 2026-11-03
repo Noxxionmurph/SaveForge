@@ -6,8 +6,8 @@ import {
   shinyDvs, speciesName, unownLetter,
 } from '../src/core/gen2/data.ts';
 import { hpBarColour, hpBarPixels } from '../src/core/gen2/hp.ts';
-import { PARTY, copyMon, dropMon, moveMon, partyLeaveRefusal, removeMon } from '../src/core/gen2/roster.ts';
 import { gameTimeAt, readRtcFooter, startFor } from '../src/core/gen2/clock.ts';
+import { DAYCARE, PARTY, copyMon, dropMon, moveMon, partyLeaveRefusal, removeMon } from '../src/core/gen2/roster.ts';
 import { GEN2_LAYOUTS, Gen2Save, SAVE_SIZE, calcStats, newMon, sum16 } from '../src/core/gen2/save.ts';
 import { blankGen2Save, buildSampleSave } from '../src/core/gen2/sample.ts';
 import { decodeText, encodeText, nameProblems } from '../src/core/gen2/text.ts';
@@ -361,4 +361,48 @@ test('day and time: a chip past 140 days wraps as the game wraps it', () => {
   const start = Uint8Array.from(startFor(rtc, { weekday: 3, hour: 8, minute: 30 }, 0));
   assert.deepEqual(gameTimeAt(rtc, start, 0), { weekday: 3, hour: 8, minute: 30 });
   assert.ok(start[0] < 140);
+});
+test('Gen 2 Day-Care: two carers, eggs refused, breeding stops when the pair changes', () => {
+  for (const game of ['gs', 'crystal'] as const) {
+    const base = GEN2_LAYOUTS[game].dayCare;
+    const s = new Gen2Save(buildSampleSave(game), game);
+    assert.equal(s.dayCare.length, 0);
+    const egg = s.party.findIndex((m) => m.isEgg);
+    if (egg >= 0) assert.equal(moveMon(s, PARTY, egg, DAYCARE), 'egg');
+    const n = s.party.length;
+    const first = s.party.findIndex((m) => !m.isEgg);
+    assert.equal(moveMon(s, PARTY, first, DAYCARE), null);
+    const second = s.party.findIndex((m) => !m.isEgg);
+    assert.equal(moveMon(s, PARTY, second, DAYCARE), null);
+    assert.equal(s.party.length, n - 2);
+    assert.equal(moveMon(s, 0, 0, DAYCARE), 'full');
+    const raw = s.serialize();
+    assert.equal(raw[base] & 1, 1, 'the man has one');
+    assert.equal(raw[base + 55] & 1, 1, 'the woman has one');
+    const back = new Gen2Save(raw, game);
+    assert.equal(back.dayCare.length, 2);
+    assert.deepEqual(back.serialize(), raw, 'round trip');
+    assert.equal(back.canHaveEgg, false, 'no egg was made for this pair');
+
+    // A pair the game started breeding (compatible, egg made): the egg switch works, and a change of pair stops it.
+    const bred = raw.slice();
+    bred[base] |= 0x20;
+    bred[base + 112 + 22] = 172;
+    const sum = sum16(bred, GEN2_LAYOUTS[game].gameData, GEN2_LAYOUTS[game].gameDataEnd);
+    bred[GEN2_LAYOUTS[game].checksum] = sum & 0xff; bred[GEN2_LAYOUTS[game].checksum + 1] = sum >> 8;
+    const b = new Gen2Save(bred, game);
+    assert.ok(b.canHaveEgg);
+    b.eggWaiting = true;
+    const withEgg = b.serialize();
+    assert.equal(withEgg[base] & 0x61, 0x41, 'has egg, no longer compatible, still has a Pokémon');
+    assert.ok(b.describeChanges(new Gen2Save(bred, game)).flatMap((g) => g.lines).includes('The old man has an egg waiting for you'));
+    const c = new Gen2Save(withEgg, game);
+    assert.equal(c.eggWaiting, true);
+    assert.equal(moveMon(c, DAYCARE, 1, PARTY), null);
+    const after = c.serialize();
+    assert.equal(after[base] & 0x60, 0, 'taking one back stops breeding');
+    assert.equal(after[base] & 1, 1, 'the man keeps his');
+    assert.equal(after[base + 55] & 1, 0, 'the woman gave hers back');
+    assert.ok(c.party.at(-1)!.maxHp > 0);
+  }
 });

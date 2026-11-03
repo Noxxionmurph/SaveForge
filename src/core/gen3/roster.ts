@@ -8,12 +8,14 @@
 import { isMail } from './data.ts';
 import { BOX_COUNT, BOX_SLOTS, PARTY_MAX, depositInBox, withdrawFromBox, type Gen3Mon, type Gen3Save } from './save.ts';
 
-/** `where` is PARTY or a box index 0-13. */
+/** `where` is PARTY, DAYCARE or a box index 0-13. */
 export const PARTY = -1;
+export const DAYCARE = -2;
+export const DAYCARE_MAX = 2;
 export { BOX_SLOTS, PARTY_MAX };
 export const BOX_TOTAL = BOX_COUNT;
 
-export type Refusal = 'full' | 'last-party' | 'same' | 'missing' | 'mail' | 'copy-mail' | 'last-healthy';
+export type Refusal = 'full' | 'last-party' | 'same' | 'missing' | 'mail' | 'copy-mail' | 'last-healthy' | 'egg' | 'daycare-mail';
 
 export const REFUSAL_TEXT: Record<Refusal, string> = {
   full: 'That place is full.',
@@ -23,18 +25,22 @@ export const REFUSAL_TEXT: Record<Refusal, string> = {
   mail: 'It’s holding Mail, and the game won’t put a Pokémon holding Mail in a box. Take the Mail off first (in the editor, change its held item).',
   'copy-mail': 'It’s holding Mail, and a letter belongs to one Pokémon, so a copy would share it. Take the Mail off first.',
   'last-healthy': 'Your party needs a Pokémon that can battle (not an egg, and not fainted), so this one stays.',
+  egg: 'The Day-Care doesn’t take eggs.',
+  'daycare-mail': 'It’s holding Mail, and the letter is kept at the Day-Care with it. Take it back in the game so the letter comes too, or take the Mail off first.',
 };
 
 export interface Slot { where: number; index: number }
 
+/** The party and the Day-Care are packed lists; a box is 30 spots that can have gaps. */
+const packed = (s: Gen3Save, where: number): Gen3Mon[] | null => (where === PARTY ? s.party : where === DAYCARE ? s.dayCare : null);
 export const monAt = (s: Gen3Save, where: number, index: number): Gen3Mon | null =>
-  (where === PARTY ? s.party[index] : s.boxes[where]?.[index]) ?? null;
-export const capacityOf = (where: number): number => (where === PARTY ? PARTY_MAX : BOX_SLOTS);
-export const countAt = (s: Gen3Save, where: number): number =>
-  (where === PARTY ? s.party.length : s.boxes[where].filter(Boolean).length);
+  (packed(s, where)?.[index] ?? s.boxes[where]?.[index]) ?? null;
+export const capacityOf = (where: number): number => (where === PARTY ? PARTY_MAX : where === DAYCARE ? DAYCARE_MAX : BOX_SLOTS);
+export const countAt = (s: Gen3Save, where: number): number => (packed(s, where)?.length ?? s.boxes[where].filter(Boolean).length);
 export const spaceAt = (s: Gen3Save, where: number): number => capacityOf(where) - countAt(s, where);
-export const placeName = (where: number): string => (where === PARTY ? 'Party' : `Box ${where + 1}`);
-export const ALL_PLACES: readonly number[] = [PARTY, ...Array.from({ length: BOX_TOTAL }, (_, i) => i)];
+export const placeName = (where: number): string => (where === PARTY ? 'Party' : where === DAYCARE ? 'Day-Care' : `Box ${where + 1}`);
+/** The party, the Day-Care, then the boxes. */
+export const ALL_PLACES: readonly number[] = [PARTY, DAYCARE, ...Array.from({ length: BOX_TOTAL }, (_, i) => i)];
 
 const holdsMail = (mon: Gen3Mon) => isMail(mon.item);
 const firstGap = (s: Gen3Save, box: number) => s.boxes[box].findIndex((m) => !m);
@@ -54,18 +60,21 @@ export const partyLeaveRefusal = (s: Gen3Save, index: number): Refusal | null =>
 
 function arrive(mon: Gen3Mon, from: number, to: number): void {
   if (from === to || mon.bad) return;
+  if (to === DAYCARE) { depositInBox(mon); return; } // StorePokemonInDaycare restores PP, like the PC
   if (to === PARTY) withdrawFromBox(mon);
   else if (from === PARTY) depositInBox(mon);
 }
 
 function take(s: Gen3Save, where: number, index: number): void {
-  if (where === PARTY) s.party.splice(index, 1);
+  const list = packed(s, where);
+  if (list) list.splice(index, 1);
   else s.boxes[where][index] = null;
 }
 
 /** Put a Pokémon at the end of the party, or the first gap of a box. Returns where it went. */
 function put(s: Gen3Save, where: number, mon: Gen3Mon): number {
-  if (where === PARTY) { s.party.push(mon); return s.party.length - 1; }
+  const list = packed(s, where);
+  if (list) { list.push(mon); return list.length - 1; }
   const i = firstGap(s, where);
   s.boxes[where][i] = mon;
   return i;
@@ -78,7 +87,13 @@ export function moveMon(s: Gen3Save, from: number, index: number, to: number): R
   if (from === to) return 'same';
   if (spaceAt(s, to) <= 0) return 'full';
   if (from === PARTY) { const r = partyBreaks(s, index); if (r) return r; }
+  if (to === DAYCARE && mon.isEgg) return 'egg';
+  if (from === DAYCARE && s.dayCareHasMail(mon)) return 'daycare-mail';
+  if (to === DAYCARE && holdsMail(mon)) return 'daycare-mail';
   if (to !== PARTY && holdsMail(mon)) return 'mail';
+  // The experience walked at the Day-Care is added when a Pokémon is taken back (TakeSelectedPokemonFromDaycare).
+  if (from === DAYCARE) s.leaveDayCare(mon);
+  if (from === DAYCARE || to === DAYCARE) s.eggWaiting = false; // the egg was made for the old pair
   take(s, from, index);
   put(s, to, mon);
   arrive(mon, from, to);
@@ -96,14 +111,16 @@ export function removeMon(s: Gen3Save, from: number, index: number): Refusal | n
 export function copyMon(s: Gen3Save, from: number, index: number): Slot | Refusal {
   const mon = monAt(s, from, index);
   if (!mon) return 'missing';
-  const where = [from, ...ALL_PLACES.filter((w) => w !== PARTY)].find((w) => spaceAt(s, w) > 0);
+  const where = [from, ...ALL_PLACES.filter((w) => w >= 0)].find((w) => spaceAt(s, w) > 0);
   if (where === undefined) return 'full';
   // The Pokémon only records which saved letter it holds, so a copy would point at the same one.
   if (where !== PARTY && holdsMail(mon)) return 'mail';
   if (holdsMail(mon) && mon.mail !== 0xff) return 'copy-mail';
+  if (where === DAYCARE && mon.isEgg) return 'egg';
   const copy = structuredClone(mon);
+  if (where === DAYCARE) s.eggWaiting = false;
   let at: number;
-  if (where === PARTY) { at = index + 1; s.party.splice(at, 0, copy); }
+  if (where === PARTY || where === DAYCARE) { at = index + 1; packed(s, where)!.splice(at, 0, copy); }
   else if (where === from && !s.boxes[where][index + 1]) { at = index + 1; s.boxes[where][at] = copy; }
   else at = put(s, where, copy);
   arrive(copy, from, where);
@@ -154,9 +171,10 @@ export function dropMon(s: Gen3Save, from: Slot, to: Slot): { kind: 'swap' | 'mo
 /** Swap with the neighbour above (-1) or below (+1); in a box, an empty neighbour spot works too. */
 export function shiftMon(s: Gen3Save, where: number, index: number, delta: -1 | 1): boolean {
   const other = index + delta;
-  if (where === PARTY) {
-    if (!s.party[index] || !s.party[other]) return false;
-    [s.party[index], s.party[other]] = [s.party[other], s.party[index]];
+  const list = packed(s, where);
+  if (list) {
+    if (!list[index] || !list[other]) return false;
+    [list[index], list[other]] = [list[other], list[index]];
     return true;
   }
   const box = s.boxes[where];

@@ -12,7 +12,7 @@ import { EVENT_ISLANDS } from '../../../core/gen3/events.ts';
 import { LEVELS, STREAK_MAX, STREAK_ROWS } from '../../../core/gen3/frontier.ts';
 import { FEEL_MAX, FLAVORS, FLAVOR_MAX, POKEBLOCK_COLORS, POKEBLOCK_SLOTS } from '../../../core/gen3/pokeblocks.ts';
 import { REMATCH_TRAINERS } from '../../../core/gen3/rematches.ts';
-import { BOX_SLOTS, BOX_TOTAL, PARTY, PARTY_MAX, REFUSAL_TEXT, countAt, dropMon, monAt, placeName, shiftMon } from '../../../core/gen3/roster.ts';
+import { BOX_SLOTS, BOX_TOTAL, DAYCARE, PARTY, PARTY_MAX, REFUSAL_TEXT, countAt, dropMon, monAt, placeName, shiftMon } from '../../../core/gen3/roster.ts';
 import {
   BATTLE_POINTS_MAX, BERRY_POWDER_MAX, BOX_NAME_LEN, COINS_MAX, FRONTIER_FACILITIES, MONEY_MAX, PLAYER_NAME_MAX, depositInBox,
   newMon, pocketSizes, type BagItem, type Gen3Mon, type Gen3Save,
@@ -641,9 +641,32 @@ export const mountGen3Editor: MountEditor<Gen3Save> = (container, s, host) => {
           draw();
         },
       }, s.party.length >= PARTY_MAX ? `Party full (${PARTY_MAX} of ${PARTY_MAX})` : `+ Add Pokémon (${s.party.length}/${PARTY_MAX})`));
+      dayCareList(dayCare, draw);
     };
+    const dayCare = h('div', { class: 'day-care-list' });
     draw();
-    return h('div', { class: 'stack' }, wrap);
+    return h('div', { class: 'stack' }, wrap,
+      h('section', { class: 'card day-care' }, h('h3', {}, 'Day-Care'), dayCare));
+  }
+
+  /** Who is at the Route 117 Day-Care, with the same actions sheet as the party, and the old man's egg. */
+  function dayCareList(wrap: HTMLElement, redraw: () => void): void {
+    clear(wrap);
+    s.dayCare.forEach((mon, i) => {
+      const steps = s.dayCareSteps(mon);
+      wrap.append(monCard(mon, () => editMon(DAYCARE, i, redraw), [
+        steps ? h('span', { class: 'muted day-care-steps' }, `+${steps.toLocaleString('en-US')} exp`) : null,
+        h('button', { class: 'icon', 'aria-label': `Actions for ${monLabel(mon)}`, onclick: () => menuFor(DAYCARE, i, redraw) }, '⋯'),
+      ].filter((n): n is HTMLElement => n !== null)));
+    });
+    if (!s.dayCare.length) wrap.append(h('p', { class: 'muted' }, 'Nobody is staying there. To leave a Pokémon, open its ⋯ menu and choose Move to… Day-Care.'));
+    if (s.dayCare.length === 2 && s.dayCareCompatibility > 0) {
+      wrap.append(h('label', { class: 'check-row' },
+        h('input', { type: 'checkbox', checked: s.eggWaiting, onchange: (e: Event) => { s.eggWaiting = (e.target as HTMLInputElement).checked; markDirty(); } }),
+        'The old man has an egg waiting'));
+    } else if (s.dayCare.length === 2) {
+      wrap.append(h('p', { class: 'muted card-note' }, 'These two can’t have an egg together.'));
+    }
   }
 
   function boxesTab(): Node {

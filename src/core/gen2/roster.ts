@@ -6,12 +6,14 @@
 import { isMail } from './data.ts';
 import { BOX_COUNT, BOX_MAX, PARTY_MAX, depositInBox, withdrawFromBox, type Gen2Mon, type Gen2Save } from './save.ts';
 
-/** `where` is PARTY or a box index 0-13. */
+/** `where` is PARTY, DAYCARE or a box index 0-13. */
 export const PARTY = -1;
+export const DAYCARE = -2;
+export const DAYCARE_MAX = 2;
 export { BOX_MAX, PARTY_MAX };
 export const BOX_TOTAL = BOX_COUNT;
 
-export type Refusal = 'full' | 'last-party' | 'same' | 'missing' | 'mail' | 'last-healthy';
+export type Refusal = 'full' | 'last-party' | 'same' | 'missing' | 'mail' | 'last-healthy' | 'egg';
 
 export const REFUSAL_TEXT: Record<Refusal, string> = {
   full: 'That place is full.',
@@ -20,14 +22,17 @@ export const REFUSAL_TEXT: Record<Refusal, string> = {
   missing: "That Pokémon isn't there any more.",
   mail: 'It’s holding Mail, and the game won’t put a Pokémon holding Mail in a box. Take the Mail off first (in the editor, change its held item).',
   'last-healthy': 'Your party needs a Pokémon that can battle (not an egg, and not fainted), so this one stays.',
+  egg: 'The Day-Care doesn’t take eggs.',
 };
 
-export const listAt = (s: Gen2Save, where: number): Gen2Mon[] => (where === PARTY ? s.party : (s.boxes[where] ??= []));
-export const capacityOf = (where: number): number => (where === PARTY ? PARTY_MAX : BOX_MAX);
+export const listAt = (s: Gen2Save, where: number): Gen2Mon[] =>
+  (where === PARTY ? s.party : where === DAYCARE ? s.dayCare : (s.boxes[where] ??= []));
+export const capacityOf = (where: number): number => (where === PARTY ? PARTY_MAX : where === DAYCARE ? DAYCARE_MAX : BOX_MAX);
 export const spaceAt = (s: Gen2Save, where: number): number => capacityOf(where) - listAt(s, where).length;
-export const placeName = (where: number): string => (where === PARTY ? 'Party' : `Box ${where + 1}`);
+export const placeName = (where: number): string => (where === PARTY ? 'Party' : where === DAYCARE ? 'Day-Care' : `Box ${where + 1}`);
 
-export const ALL_PLACES: readonly number[] = [PARTY, ...Array.from({ length: BOX_TOTAL }, (_, i) => i)];
+/** The party, the Day-Care, then the boxes. */
+export const ALL_PLACES: readonly number[] = [PARTY, DAYCARE, ...Array.from({ length: BOX_TOTAL }, (_, i) => i)];
 
 const holdsMail = (mon: Gen2Mon) => isMail(mon.item);
 
@@ -63,6 +68,7 @@ export function moveMon(s: Gen2Save, from: number, index: number, to: number): R
     if (r) return r;
   }
   if (to !== PARTY && holdsMail(mon)) return 'mail';
+  if (to === DAYCARE && mon.isEgg) return 'egg';
   listAt(s, from).splice(index, 1);
   listAt(s, to).push(mon);
   arrive(mon, from, to);
@@ -86,7 +92,7 @@ export function removeMon(s: Gen2Save, from: number, index: number): Refusal | n
 export function copyMon(s: Gen2Save, from: number, index: number): { where: number; index: number } | Refusal {
   const mon = listAt(s, from)[index];
   if (!mon) return 'missing';
-  const where = [from, ...ALL_PLACES.filter((w) => w !== PARTY)].find((w) => spaceAt(s, w) > 0);
+  const where = [from, ...ALL_PLACES.filter((w) => w >= 0)].find((w) => spaceAt(s, w) > 0);
   if (where === undefined) return 'full';
   if (where !== PARTY && holdsMail(mon)) return 'mail';
   const list = listAt(s, where);
@@ -134,6 +140,7 @@ export function dropMon(s: Gen2Save, from: Slot, to: Slot): { kind: 'swap' | 'mo
 
 /** Swap with the neighbour above (-1) or below (+1). */
 export function shiftMon(s: Gen2Save, where: number, index: number, delta: -1 | 1): boolean {
+  if (where === DAYCARE) return false; // each carer keeps their own Pokémon, so there is no order to change
   const list = listAt(s, where);
   const other = index + delta;
   if (!list[index] || !list[other]) return false;

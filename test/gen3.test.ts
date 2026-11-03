@@ -6,7 +6,8 @@ import {
   maxPp, natureOf, speciesOf, unownForm,
 } from '../src/core/gen3/data.ts';
 import { hpBarColour, hpBarPixels } from '../src/core/gen3/hp.ts';
-import { PARTY, copyMon, dropMon, moveMon, partyLeaveRefusal } from '../src/core/gen3/roster.ts';
+import { DAYCARE, PARTY, copyMon, dropMon, moveMon, partyLeaveRefusal } from '../src/core/gen3/roster.ts';
+import { compatibility } from '../src/core/gen3/daycare.ts';
 import { GEN3_LAYOUTS, Gen3Save, SAVE_SIZE, detectGen3, newMon, recalcPartyStats, sectorChecksum } from '../src/core/gen3/save.ts';
 import { blankGen3Save, buildSampleSave } from '../src/core/gen3/sample.ts';
 import { decodeText, encodeText, nameProblems } from '../src/core/gen3/text.ts';
@@ -516,4 +517,50 @@ test('event island tickets: the item and the flag the ferry checks go together, 
   const s = new Gen3Save(buildSampleSave('emerald'));
   s.pockets.key = [...s.pockets.key, { id: 275, count: 1 }];
   assert.equal(new Gen3Save(s.serialize()).islands[0], false);
+});
+
+test('Gen 3 Day-Care: leave two, round trip, an egg only for a pair that can breed', () => {
+  for (const game of ['rs', 'emerald'] as const) {
+    const s = new Gen3Save(buildSampleSave(game), game);
+    assert.equal(s.dayCare.length, 0);
+    const egg = s.party.findIndex((m) => m.isEgg);
+    if (egg >= 0) assert.equal(moveMon(s, PARTY, egg, DAYCARE), 'egg');
+    const picks = s.party.filter((m) => !m.isEgg && !m.bad).slice(0, 2);
+    for (const m of picks) assert.equal(moveMon(s, PARTY, s.party.indexOf(m), DAYCARE), null);
+    assert.equal(s.dayCare.length, 2);
+    const raw = s.serialize();
+    const back = new Gen3Save(raw, game);
+    assert.deepEqual(back.dayCare.map((m) => m.species), picks.map((m) => m.species));
+    assert.deepEqual(back.serialize(), raw, 'round trip');
+    assert.ok(back.describeChanges(new Gen3Save(buildSampleSave(game), game)).flatMap((g) => g.lines).some((l) => /Day-Care/.test(l)));
+
+    // Make the pair a Ditto and a Pikachu from another trainer: they can breed.
+    back.dayCare[0].species = 132;
+    back.dayCare[1].species = 25;
+    back.dayCare[1].otId = (back.dayCare[0].otId + 1) >>> 0;
+    assert.equal(back.dayCareCompatibility, 50);
+    back.eggWaiting = true;
+    const withEgg = new Gen3Save(back.serialize(), game);
+    assert.equal(withEgg.eggWaiting, true);
+    assert.equal(withEgg.dayCare.length, 2);
+    // Taking one back stops the egg and leaves the other in the first spot.
+    assert.equal(moveMon(withEgg, DAYCARE, 0, PARTY), null);
+    const after = new Gen3Save(withEgg.serialize(), game);
+    assert.equal(after.eggWaiting, false);
+    assert.equal(after.dayCare.length, 1);
+    assert.equal(after.dayCare[0].species, 25);
+  }
+});
+
+test('Gen 3 breeding compatibility follows GetDaycareCompatibilityScore', () => {
+  const m = (species: number, pid: number, otId = 1) => ({ species, pid, otId });
+  // Pikachu: half male, half female (ratio 127). Low byte under 127 is female.
+  assert.equal(compatibility(m(25, 0x00), m(25, 0xff)), 50, 'same species, same trainer');
+  assert.equal(compatibility(m(25, 0x00), m(25, 0xff, 2)), 70, 'same species, different trainers');
+  assert.equal(compatibility(m(25, 0x00), m(25, 0x00)), 0, 'two females');
+  assert.equal(compatibility(m(25, 0x00), m(52, 0xff)), 20, 'Pikachu and Meowth share Field, same trainer');
+  assert.equal(compatibility(m(132, 0), m(132, 0, 2)), 0, 'two Ditto');
+  assert.equal(compatibility(m(132, 0), m(81, 0, 2)), 50, 'Ditto and genderless Magnemite');
+  assert.equal(compatibility(m(132, 0), m(150, 0, 2)), 0, 'Mewtwo cannot breed');
+  assert.equal(compatibility(m(172, 0), m(25, 0xff)), 0, 'Pichu (No Eggs) cannot breed');
 });

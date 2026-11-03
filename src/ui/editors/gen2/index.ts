@@ -9,7 +9,7 @@ import {
   baseStatsFor, genderOf, itemChoices, itemName, moveInfo, speciesName, type ItemSet, type Pocket,
 } from '../../../core/gen2/data.ts';
 import { WEEKDAYS } from '../../../core/gen2/clock.ts';
-import { BOX_MAX, BOX_TOTAL, PARTY, PARTY_MAX, REFUSAL_TEXT, dropMon, listAt, placeName, shiftMon } from '../../../core/gen2/roster.ts';
+import { BOX_MAX, BOX_TOTAL, DAYCARE, PARTY, PARTY_MAX, REFUSAL_TEXT, dropMon, listAt, placeName, shiftMon } from '../../../core/gen2/roster.ts';
 import {
   BAG_MAX, BOX_NAME_LEN, COINS_MAX, MONEY_MAX, PLAYER_NAME_MAX, depositInBox, newMon, type BagItem, type Gen2Mon, type Gen2Save,
 } from '../../../core/gen2/save.ts';
@@ -444,10 +444,29 @@ export const mountGen2Editor: MountEditor<Gen2Save> = (container, s, host) => {
           draw();
         },
       }, s.party.length >= PARTY_MAX ? `Party full (${PARTY_MAX} of ${PARTY_MAX})` : `+ Add Pokémon (${s.party.length}/${PARTY_MAX})`));
+      dayCareList(dayCare, draw);
     };
+    const dayCare = h('div', { class: 'day-care-list' });
     draw();
     return h('div', { class: 'stack' },
-      wrap);
+      wrap,
+      h('section', { class: 'card day-care' }, h('h3', {}, 'Day-Care'), dayCare));
+  }
+
+  /** Who is at the Route 34 Day-Care, with the same actions sheet as the party, and the old man's egg. */
+  function dayCareList(wrap: HTMLElement, redraw: () => void): void {
+    clear(wrap);
+    s.dayCare.forEach((mon, i) => wrap.append(monCard(mon, () => editMon(DAYCARE, i, redraw), [
+      h('button', { class: 'icon', 'aria-label': `Actions for ${monLabel(mon)}`, onclick: () => menuFor(DAYCARE, i, redraw) }, '⋯'),
+    ])));
+    if (!s.dayCare.length) wrap.append(h('p', { class: 'muted' }, 'Nobody is staying there. To leave a Pokémon, open its ⋯ menu and choose Move to… Day-Care.'));
+    if (s.canHaveEgg) {
+      wrap.append(h('label', { class: 'check-row' },
+        h('input', { type: 'checkbox', checked: s.eggWaiting, onchange: (e: Event) => { s.eggWaiting = (e.target as HTMLInputElement).checked; markDirty(); } }),
+        'The old man has an egg waiting'));
+    } else if (s.dayCare.length === 2) {
+      wrap.append(h('p', { class: 'muted card-note' }, 'Eggs come from a pair the game itself takes in, when the two can breed.'));
+    }
   }
 
   function boxesTab(): Node {

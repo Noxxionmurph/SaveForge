@@ -136,6 +136,8 @@ Everything runs client-side; saves never leave the browser. **Back up your real 
 - **Save** first shows a plain-language list of everything that changed (and "No changes yet" if nothing did)
 - "Try a Yellow sample", "Try a Crystal sample" and "Try an Emerald sample" on the landing page open made-up saves, so nothing needs to be uploaded to look around
 - All checksums recalculated on export (main + box banks); an unedited save round-trips byte-for-byte
+- The Day-Care on Route 5: the Pokémon staying there appears under the party, to edit, take back or leave there with
+  Move to…. Checked in Red: the game counts its steps.
 - Boxes 2-12 of a save where the player never changed box are read as empty (the game hasn't set them up, and empties
   them on the first change of box). Putting a Pokémon in one sets them all up and marks them, as that first change does.
 - A file opened with "Try opening anyway" after failing its checksum says so above the editor.
@@ -155,6 +157,10 @@ Everything runs client-side; saves never leave the browser. **Back up your real 
 - Party and all 14 boxes, with box names. Moving works as in Gen 1 (arrows, drag and drop, the action menu) and follows
   the game's PC rules: a Pokémon holding Mail can't go in a box, the party always keeps one Pokémon that can battle (an
   egg can't), a Pokémon taken out of a box is healed, and one put in has its PP restored.
+- The Day-Care on Route 34: the old man's and the old woman's Pokémon appear under the party, to edit, take back or
+  leave there with Move to… (no eggs, no Mail, as in the game). When the game itself started a pair breeding (it makes
+  the egg then), a switch has the old man waiting outside with it. Changing the pair stops breeding until the game takes
+  a Pokémon in again. Checked in Crystal: the two show in the yard and the old man comes out with the egg.
 - Pokémon editor with what Gen 2 added: held item, friendship, Pokérus, Special Attack and Special Defense, and eggs
   (egg cycles, and hatching one or turning it back into an egg). Gender, shininess and Unown's letter come from the
   DVs in these games, so they're set from the DVs: pick a gender, tap Make shiny, or pick a letter, and the editor
@@ -210,6 +216,11 @@ the same editor (`GEN3_LAYOUTS` in `src/core/gen3/save.ts`).
   goes there, and tap an empty spot to add one there. The PC rules are the game's (Mail, a party that can battle, healed
   on the way out, PP restored on the way in). A Bad Egg can be moved or removed but not edited, and is written back
   untouched.
+- The Day-Care on Route 117: its two Pokémon under the party, with the experience they've walked there (added when
+  you take one back, as the game does). An egg waiting with the old man for any pair that can breed, worked out as the
+  game does (egg groups, genders, Ditto, same trainer or not). Eggs and Pokémon holding Mail stay out, and one that left
+  its letter there stays in (take it back in the game to keep the letter). Checked in Ruby and Emerald: the old man hands
+  over the egg.
 - Pokémon editor with what Gen 3 changed: nature (the raised and lowered stats marked on the stats), ability, IVs 0-31,
   EVs 0-255 with the 510 total, gender, shininess and Unown's 28 forms (all from the personality value, so changing one
   picks a new value that keeps the rest), Poké Ball, where and at what level it was met and in which game, its language,

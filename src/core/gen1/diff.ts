@@ -96,8 +96,9 @@ function optionLines(b: Gen1Save, a: Gen1Save): string[] {
 interface Slot { mon: Gen1Mon; box: number; index: number }
 interface Pair { b: Slot; a: Slot }
 
-const place = (s: { box: number; index: number }) => (s.box < 0 ? `Party ${s.index + 1}` : `Box ${s.box + 1}, slot ${s.index + 1}`);
-const containerName = (box: number) => (box < 0 ? 'Party' : `Box ${box + 1}`);
+const place = (s: { box: number; index: number }) =>
+  (s.box === -2 ? 'Day-Care' : s.box < 0 ? `Party ${s.index + 1}` : `Box ${s.box + 1}, slot ${s.index + 1}`);
+const containerName = (box: number) => (box === -2 ? 'Day-Care' : box < 0 ? 'Party' : `Box ${box + 1}`);
 
 function label(m: Gen1Mon): string {
   const species = speciesName(m.species);
@@ -113,6 +114,7 @@ const signature = (m: Gen1Mon) => JSON.stringify([
 
 function slots(save: Gen1Save): Slot[] {
   const out: Slot[] = save.party.map((mon, index) => ({ mon, box: -1, index }));
+  save.dayCare.forEach((mon, index) => out.push({ mon, box: -2, index }));
   save.boxes.forEach((list, box) => list.forEach((mon, index) => out.push({ mon, box, index })));
   return out;
 }
@@ -185,7 +187,7 @@ function pokemonLines(b: Gen1Save, a: Gen1Save): string[] {
 
   for (const { b: sb, a: sa } of [...pairs].sort((p, q) => order(p.a, q.a))) {
     const crossed = sb.box !== sa.box; // moved between party and boxes, or between boxes
-    const edits = monChanges(sb.mon, sa.mon, sb.box < 0 && sa.box < 0);
+    const edits = monChanges(sb.mon, sa.mon, sb.box === -1 && sa.box === -1);
     // Moving within one container only reorders; the order check below covers that.
     if (!crossed && !edits.length) continue;
     lines.push(crossed
