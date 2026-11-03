@@ -409,6 +409,7 @@ export function describeGen3Changes(before: Gen3Save, after: Gen3Save): ChangeGr
     group('Box names', boxNameLines(before, after)),
     group('Pokédex', dexLines(before, after)),
     group('Legendary Pokémon', legendLines(after)),
+    group('Continue', after.sendHome ? [`Start in ${after.homeName} (a way out if you're stuck)`] : []),
     group('Game stats', statLines(before, after)),
     group('Options', optionLines(before, after)),
   ].filter((g): g is ChangeGroup => g !== null);

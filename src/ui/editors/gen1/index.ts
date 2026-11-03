@@ -11,6 +11,7 @@ import { clear, field, h, numberInput, selectInput, toast } from '../../dom.ts';
 import { enableDrag } from '../../drag.ts';
 import { itemList } from '../../itemList.ts';
 import { legendsCard } from '../../legendsCard.ts';
+import { rescueRow } from '../../rescueRow.ts';
 import { badgeIcon, pokemonIcon } from '../../sprites.ts';
 import { itemSpritePath } from './itemSprites.ts';
 import { dexTab as sharedDexTab } from '../../dexTab.ts';
@@ -170,7 +171,8 @@ export const mountGen1Editor: MountEditor<Gen1Save> = (container, s, host) => {
             field('Hours', numberInput(s.playHours, 0, 255, (v) => { s.playHours = v; edited(); })),
             field('Minutes', numberInput(s.playMinutes, 0, 59, (v) => { s.playMinutes = v; edited(); })),
             field('Seconds', numberInput(s.playSeconds, 0, 59, (v) => { s.playSeconds = v; markDirty(); })),
-          ))),
+          )),
+        rescueRow(s, markDirty)),
       h('section', { class: 'card' },
         h('h3', {}, 'Badges'),
         badgeRow,

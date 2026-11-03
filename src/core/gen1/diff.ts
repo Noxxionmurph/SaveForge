@@ -235,6 +235,7 @@ export function describeGen1Changes(before: Gen1Save, after: Gen1Save): ChangeGr
     group('Pokémon', pokemonLines(before, after), 14),
     group('Pokédex', dexLines(before, after)),
     group('Legendary Pokémon', legendLines(after)),
+    group('Continue', after.sendHome ? [`Start in ${after.homeName} (a way out if you're stuck)`] : []),
     group('Pikachu', pikachuLines(before, after)),
     group('Options', optionLines(before, after)),
   ].filter((g): g is ChangeGroup => g !== null);

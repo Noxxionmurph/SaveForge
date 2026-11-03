@@ -20,6 +20,7 @@ import { dexTab as sharedDexTab } from '../../dexTab.ts';
 import { choiceRow, stepRow } from '../../gameChoice.ts';
 import { itemList } from '../../itemList.ts';
 import { legendsCard } from '../../legendsCard.ts';
+import { rescueRow } from '../../rescueRow.ts';
 import { badgeIcon, itemIcon, itemIconUrl, setIconSrc } from '../../sprites.ts';
 import { tabBar, tabPanel } from '../../tabs.ts';
 import { typeChips } from '../../typeChip.ts';
@@ -219,7 +220,8 @@ export const mountGen2Editor: MountEditor<Gen2Save> = (container, s, host) => {
             field('Minutes', numberInput(s.playMinutes, 0, 59, (v) => { s.playMinutes = v; edited(); })),
             field('Seconds', numberInput(s.playSeconds, 0, 59, (v) => { s.playSeconds = v; markDirty(); })),
           )),
-        clockGroup()),
+        clockGroup(),
+        rescueRow(s, markDirty)),
       h('section', { class: 'card' },
         h('h3', {}, 'Badges'),
         badgeCard('Johto badges', JOHTO_BADGES, 'johto', () => s.johtoBadges, (v) => { s.johtoBadges = v; }),

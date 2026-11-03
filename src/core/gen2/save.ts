@@ -268,6 +268,11 @@ function writeMonList(d: Uint8Array, base: number, mons: Gen2Mon[], party: boole
 
 // ---------- the save ----------
 
+/** wSpawnAfterChampion (the same address in all three games) and the value that sends Continue to New Bark Town. */
+const SPAWN_AFTER_CHAMPION = 0x2043, SPAWN_LANCE = 1;
+/** wPlayerState: walking, biking, surfing... */
+const PLAYER_STATE: Record<Gen2Game, number> = { gs: 0x24ea, crystal: 0x24eb };
+
 export class Gen2Save implements EditableSave {
   trainerName: string;
   rivalName: string;
@@ -313,6 +318,10 @@ export class Gen2Save implements EditableSave {
   /** Which layout the file uses. */
   readonly game: Gen2Game;
   readonly legends: readonly Gen2Legend[];
+  /** A way out for a stuck game: the next Continue starts the player in New Bark Town, on foot (wSpawnAfterChampion
+   * set to SPAWN_LANCE, as after the Hall of Fame; see pokegold engine/menus/intro_menu.asm). */
+  sendHome = false;
+  readonly homeName = 'New Bark Town';
   /** Per legend (see legends.ts), whether saving brings it back. */
   bringBack: boolean[];
   /** Crystal only: the player chose the boy or the girl at the start (null for Gold and Silver). */
@@ -558,6 +567,10 @@ export class Gen2Save implements EditableSave {
 
     d.set(this.startTime, START_TIME);
     this.legends.forEach((l, i) => { if (this.bringBack[i]) bringBackGen2Legend(d, this.game, l); });
+    if (this.sendHome) {
+      d[SPAWN_AFTER_CHAMPION] = SPAWN_LANCE;
+      d[PLAYER_STATE[this.game]] = 0; // PLAYER_NORMAL: off the bike or the water
+    }
 
     // Outside the checksummed data, in the same place in all three games (pret ram/sram.asm sRTCStatusFlags).
     if (this.resetClock !== !!(this.original[RTC_STATUS] & RTC_RESET)) {
