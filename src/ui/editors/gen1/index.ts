@@ -10,6 +10,7 @@ import type { EditorHost, MountEditor } from '../../../core/types.ts';
 import { clear, field, h, numberInput, selectInput, toast } from '../../dom.ts';
 import { enableDrag } from '../../drag.ts';
 import { itemList } from '../../itemList.ts';
+import { legendsCard } from '../../legendsCard.ts';
 import { badgeIcon, pokemonIcon } from '../../sprites.ts';
 import { itemSpritePath } from './itemSprites.ts';
 import { dexTab as sharedDexTab } from '../../dexTab.ts';
@@ -178,6 +179,7 @@ export const mountGen1Editor: MountEditor<Gen1Save> = (container, s, host) => {
           h('button', { onclick: () => { s.badges = 0xff; markDirty(); render(); } }, 'All badges'),
           h('button', { onclick: () => { s.badges = 0; markDirty(); render(); } }, 'Clear badges'),
         )),
+      legendsCard(s, markDirty),
       optionsCard(),
     );
   }

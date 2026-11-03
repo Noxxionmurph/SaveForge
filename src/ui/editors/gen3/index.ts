@@ -23,6 +23,7 @@ import { type Child, clear, field, h, numberInput, refocusAfterRemove, selectInp
 import { enableDrag } from '../../drag.ts';
 import { dexTab as sharedDexTab } from '../../dexTab.ts';
 import { choiceRow, stepRow } from '../../gameChoice.ts';
+import { legendsCard } from '../../legendsCard.ts';
 import { itemList } from '../../itemList.ts';
 import {
   badgeIcon, frontierSymbolIcon, itemIcon, pokeblockIcon, pokeblockIconUrl, pokemonIcon,
@@ -220,6 +221,7 @@ export const mountGen3Editor: MountEditor<Gen3Save> = (container, s, host) => {
       badgeCard(),
       frontierCard(),
       islandCard(),
+      legendsCard(s, markDirty, (title, ...body) => h('section', { class: 'card legends' }, fold('legends', title, ...body))),
       roamerCard(),
       rematchCard(),
       statsCard(),

@@ -138,6 +138,8 @@ Everything runs client-side; saves never leave the browser. **Back up your real 
 - All checksums recalculated on export (main + box banks); an unedited save round-trips byte-for-byte
 - The Day-Care on Route 5: the Pokémon staying there appears under the party, to edit, take back or leave there with
   Move to…. Checked in Red: the game counts its steps.
+- Legendary Pokémon: the two Snorlax, Zapdos, Moltres, Articuno and Mewtwo, each shown as still there or gone (battled),
+  with a box to bring back one that's gone. Checked against Red: the flags the editor reads are the ones the game keeps.
 - Boxes 2-12 of a save where the player never changed box are read as empty (the game hasn't set them up, and empties
   them on the first change of box). Putting a Pokémon in one sets them all up and marks them, as that first change does.
 - A file opened with "Try opening anyway" after failing its checksum says so above the editor.
@@ -161,6 +163,10 @@ Everything runs client-side; saves never leave the browser. **Back up your real 
   leave there with Move to… (no eggs, no Mail, as in the game). When the game itself started a pair breeding (it makes
   the egg then), a switch has the old man waiting outside with it. Changing the pair stops breeding until the game takes
   a Pokémon in again. Checked in Crystal: the two show in the yard and the old man comes out with the egg.
+- Legendary Pokémon: Sudowoodo, the red Gyarados, Snorlax, Lugia, Ho-Oh and the roaming dogs, each shown as still
+  there or gone, with a box to bring back one that's gone (a dog that was beaten or caught starts roaming again from
+  its first route). Checked in Crystal: Sudowoodo is back on Route 36. Crystal's Suicune at Tin Tower can't be brought
+  back (it depends on that map's scene, not just flags).
 - Pokémon editor with what Gen 2 added: held item, friendship, Pokérus, Special Attack and Special Defense, and eggs
   (egg cycles, and hatching one or turning it back into an egg). Gender, shininess and Unown's letter come from the
   DVs in these games, so they're set from the DVs: pick a gender, tap Make shiny, or pick a letter, and the editor
@@ -221,6 +227,10 @@ the same editor (`GEN3_LAYOUTS` in `src/core/gen3/save.ts`).
   game does (egg groups, genders, Ditto, same trainer or not). Eggs and Pokémon holding Mail stay out, and one that left
   its letter there stays in (take it back in the game to keep the letter). Checked in Ruby and Emerald: the old man hands
   over the egg.
+- Legendary Pokémon: the Regis, Rayquaza, Groudon or Kyogre, the Eon Pokémon and (in Emerald) Sudowoodo, Kyogre's and
+  Groudon's caves and the event-island Pokémon, each shown as still there or gone, with a box to bring back one that's
+  gone. In Ruby and Sapphire that resets the Cave of Origin scene so it can play again. Checked in Ruby and Emerald: Regirock is back in the
+  Desert Ruins, and Groudon in the Cave of Origin.
 - Pokémon editor with what Gen 3 changed: nature (the raised and lowered stats marked on the stats), ability, IVs 0-31,
   EVs 0-255 with the 510 total, gender, shininess and Unown's 28 forms (all from the personality value, so changing one
   picks a new value that keeps the rest), Poké Ball, where and at what level it was met and in which game, its language,
@@ -359,7 +369,7 @@ Every screen explains itself in plain words, so keep it that way when you add a 
   it loads and saves back byte for byte, and an edited copy (badges, money, a shiny Pokémon holding an item, a renamed
   box, a Pokémon moved out of a box) loads and plays in the real game (checked in an emulator with
   `scripts/boot-gen2-save.py`), as does the sample. Offsets come from the pokegold disassembly's symbol file. Event
-  flags, map position, the clock, the Day-Care and the Pokégear are left untouched.
+  flags (other than the legendary Pokémon's), map position and the Pokégear are left untouched.
 - Gen 3 tables (base stats, types, gender ratios, growth, egg cycles, abilities, friendship, species, move, ability and item
   names, item pockets, every move, TM/HM moves, the nature table and the experience tables) match Ruby, Sapphire and
   Emerald ROMs (`scripts/verify-gen3-rom.mjs`). The samples load in Ruby 1.0, Sapphire and Emerald, and the game's PC
@@ -371,8 +381,8 @@ Every screen explains itself in plain words, so keep it that way when you add a 
   of the samples (nature, shininess, IVs, EVs, badges, options, the National Pokédex) all load and play in the real
   games (checked in an emulator), as do Emerald's edited Battle Points, Berry Powder, Frontier symbols, BP won, game stats, Pokéblocks and a secret base
   made and decorated in the editor. Offsets come
-  from pokeruby and pokeemerald. Event flags (other than badges, the National Pokédex and Emerald's Frontier symbols),
-  map position, the clock, friends' secret bases, the Day-Care, records and the rest of the Battle Frontier data
+  from pokeruby and pokeemerald. Event flags (other than badges, the National Pokédex, the event tickets, the legendary
+  Pokémon and Emerald's Frontier symbols), map position, the clock, friends' secret bases, records and the rest of the Battle Frontier data
   (Battle Tower opponents, rental Pokémon and so on) are left untouched. FireRed and LeafGreen aren't supported yet.
 - A Pokémon's stats can be a point behind the editor's numbers in a real save: the game only recalculates stats when a
   Pokémon levels up, so stat experience earned since then hasn't counted yet. The editor shows both and leaves the

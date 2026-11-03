@@ -17,6 +17,7 @@ import {
   DEX_COUNT, EGG_SPECIES, HM_COUNT, TM_COUNT, baseStatsFor, hpDv, maxPp, speciesName, type Dvs,
 } from './data.ts';
 import { START_TIME, gameTimeAt, readRtcFooter, startFor, type GameTime, type RtcFooter } from './clock.ts';
+import { bringBackGen2Legend, gen2LegendGone, legendsFor, type Gen2Legend } from './legends.ts';
 import { describeGen2Changes } from './diff.ts';
 import {
   CHECK_VALUE_2, GEN2_LAYOUTS, SAVE_SIZE, backupValid, detectGen2, mainValid, sum16, type Gen2Game, type Layout,
@@ -311,6 +312,9 @@ export class Gen2Save implements EditableSave {
 
   /** Which layout the file uses. */
   readonly game: Gen2Game;
+  readonly legends: readonly Gen2Legend[];
+  /** Per legend (see legends.ts), whether saving brings it back. */
+  bringBack: boolean[];
   /** Crystal only: the player chose the boy or the girl at the start (null for Gold and Silver). */
   playerGender: 'boy' | 'girl' | null;
   /** Which copy the file opened from, as the game would pick it: neither passing its checks means a damaged file. */
@@ -328,6 +332,8 @@ export class Gen2Save implements EditableSave {
     this.game = game ?? Gen2Save.detectGame(data) ?? 'gs';
     const L = this.L = GEN2_LAYOUTS[this.game];
     this.original = data.slice();
+    this.legends = legendsFor(this.game);
+    this.bringBack = this.legends.map(() => false);
     const d = this.original;
     this.loadedFrom = Gen2Save.mainValid(d, this.game) ? 'main' : Gen2Save.backupValid(d, this.game) ? 'backup' : 'neither';
     if (this.loadedFrom === 'backup') {
@@ -424,6 +430,11 @@ export class Gen2Save implements EditableSave {
       // The game clears "compatible" when it finds an egg and sets it again once you take the egg.
       d[base + DC.man] = this.eggWaiting ? (d[base + DC.man] & ~DC_COMPATIBLE) | DC_HAS_EGG : (d[base + DC.man] & ~DC_HAS_EGG) | DC_COMPATIBLE;
     }
+  }
+
+  /** Whether a legend was gone (battled, or a roaming dog beaten or caught) in the file as opened. */
+  legendGone(i: number): boolean {
+    return gen2LegendGone(this.original, this.game, this.legends[i]);
   }
 
   static boxOffset(i: number): number {
@@ -546,6 +557,7 @@ export class Gen2Save implements EditableSave {
     });
 
     d.set(this.startTime, START_TIME);
+    this.legends.forEach((l, i) => { if (this.bringBack[i]) bringBackGen2Legend(d, this.game, l); });
 
     // Outside the checksummed data, in the same place in all three games (pret ram/sram.asm sRTCStatusFlags).
     if (this.resetClock !== !!(this.original[RTC_STATUS] & RTC_RESET)) {

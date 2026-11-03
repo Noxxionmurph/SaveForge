@@ -3,6 +3,7 @@
 
 import { WEEKDAYS } from './clock.ts';
 import type { ChangeGroup } from '../types.ts';
+import { legendLines } from '../legends.ts';
 import {
   DEX_COUNT, JOHTO_BADGES, KANTO_BADGES, MOVE_NAMES, PRINT_SHADES, TEXT_SPEEDS, TMHM_LABELS, TMHM_MOVES, genderOf, isShiny, itemName as nameOf,
   speciesName, UNOWN, unownLetter, type ItemSet,
@@ -268,6 +269,7 @@ export function describeGen2Changes(before: Gen2Save, after: Gen2Save): ChangeGr
       ? [after.eggWaiting ? 'The old man has an egg waiting for you' : 'No egg waiting'] : []),
     group('Box names', boxNameLines(before, after)),
     group('Pokédex', dexLines(before, after)),
+    group('Legendary Pokémon', legendLines(after)),
     group('Options', optionLines(before, after)),
   ].filter((g): g is ChangeGroup => g !== null);
 }

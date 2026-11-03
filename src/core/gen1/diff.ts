@@ -1,4 +1,5 @@
 // Turns "what the user edited" into plain sentences for the review dialog shown before Save.
+import { legendLines } from '../legends.ts';
 // Compares two models of the same save (as first loaded vs. now). Nothing here touches bytes.
 
 import type { ChangeGroup } from '../types.ts';
@@ -233,6 +234,7 @@ export function describeGen1Changes(before: Gen1Save, after: Gen1Save): ChangeGr
     group('PC items', itemLines(before.pcItems, after.pcItems)),
     group('Pokémon', pokemonLines(before, after), 14),
     group('Pokédex', dexLines(before, after)),
+    group('Legendary Pokémon', legendLines(after)),
     group('Pikachu', pikachuLines(before, after)),
     group('Options', optionLines(before, after)),
   ].filter((g): g is ChangeGroup => g !== null);
