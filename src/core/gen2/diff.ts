@@ -54,6 +54,7 @@ function trainerLines(b: Gen2Save, a: Gen2Save): string[] {
   if (b.momsMoney !== a.momsMoney) out.push(`Mom’s savings: ${money(b.momsMoney)} → ${money(a.momsMoney)}`);
   if (b.coins !== a.coins) out.push(`Coins: ${b.coins.toLocaleString('en-US')} → ${a.coins.toLocaleString('en-US')}`);
   if (clock(b) !== clock(a)) out.push(`Play time: ${clock(b)} → ${clock(a)}`);
+  if (b.resetClock !== a.resetClock) out.push(a.resetClock ? 'Clock: the game asks for the day and time on Continue' : 'Clock: no longer asks for the day and time on Continue');
   out.push(...badgeLines(JOHTO_BADGES, b.johtoBadges, a.johtoBadges), ...badgeLines(KANTO_BADGES, b.kantoBadges, a.kantoBadges));
   return out;
 }

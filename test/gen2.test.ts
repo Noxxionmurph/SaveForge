@@ -303,3 +303,20 @@ test('a real Gold or Silver save round-trips byte for byte', { skip: real && exi
   assert.equal(found?.module.id, 'pokemon-gen2');
   assert.deepEqual(found!.save.serialize().subarray(0, SAVE_SIZE), raw.subarray(0, SAVE_SIZE));
 });
+
+test('clock reset: Continue asks for the day and time again (sRTCStatusFlags bit 7)', () => {
+  for (const game of ['gs', 'crystal'] as const) {
+    const raw = buildSampleSave(game);
+    raw[0x0c60] = 0x20; // keep the other RTC bits as they are
+    const s = new Gen2Save(raw, game);
+    assert.equal(s.resetClock, false);
+    s.resetClock = true;
+    const out = s.serialize();
+    assert.equal(out[0x0c60], 0xa0);
+    const back = new Gen2Save(out, game);
+    assert.equal(back.resetClock, true);
+    assert.ok(back.describeChanges(new Gen2Save(raw, game)).flatMap((g) => g.lines).some((l) => l.startsWith('Clock:')));
+    back.resetClock = false;
+    assert.equal(back.serialize()[0x0c60], 0x20);
+  }
+});

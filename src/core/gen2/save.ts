@@ -32,6 +32,9 @@ export const BOX_NAME_LEN = 9;
 const PARTY_MON_SIZE = 48;
 const BOX_MON_SIZE = 32;
 const MAIL_SIZE = 47;
+/** sRTCStatusFlags (SRAM bank 0, 0xAC60) and its RTC_RESET bit: Continue asks for the day and time again. */
+const RTC_STATUS = 0x0c60;
+const RTC_RESET = 0x80;
 export const PARTY_MAX = 6;
 export const BOX_MAX = 20;
 export const BOX_COUNT = 14;
@@ -284,6 +287,11 @@ export class Gen2Save implements EditableSave {
   boxes: Gen2Mon[][];
   dexCaught: Uint8Array;
   dexSeen: Uint8Array;
+  /**
+   * The game asks for the day and time again on the next Continue, as after its own clock-reset password. This is
+   * sRTCStatusFlags bit 7 (RTC_RESET), the same flag the game sets itself when the cartridge clock stops.
+   */
+  resetClock: boolean;
 
   /** Which layout the file uses. */
   readonly game: Gen2Game;
@@ -343,6 +351,7 @@ export class Gen2Save implements EditableSave {
     this.tmhm = Array.from(d.slice(L.tmhm, L.tmhm + TM_COUNT + HM_COUNT));
     this.dexCaught = d.slice(L.dexCaught, L.dexCaught + DEX_BYTES);
     this.dexSeen = d.slice(L.dexSeen, L.dexSeen + DEX_BYTES);
+    this.resetClock = !!(d[RTC_STATUS] & RTC_RESET);
     this.party = readMonList(d, L.party, true);
     this.party.forEach((mon, i) => { mon.mail = d.slice(L.partyMail + i * MAIL_SIZE, L.partyMail + (i + 1) * MAIL_SIZE); });
     this.boxes = Array.from({ length: BOX_COUNT }, (_, i) =>
@@ -454,6 +463,11 @@ export class Gen2Save implements EditableSave {
       d.set(mon.mail, L.partyMail + i * MAIL_SIZE);
       d.set(mon.mail, L.partyMailBackup + i * MAIL_SIZE);
     });
+
+    // Outside the checksummed data, in the same place in all three games (pret ram/sram.asm sRTCStatusFlags).
+    if (this.resetClock !== !!(this.original[RTC_STATUS] & RTC_RESET)) {
+      d[RTC_STATUS] = this.resetClock ? d[RTC_STATUS] | RTC_RESET : d[RTC_STATUS] & ~RTC_RESET;
+    }
 
     // Crystal's player gender lives outside the checksummed data, and the game reads it back on Continue.
     if (L.playerGender !== undefined && this.playerGender) {

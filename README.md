@@ -141,6 +141,8 @@ Everything runs client-side; saves never leave the browser. **Back up your real 
 - Trainer: name, rival, ID, money, Mom's savings, coins, play time (to 999 hours), all 16 badges (Johto and Kanto, shown
   on the trainer card in the game's own badge art), and every OPTION setting: text speed, battle scene, battle style,
   sound, Game Boy Printer shade, menu account and text box frame.
+- Clock reset: the game asks for the day and time again on the next Continue, the same as its own reset password
+  (sRTCStatusFlags bit 7). Checked in Gold and Crystal.
 - All four bag pockets (Items, Balls, Key Items, TM/HM with a count for each of the 57, and a switch to hide the ones you already have) and PC item storage. Each picker
   only offers what the game files in that pocket.
 - Party and all 14 boxes, with box names. Moving works as in Gen 1 (arrows, drag and drop, the action menu) and follows
