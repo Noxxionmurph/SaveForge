@@ -4,7 +4,7 @@ import { popcount } from '../../../core/bytes.ts';
 import {
   BADGE_NAMES, DEX_NAMES, DEX_TO_INTERNAL, INTERNAL_TO_DEX, ITEM_CHOICES, SOUND_OPTIONS, TEXT_SPEEDS, baseStatsFor, itemName, speciesName, tmhmMoveName,
 } from '../../../core/gen1/data.ts';
-import { BOX_MAX, BOX_TOTAL, PARTY, PARTY_MAX, REFUSAL_TEXT, dropMon, listAt, placeName, shiftMon } from '../../../core/gen1/roster.ts';
+import { BOX_MAX, BOX_TOTAL, DAYCARE, PARTY, PARTY_MAX, REFUSAL_TEXT, dropMon, listAt, placeName, shiftMon } from '../../../core/gen1/roster.ts';
 import { newMon, recalcPartyStats, type BagItem, type Gen1Mon, type Gen1Save } from '../../../core/gen1/save.ts';
 import type { EditorHost, MountEditor } from '../../../core/types.ts';
 import { clear, field, h, numberInput, selectInput, toast } from '../../dom.ts';
@@ -273,6 +273,15 @@ export const mountGen1Editor: MountEditor<Gen1Save> = (container, s, host) => {
     if (i >= 0) list.splice(i, 1);
   }
 
+  /** Who is at the Day-Care, each with the same actions sheet as the party (Move to… brings them back). */
+  function dayCareList(wrap: HTMLElement, redraw: () => void): void {
+    clear(wrap);
+    s.dayCare.forEach((mon, i) => wrap.append(monCard(mon, () => editMon(DAYCARE, i, redraw), [
+      h('button', { class: 'icon', 'aria-label': `Actions for ${monLabel(mon)}`, onclick: () => menuFor(DAYCARE, i, redraw) }, '⋯'),
+    ])));
+    if (!s.dayCare.length) wrap.append(h('p', { class: 'muted' }, 'Nobody is staying there. To leave a Pokémon, open its ⋯ menu and choose Move to… Day-Care.'));
+  }
+
   function partyTab(): Node {
     const wrap = h('div', { class: 'mon-list' });
     /** Things below the list (the Pikachu card's starter status) that depend on who is in the party. */
@@ -306,11 +315,14 @@ export const mountGen1Editor: MountEditor<Gen1Save> = (container, s, host) => {
           draw();
         },
       }, s.party.length >= PARTY_MAX ? `Party full (${PARTY_MAX} of ${PARTY_MAX})` : `+ Add Pokémon (${s.party.length}/${PARTY_MAX})`));
+      dayCareList(dayCare, draw);
       afterDraw.forEach((f) => f());
     };
+    const dayCare = h('div', { class: 'mon-list' });
     draw();
     return h('div', { class: 'stack' },
       wrap,
+      h('section', { class: 'card day-care' }, h('h3', {}, 'Day-Care'), dayCare),
       pikachuSection((fn) => afterDraw.push(fn)));
   }
 

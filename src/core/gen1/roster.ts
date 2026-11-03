@@ -3,8 +3,10 @@
 
 import { recalcPartyStats, type Gen1Mon, type Gen1Save } from './save.ts';
 
-/** `where` is PARTY or a box index 0-11 (the same numbering the diff uses). */
+/** `where` is PARTY, DAYCARE or a box index 0-11 (the same numbering the diff uses). */
 export const PARTY = -1;
+export const DAYCARE = -2;
+export const DAYCARE_MAX = 1;
 export const PARTY_MAX = 6;
 export const BOX_MAX = 20;
 export const BOX_TOTAL = 12;
@@ -20,13 +22,14 @@ export const REFUSAL_TEXT: Record<Refusal, string> = {
   missing: "That Pokémon isn't there any more.",
 };
 
-export const listAt =(s: Gen1Save, where: number): Gen1Mon[] => (where === PARTY ? s.party : (s.boxes[where] ??= []));
-export const capacityOf = (where: number): number => (where === PARTY ? PARTY_MAX : BOX_MAX);
+export const listAt = (s: Gen1Save, where: number): Gen1Mon[] =>
+  (where === PARTY ? s.party : where === DAYCARE ? s.dayCare : (s.boxes[where] ??= []));
+export const capacityOf = (where: number): number => (where === PARTY ? PARTY_MAX : where === DAYCARE ? DAYCARE_MAX : BOX_MAX);
 export const spaceAt = (s: Gen1Save, where: number): number => capacityOf(where) - listAt(s, where).length;
-export const placeName = (where: number): string => (where === PARTY ? 'Party' : `Box ${where + 1}`);
+export const placeName = (where: number): string => (where === PARTY ? 'Party' : where === DAYCARE ? 'Day-Care' : `Box ${where + 1}`);
 
-/** Every place a Pokémon can live, party first. */
-export const ALL_PLACES: readonly number[] = [PARTY, ...Array.from({ length: BOX_TOTAL }, (_, i) => i)];
+/** Every place a Pokémon can live: the party, the Day-Care, then the boxes. */
+export const ALL_PLACES: readonly number[] = [PARTY, DAYCARE, ...Array.from({ length: BOX_TOTAL }, (_, i) => i)];
 
 /** The game can't run with an empty party, so the last Pokémon in it stays. */
 const isLastInParty = (s: Gen1Save, where: number) => where === PARTY && s.party.length <= 1;
@@ -58,7 +61,7 @@ export function removeMon(s: Gen1Save, from: number, index: number): Refusal | n
 export function copyMon(s: Gen1Save, from: number, index: number): { where: number; index: number } | Refusal {
   const mon = listAt(s, from)[index];
   if (!mon) return 'missing';
-  const where = [from, ...ALL_PLACES.filter((w) => w !== PARTY)].find((w) => spaceAt(s, w) > 0);
+  const where = [from, ...ALL_PLACES.filter((w) => w >= 0)].find((w) => spaceAt(s, w) > 0);
   if (where === undefined) return 'full';
   const list = listAt(s, where);
   const at = where === from ? index + 1 : list.length;

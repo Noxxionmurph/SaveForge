@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { DEX_TO_INTERNAL } from '../src/core/gen1/data.ts';
-import { PARTY, copyMon, dropMon, listAt, moveMon, removeMon, shiftMon, spaceAt } from '../src/core/gen1/roster.ts';
+import { DAYCARE, PARTY, copyMon, dropMon, listAt, moveMon, removeMon, shiftMon, spaceAt } from '../src/core/gen1/roster.ts';
 import { Gen1Save, newMon } from '../src/core/gen1/save.ts';
 import { blankGen1Save } from '../src/core/gen1/sample.ts';
 
@@ -140,4 +140,29 @@ test('everything survives serialising after a shuffle', () => {
   assert.equal(back.party.length, s.party.length);
   assert.equal(back.boxes[7].length, 1);
   assert.equal(back.boxes[0].length, 1);
+});
+
+test('Gen 1 Day-Care: one Pokémon, in and out through the save', () => {
+  const s = save();
+  assert.equal(s.dayCare.length, 0);
+  assert.equal(moveMon(s, PARTY, 1, DAYCARE), null);
+  assert.equal(moveMon(s, 0, 0, DAYCARE), 'full', 'room for one');
+  assert.equal(moveMon(s, PARTY, 0, DAYCARE), 'full');
+  s.dayCare[0].nickname = 'BIRDY';
+  const raw = s.serialize();
+  assert.equal(raw[0x2cf4], 1);
+  const back = new Gen1Save(raw);
+  assert.equal(back.dayCare.length, 1);
+  assert.equal(back.dayCare[0].species, DEX_TO_INTERNAL[16]);
+  assert.equal(back.dayCare[0].nickname, 'BIRDY');
+  assert.deepEqual(back.serialize(), raw, 'round trip');
+  assert.ok(back.describeChanges(new Gen1Save(save().serialize())).flatMap((g) => g.lines).some((l) => /Day-Care/.test(l)));
+  // Copying from a full Day-Care goes to a box; taking it back to the party gives it battle stats.
+  const c = copyMon(back, DAYCARE, 0);
+  assert.ok(typeof c === 'object' && c.where >= 0);
+  assert.equal(moveMon(back, DAYCARE, 0, PARTY), null);
+  assert.ok(back.party.at(-1)!.maxHp > 0);
+  const out = back.serialize();
+  assert.equal(out[0x2cf4], 0);
+  assert.equal(new Gen1Save(out).dayCare.length, 0);
 });

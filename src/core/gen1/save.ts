@@ -31,6 +31,11 @@ const OFF = {
   playMaxed: 0x2cee,
   playMinutes: 0x2cef,
   playSeconds: 0x2cf0,
+  // The Day-Care on Route 5 (wDayCareInUse, then the nickname, OT name and a box-format Pokémon).
+  dayCareInUse: 0x2cf4,
+  dayCareNick: 0x2cf5,
+  dayCareOt: 0x2d00,
+  dayCareMon: 0x2d0b,
   party: 0x2f2c, // count, species[7], 6 × 44 mons, 6 × 11 OT, 6 × 11 nicknames
   currentBoxData: 0x30c0,
   checksum: 0x3523,
@@ -359,6 +364,8 @@ export class Gen1Save implements EditableSave {
   pcItems: BagItem[];
   party: Gen1Mon[];
   boxes: Gen1Mon[][];
+  /** The Pokémon at the Day-Care (none or one). It earns a point of experience per step there. */
+  dayCare: Gen1Mon[];
   dexOwned: Uint8Array;
   dexSeen: Uint8Array;
 
@@ -393,6 +400,9 @@ export class Gen1Save implements EditableSave {
     this.dexOwned = d.slice(OFF.dexOwned, OFF.dexOwned + DEX_BYTES);
     this.dexSeen = d.slice(OFF.dexSeen, OFF.dexSeen + DEX_BYTES);
     this.party = readMonList(d, OFF.party, true);
+    this.dayCare = d[OFF.dayCareInUse]
+      ? [readMon(d, OFF.dayCareMon, false, d.slice(OFF.dayCareOt, OFF.dayCareOt + NAME_LEN), d.slice(OFF.dayCareNick, OFF.dayCareNick + NAME_LEN))]
+      : [];
     this.boxes = [];
     for (let i = 0; i < BOX_COUNT; i++) {
       if (i === this.currentBoxIndex) this.boxes.push(readMonList(d, OFF.currentBoxData, false));
@@ -488,6 +498,14 @@ export class Gen1Save implements EditableSave {
     writeItems(d, OFF.bagCount, this.bag, BAG_MAX);
     writeItems(d, OFF.pcItemCount, this.pcItems, PC_MAX);
     writeMonList(d, OFF.party, this.party, true);
+    // Taking a Pokémon back only clears the in-use byte; the game leaves the rest, and so does this.
+    const dc = this.dayCare[0];
+    d[OFF.dayCareInUse] = dc ? 1 : 0;
+    if (dc) {
+      writeMon(d, OFF.dayCareMon, dc, false);
+      d.set(encodeText(dc.otName, NAME_LEN, dc.otRaw), OFF.dayCareOt);
+      d.set(encodeText(dc.nickname, NAME_LEN, dc.nickRaw), OFF.dayCareNick);
+    }
 
     // Boxes that were never set up are written (all of them, empty ones as empty lists, as the game's first change of
     // box does) only once a Pokémon goes into one or the current box moves; the flag then stops the game wiping them.
