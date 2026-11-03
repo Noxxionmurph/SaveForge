@@ -270,6 +270,7 @@ export function describeGen2Changes(before: Gen2Save, after: Gen2Save): ChangeGr
     group('Box names', boxNameLines(before, after)),
     group('Pokédex', dexLines(before, after)),
     group('Legendary Pokémon', legendLines(after)),
+    group('Continue', after.sendHome ? [`Start in ${after.homeName} (a way out if you're stuck)`] : []),
     group('Options', optionLines(before, after)),
   ].filter((g): g is ChangeGroup => g !== null);
 }

@@ -391,6 +391,11 @@ export class Gen3Save implements EditableSave {
    * with setIsland, which keeps the ticket and the flag together. */
   islands: boolean[];
   readonly legends: readonly Gen3Legend[];
+  /** A way out for a stuck game: the next Continue puts the player where they last healed (the Pokémon Center, or
+   * home), where blacking out would: SaveBlock1's lastHealLocation copied to continueGameWarp, which the game uses
+   * when SaveBlock2's CONTINUE_GAME_WARP bit is set. */
+  sendHome = false;
+  readonly homeName = 'the last Pokémon Center (or home) you healed at';
   /** Per legend (see legends.ts), whether saving brings it back. */
   bringBack: boolean[];
   /** The decorations in the PC, one id list per category (decorations.ts). */
@@ -723,6 +728,10 @@ export class Gen3Save implements EditableSave {
     EVENT_ISLANDS[this.game].forEach((isle, i) => {
       if (this.islands[i] !== this.loaded.islands[i]) this.setFlagIn(sb1, isle.flag, this.islands[i]);
     });
+    if (this.sendHome) {
+      sb1.copyWithin(0x0c, 0x1c, 0x24);
+      sb2[SB2.specialSaveWarp] |= 1;
+    }
     this.legends.forEach((l, i) => {
       if (!this.bringBack[i] || !this.legendGone(i)) return;
       for (const f of l.clear) this.setFlagIn(sb1, f, false);

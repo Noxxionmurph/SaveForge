@@ -140,6 +140,8 @@ Everything runs client-side; saves never leave the browser. **Back up your real 
   Move to…. Checked in Red: the game counts its steps.
 - Legendary Pokémon: the two Snorlax, Zapdos, Moltres, Articuno and Mewtwo, each shown as still there or gone (battled),
   with a box to bring back one that's gone. Checked against Red: the flags the editor reads are the ones the game keeps.
+- Stuck? Start in a safe place: the next Continue starts you in your bedroom, on foot (for a save left somewhere you
+  can't get out of). Checked in Red and Yellow, Pikachu following.
 - Boxes 2-12 of a save where the player never changed box are read as empty (the game hasn't set them up, and empties
   them on the first change of box). Putting a Pokémon in one sets them all up and marks them, as that first change does.
 - A file opened with "Try opening anyway" after failing its checksum says so above the editor.
@@ -167,6 +169,7 @@ Everything runs client-side; saves never leave the browser. **Back up your real 
   there or gone, with a box to bring back one that's gone (a dog that was beaten or caught starts roaming again from
   its first route). Checked in Crystal: Sudowoodo is back on Route 36. Crystal's Suicune at Tin Tower can't be brought
   back (it depends on that map's scene, not just flags).
+- Stuck? Start in a safe place: the next Continue starts you in New Bark Town, on foot. Checked in Crystal.
 - Pokémon editor with what Gen 2 added: held item, friendship, Pokérus, Special Attack and Special Defense, and eggs
   (egg cycles, and hatching one or turning it back into an egg). Gender, shininess and Unown's letter come from the
   DVs in these games, so they're set from the DVs: pick a gender, tap Make shiny, or pick a letter, and the editor
@@ -231,6 +234,8 @@ the same editor (`GEN3_LAYOUTS` in `src/core/gen3/save.ts`).
   Groudon's caves and the event-island Pokémon, each shown as still there or gone, with a box to bring back one that's
   gone. In Ruby and Sapphire that resets the Cave of Origin scene so it can play again. Checked in Ruby and Emerald: Regirock is back in the
   Desert Ruins, and Groudon in the Cave of Origin.
+- Stuck? Start in a safe place: the next Continue starts you at the last Pokémon Center (or home) you healed at.
+  Checked in Emerald.
 - Pokémon editor with what Gen 3 changed: nature (the raised and lowered stats marked on the stats), ability, IVs 0-31,
   EVs 0-255 with the 510 total, gender, shininess and Unown's 28 forms (all from the personality value, so changing one
   picks a new value that keeps the rest), Poké Ball, where and at what level it was met and in which game, its language,

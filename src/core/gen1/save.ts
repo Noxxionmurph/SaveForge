@@ -6,6 +6,7 @@ import type { ChangeGroup, EditableSave, SummaryLine } from '../types.ts';
 import { baseStatsFor, speciesName, TYPE_BYTE } from './data.ts';
 import { describeGen1Changes } from './diff.ts';
 import { decodeText, encodeText } from './text.ts';
+import { sendGen1Home } from './home.ts';
 import { GEN1_LEGENDS, bringBackGen1Legend, gen1LegendGone } from './legends.ts';
 
 export const SAVE_SIZE = 0x8000;
@@ -370,6 +371,9 @@ export class Gen1Save implements EditableSave {
   dexOwned: Uint8Array;
   dexSeen: Uint8Array;
   readonly legends = GEN1_LEGENDS;
+  /** A way out for a stuck game: the next Continue starts the player in their bedroom (see home.ts). */
+  sendHome = false;
+  readonly homeName = 'your bedroom';
   /** Per legend (see legends.ts), whether saving brings it back. */
   bringBack: boolean[] = GEN1_LEGENDS.map(() => false);
 
@@ -530,6 +534,7 @@ export class Gen1Save implements EditableSave {
     }
 
     GEN1_LEGENDS.forEach((l, i) => { if (this.bringBack[i]) bringBackGen1Legend(d, l, this.isYellow); });
+    if (this.sendHome) sendGen1Home(d, this.isYellow);
 
     // Main checksum.
     d[OFF.checksum] = checksum8(d, OFF.checksumStart, OFF.checksumEnd);

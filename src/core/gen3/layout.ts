@@ -63,7 +63,7 @@ export const GEN3_LAYOUTS: Readonly<Record<Gen3Game, Layout>> = { rs: RS, emeral
 
 // Shared offsets.
 export const SB2 = {
-  name: 0x00, gender: 0x08, trainerId: 0x0a, playHours: 0x0e, playMinutes: 0x10, playSeconds: 0x11, playFrames: 0x12,
+  name: 0x00, gender: 0x08, specialSaveWarp: 0x09, trainerId: 0x0a, playHours: 0x0e, playMinutes: 0x10, playSeconds: 0x11, playFrames: 0x12,
   buttonMode: 0x13, options: 0x14, dexMode: 0x19, nationalMagic: 0x1a, dexOwned: 0x28, dexSeen: 0x5c, key: 0xac,
 };
 export const SB1 = { partyCount: 0x234, party: 0x238, money: 0x490, coins: 0x494, pcItems: 0x498 };

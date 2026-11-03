@@ -24,6 +24,7 @@ import { enableDrag } from '../../drag.ts';
 import { dexTab as sharedDexTab } from '../../dexTab.ts';
 import { choiceRow, stepRow } from '../../gameChoice.ts';
 import { legendsCard } from '../../legendsCard.ts';
+import { rescueRow } from '../../rescueRow.ts';
 import { itemList } from '../../itemList.ts';
 import {
   badgeIcon, frontierSymbolIcon, itemIcon, pokeblockIcon, pokeblockIconUrl, pokemonIcon,
@@ -217,7 +218,8 @@ export const mountGen3Editor: MountEditor<Gen3Save> = (container, s, host) => {
         h('label', { class: 'check-row' },
           h('input', { type: 'checkbox', checked: s.nationalDex, onchange: (e: Event) => { s.nationalDex = (e.target as HTMLInputElement).checked; markDirty(); } }),
           h('span', {}, 'National Pokédex'),
-          h('span', { class: 'muted' }, ' Unlocked after the Hall of Fame.'))),
+          h('span', { class: 'muted' }, ' Unlocked after the Hall of Fame.')),
+        rescueRow(s, markDirty)),
       badgeCard(),
       frontierCard(),
       islandCard(),
