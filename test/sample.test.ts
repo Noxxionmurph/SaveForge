@@ -50,3 +50,11 @@ test('the sample is a Pokémon Yellow save with its starter Pikachu in front', (
   assert.equal(s.isStarterPikachu(s.party[0]), true);
   assert.deepEqual(s.party.slice(1).map((m) => s.isStarterPikachu(m)), [false, false, false, false, false]);
 });
+
+test('the sample puts you in your bedroom, so CONTINUE draws the room in the real game', () => {
+  const d = buildSampleSave();
+  assert.equal(d[0x260a], 0x26, 'wCurMap is REDS_HOUSE_2F');
+  assert.deepEqual([d[0x260d], d[0x260e]], [6, 3], 'on the new-game spot');
+  assert.equal(d[0x2613], 4, 'with the REDS_HOUSE_2 tileset');
+  assert.equal(d[0x27d7], 0x19, 'whose graphics are in ROM bank 0x19');
+});

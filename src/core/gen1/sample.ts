@@ -31,6 +31,25 @@ export function blankGen1Save(trainer = 'ASH', rival = 'GARY', yellow = false): 
   return d;
 }
 
+/**
+ * Where CONTINUE puts you: upstairs in your house in Pallet Town, on the spot a new game starts. Pokémon Yellow keeps the
+ * map you're on in the save, including the ROM addresses of the room's blocks, scripts and tileset, so without these the
+ * game draws a garbled or white screen. Values are pokeyellow's (maps/RedsHouse2F, data/tilesets/tileset_headers.asm,
+ * the addresses from its symbol file), matching what the game itself writes when you save there. Red and Blue keep
+ * these at other ROM addresses, so this spot is for the Yellow sample only.
+ */
+function placeInBedroom(d: Uint8Array): void {
+  d[0x260a] = 0x26; // wCurMap: REDS_HOUSE_2F
+  d.set([0x12, 0xc7], 0x260b); // wCurrentTileBlockMapViewPointer, the room's corner in the block buffer
+  d.set([6, 3, 0, 1], 0x260d); // wYCoord, wXCoord, wYBlockCoord, wXBlockCoord
+  // wCurMapHeader: tileset REDS_HOUSE_2, 4x4 blocks, RedsHouse2F_Blocks, _TextPointers, _Script, no connections
+  d.set([0x04, 4, 4, 0x10, 0x40, 0xc7, 0x40, 0xb0, 0x40, 0x00, 0xff], 0x2613);
+  // wMapBackgroundTile, then one warp: the stairs at 7,1 to warp 2 of REDS_HOUSE_1F
+  d.set([0x0a, 1, 1, 7, 2, 0x25], 0x2659);
+  // wTilesetBank and the RedsHouse2 tileset's blocks, graphics and collision; no talk-over tiles, no grass
+  d.set([0x19, 0x90, 0x52, 0x00, 0x4e, 0xd6, 0x4a, 0xff, 0xff, 0xff, 0xff], 0x27d7);
+}
+
 const move = (name: string): number => {
   const id = MOVE_NAMES.indexOf(name);
   if (id < 1) throw new Error(`sample: unknown move ${name}`);
@@ -81,7 +100,9 @@ const BOX_2: Spec[] = [
 
 /** The sample save's bytes: a valid file that opens in the editor and in the real game. */
 export function buildSampleSave(): Uint8Array {
-  const save = new Gen1Save(blankGen1Save('ASH', 'GARY', true));
+  const blank = blankGen1Save('ASH', 'GARY', true);
+  placeInBedroom(blank);
+  const save = new Gen1Save(blank);
   save.pikachuFriendship = 160;
   save.trainerId = TRAINER_ID;
   save.money = 12500;

@@ -9,7 +9,8 @@ can pick when you talk to your starter Pikachu, frame 1 on the left and frame 2 
 One file keeps the page to a single request. The rows are in the sheet's order, least to most happy, and
 src/core/gen1/data.ts (REACTIONS) lists them in that same order; test/yellow.test.ts checks the two agree.
 Where a frame is also in the pokeyellow disassembly (gfx/pikachu/*.png) the pixels are identical, and that is
-how rows were matched to names; Jump and Heart match by elimination and by eye.
+how rows were matched to names; Jump and Heart matched by elimination, and talking to Pikachu in the real game
+(2026-11-03) shows exactly these frames for every reaction row.
 The finished file is committed, so you only need this to redo the cut. Needs Pillow."""
 import sys
 from pathlib import Path
