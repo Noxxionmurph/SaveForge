@@ -8,6 +8,7 @@ import {
   DEX_COUNT, DEX_NAMES, HM_COUNT, JOHTO_BADGES, KANTO_BADGES, PRINT_SHADES, TEXT_SPEEDS, TMHM_LABELS, TMHM_MOVES, TM_COUNT,
   baseStatsFor, genderOf, itemChoices, itemName, moveInfo, speciesName, type ItemSet, type Pocket,
 } from '../../../core/gen2/data.ts';
+import { WEEKDAYS } from '../../../core/gen2/clock.ts';
 import { BOX_MAX, BOX_TOTAL, PARTY, PARTY_MAX, REFUSAL_TEXT, dropMon, listAt, placeName, shiftMon } from '../../../core/gen2/roster.ts';
 import {
   BAG_MAX, BOX_NAME_LEN, COINS_MAX, MONEY_MAX, PLAYER_NAME_MAX, depositInBox, newMon, type BagItem, type Gen2Mon, type Gen2Save,
@@ -216,17 +217,36 @@ export const mountGen2Editor: MountEditor<Gen2Save> = (container, s, host) => {
             field('Hours', numberInput(s.playHours, 0, 999, (v) => { s.playHours = v; edited(); })),
             field('Minutes', numberInput(s.playMinutes, 0, 59, (v) => { s.playMinutes = v; edited(); })),
             field('Seconds', numberInput(s.playSeconds, 0, 59, (v) => { s.playSeconds = v; markDirty(); })),
-          ),
-          h('label', { class: 'check-row' },
-            h('input', { type: 'checkbox', checked: s.resetClock, onchange: (e: Event) => { s.resetClock = (e.target as HTMLInputElement).checked; markDirty(); } }),
-            'Set the day and time again on Continue'),
-        )),
+          )),
+        clockGroup()),
       h('section', { class: 'card' },
         h('h3', {}, 'Badges'),
         badgeCard('Johto badges', JOHTO_BADGES, 'johto', () => s.johtoBadges, (v) => { s.johtoBadges = v; }),
         badgeCard('Kanto badges', KANTO_BADGES, 'kanto', () => s.kantoBadges, (v) => { s.kantoBadges = v; })),
       optionsCard(),
     );
+  }
+
+  /** The in-game day and time (needs the emulator's clock data), and the switch that makes Continue ask for it. */
+  function clockGroup(): Node {
+    const now = s.gameTime();
+    const reset = h('label', { class: 'check-row' },
+      h('input', { type: 'checkbox', checked: s.resetClock, onchange: (e: Event) => { s.resetClock = (e.target as HTMLInputElement).checked; markDirty(); } }),
+      'Ask for the day and time on Continue');
+    if (!now) {
+      return h('div', { class: 'subgroup' }, h('h4', {}, 'Day and time'),
+        h('p', { class: 'muted card-note' }, 'This file has no clock data from an emulator, so the time can only be reset.'), reset);
+    }
+    const want = { ...now };
+    const apply = () => { s.setGameTime(want); markDirty(); render(); };
+    return h('div', { class: 'subgroup' },
+      h('h4', {}, 'Day and time'),
+      h('div', { class: 'grid trio' },
+        field('Day', selectInput(WEEKDAYS.map((d, i) => ({ value: i, label: d })), want.weekday, (v) => { want.weekday = Number(v); apply(); })),
+        field('Hour', numberInput(want.hour, 0, 23, (v) => { want.hour = v; apply(); })),
+        field('Minute', numberInput(want.minute, 0, 59, (v) => { want.minute = v; apply(); })),
+      ),
+      reset);
   }
 
   /** The settings from the in-game OPTION menu. */
