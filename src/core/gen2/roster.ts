@@ -140,6 +140,7 @@ export function dropMon(s: Gen2Save, from: Slot, to: Slot): { kind: 'swap' | 'mo
 
 /** Swap with the neighbour above (-1) or below (+1). */
 export function shiftMon(s: Gen2Save, where: number, index: number, delta: -1 | 1): boolean {
+  if (where === DAYCARE) return false; // each carer keeps their own Pokémon, so there is no order to change
   const list = listAt(s, where);
   const other = index + delta;
   if (!list[index] || !list[other]) return false;

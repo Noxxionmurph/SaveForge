@@ -31,6 +31,7 @@ import { VAR_SECRET_BASE_MAP, baseMapSection, readSecretBase, writeSecretBase, t
 import { readDecorations, writeDecorations } from './decorations.ts';
 import { CARD_BATTLE_POINTS, readStreaks, writeStreaks, type Streak } from './frontier.ts';
 import { readPokeblocks, writePokeblocks, type Pokeblock } from './pokeblocks.ts';
+import { DAYCARE, PENDING_EGG_FLAG, clearDayCareMail, compatibility, dayCareSteps, eggPersonality, hasDayCareMail } from './daycare.ts';
 import { REMATCHES_AT, REMATCH_TRAINERS, TRAINER_FLAGS_START, nextRematchTeam, rematchAvailable } from './rematches.ts';
 import { RIBBON_MASK } from './ribbons.ts';
 import { GAME_STAT_MAX, HOF_TIME_STAT, gameStatCount } from './stats.ts';
@@ -283,6 +284,14 @@ export function withdrawFromBox(mon: Gen3Mon): void {
   recalcPartyStats(mon, true);
 }
 
+/** The steps a Pokémon walked at the Day-Care become experience when it's taken back (not past level 100). */
+export function addDayCareExp(mon: Gen3Mon, steps: number): void {
+  if (!steps || mon.bad || mon.isEgg) return;
+  const growth = growthOf(mon.species);
+  mon.exp = Math.min(mon.exp + steps, expForLevel(growth, 100));
+  mon.level = levelForExp(growth, mon.exp);
+}
+
 /** What the game does when a Pokémon goes into the PC (pokeemerald: SetPlacedMonData): its PP is refilled. */
 export function depositInBox(mon: Gen3Mon): void {
   mon.pp = mon.moves.map((m, i) => maxPp(m, mon.ppUps[i])) as Gen3Mon['pp'];
@@ -396,6 +405,10 @@ export class Gen3Save implements EditableSave {
   pockets: Record<Exclude<Pocket, 'tmhm'>, BagItem[]> & { tmhm: BagItem[] };
   pcItems: BagItem[];
   party: Gen3Mon[];
+  /** The Pokémon at the Route 117 Day-Care (up to two, the game keeps them packed). */
+  dayCare: Gen3Mon[];
+  /** The old man is waiting outside with an egg. */
+  eggWaiting: boolean;
   /** 14 boxes of 30 slots; a box can have gaps, as in the game. */
   boxes: (Gen3Mon | null)[][];
   boxNames: string[];
@@ -404,6 +417,9 @@ export class Gen3Save implements EditableSave {
   dexSeen: Uint8Array;
 
   private L: Layout;
+  /** Each Day-Care Pokémon's spot (0 or 1) when the file was opened, to keep its letter and steps with it. */
+  private dayCareSpot = new Map<Gen3Mon, number>();
+  private dayCareLoaded = 0;
   private original: Uint8Array;
   private slot: Slot;
   private sb2: Uint8Array;
@@ -490,6 +506,16 @@ export class Gen3Save implements EditableSave {
       const mon = readMon(sb1, SB1.party + i * PARTY_MON_SIZE, true);
       if (mon) this.party.push(mon);
     }
+    const dc = DAYCARE[this.game];
+    this.dayCare = [];
+    for (let i = 0; i < 2; i++) {
+      const mon = readMon(sb1, dc.mon(i), false);
+      if (!mon) continue;
+      this.dayCare.push(mon);
+      this.dayCareSpot.set(mon, i);
+    }
+    this.dayCareLoaded = this.dayCare.length;
+    this.eggWaiting = eggPersonality(sb1, dc) !== 0;
     this.currentBoxIndex = Math.min(st[STORAGE.currentBox], BOX_COUNT - 1);
     this.boxes = Array.from({ length: BOX_COUNT }, (_, b) => Array.from({ length: BOX_SLOTS }, (_, i) =>
       readMon(st, STORAGE.boxes + (b * BOX_SLOTS + i) * BOX_MON_SIZE, false)));
@@ -500,6 +526,39 @@ export class Gen3Save implements EditableSave {
   }
 
   /** Whether a block differs from how it was opened. */
+  /** Steps walked at the Day-Care: experience the Pokémon gets when it's taken back (0 for one that just arrived). */
+  dayCareSteps(mon: Gen3Mon): number {
+    const i = this.dayCareSpot.get(mon);
+    return i === undefined ? 0 : dayCareSteps(this.sb1, DAYCARE[this.game], i);
+  }
+
+  /**
+   * A Pokémon leaving the Day-Care gets the experience it walked there (TakeSelectedPokemonFromDaycare), and from then
+   * on counts as a newcomer if it comes back.
+   */
+  leaveDayCare(mon: Gen3Mon): void {
+    addDayCareExp(mon, this.dayCareSteps(mon));
+    this.dayCareSpot.delete(mon);
+  }
+
+  /** It arrived holding Mail, and the letter is kept at the Day-Care (the editor leaves such a Pokémon where it is). */
+  dayCareHasMail(mon: Gen3Mon): boolean {
+    const i = this.dayCareSpot.get(mon);
+    return i !== undefined && hasDayCareMail(this.sb1, DAYCARE[this.game], i);
+  }
+
+  /** How likely the two at the Day-Care are to have an egg (0 means they can't; see daycare.ts). */
+  get dayCareCompatibility(): number {
+    const [a, b] = this.dayCare;
+    if (!a || !b || a.bad || b.bad || a.isEgg || b.isEgg) return 0;
+    return compatibility(a, b);
+  }
+
+  /** Has anyone been left or taken back since the file was opened? */
+  private dayCareChanged(): boolean {
+    return this.dayCare.length !== this.dayCareLoaded || this.dayCare.some((m, i) => this.dayCareSpot.get(m) !== i);
+  }
+
   private edited(k: Tracked): boolean {
     return JSON.stringify(this[k]) !== JSON.stringify(this.loaded[k]);
   }
@@ -687,6 +746,8 @@ export class Gen3Save implements EditableSave {
       sb1.fill(0, SB1.party + i * PARTY_MON_SIZE, SB1.party + (i + 1) * PARTY_MON_SIZE);
     }
 
+    this.writeDayCare(sb1);
+
     st[STORAGE.currentBox] = this.currentBoxIndex;
     this.boxes.forEach((box, b) => box.forEach((mon, i) => {
       const off = STORAGE.boxes + (b * BOX_SLOTS + i) * BOX_MON_SIZE;
@@ -709,6 +770,41 @@ export class Gen3Save implements EditableSave {
     put(sb1, 1, 4);
     put(st, 5, 13);
     return d;
+  }
+
+  /**
+   * Each Pokémon goes to its spot, packed as the game keeps them, carrying its letter and steps if it moved spot (as
+   * ShiftDaycareSlots does); a new arrival starts with no letter and no steps, as StorePokemonInDaycare leaves it.
+   * When the pair changes, any waiting egg goes (it was made for the old pair).
+   */
+  private writeDayCare(sb1: Uint8Array): void {
+    const dc = DAYCARE[this.game];
+    const changed = this.dayCareChanged();
+    for (let i = 0; i < 2; i++) {
+      const mon = this.dayCare[i];
+      const from = mon ? this.dayCareSpot.get(mon) : undefined;
+      if (mon) writeMon(sb1, dc.mon(i), mon, false);
+      else if (readMon(this.sb1, dc.mon(i), false)) sb1.fill(0, dc.mon(i), dc.mon(i) + BOX_MON_SIZE);
+      if (from === i) continue;
+      if (from !== undefined) {
+        sb1.set(this.sb1.subarray(dc.mail(from), dc.mail(from) + 0x38), dc.mail(i));
+        sb1.set(this.sb1.subarray(dc.steps(from), dc.steps(from) + 4), dc.steps(i));
+      } else if (mon || this.dayCareLoaded > i) {
+        clearDayCareMail(sb1, dc, i);
+        setU32(sb1, dc.steps(i), 0);
+      }
+    }
+    const was = eggPersonality(this.sb1, dc) !== 0;
+    const want = this.eggWaiting && !changed && this.dayCareCompatibility > 0;
+    if (want === was && !(changed && was)) return;
+    if (want) {
+      // TriggerPendingDaycareEgg: any non-zero personality (the egg's nature and gender come from it).
+      const pid = ((Math.random() * 0xfffe) | 0) + 1;
+      if (dc.eggBytes === 4) setU32(sb1, dc.egg, ((((Math.random() * 0x10000) | 0) << 16) | pid) >>> 0);
+      else setU16(sb1, dc.egg, pid);
+    } else if (dc.eggBytes === 4) setU32(sb1, dc.egg, 0);
+    else setU16(sb1, dc.egg, 0);
+    this.setFlagIn(sb1, PENDING_EGG_FLAG, want);
   }
 
   private setFlagIn(sb1: Uint8Array, n: number, on: boolean): void {

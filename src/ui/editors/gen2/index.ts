@@ -446,7 +446,7 @@ export const mountGen2Editor: MountEditor<Gen2Save> = (container, s, host) => {
       }, s.party.length >= PARTY_MAX ? `Party full (${PARTY_MAX} of ${PARTY_MAX})` : `+ Add Pokémon (${s.party.length}/${PARTY_MAX})`));
       dayCareList(dayCare, draw);
     };
-    const dayCare = h('div', { class: 'mon-list' });
+    const dayCare = h('div', { class: 'day-care-list' });
     draw();
     return h('div', { class: 'stack' },
       wrap,

@@ -79,6 +79,8 @@ const genderByte = (g) => {
   const m = g.match(/PERCENT_FEMALE\(([\d.]+)\)/);
   return m ? Math.min(254, Math.floor((Number(m[1]) * 255) / 100)) : NaN;
 };
+const EGG_GROUPS = ['NONE', 'MONSTER', 'WATER_1', 'BUG', 'FLYING', 'FIELD', 'FAIRY', 'GRASS', 'HUMAN_LIKE', 'WATER_3', 'MINERAL', 'AMORPHOUS', 'WATER_2', 'DITTO', 'DRAGON', 'NO_EGGS_DISCOVERED'];
+const eggGroups = [];
 const base = [];
 for (let dex = 1; dex <= 386; dex++) {
   const c = constByInternal[dexToInternal[dex]];
@@ -96,6 +98,9 @@ for (let dex = 1; dex <= 386; dex++) {
   if ([hp, atk, def, spe, spa, spd, gender, eggCycles, friendship].some(Number.isNaN) || growth < 0 || !types || !abil) {
     problems.push(`could not read ${c}`); continue;
   }
+  const eg = b.match(/\.eggGroups = \{\s*EGG_GROUP_(\w+),\s*EGG_GROUP_(\w+)/);
+  if (!eg) { problems.push(`egg groups ${c}`); continue; }
+  eggGroups.push([EGG_GROUPS.indexOf(eg[1]), EGG_GROUPS.indexOf(eg[2])]);
   base.push(`  [${hp}, ${atk}, ${def}, ${spe}, ${spa}, ${spd}, '${TYPES[types[1]]}', '${TYPES[types[2]]}', ${gender}, ${growth}, ${eggCycles}, ${ABILITY_ID[abil[1]]}, ${ABILITY_ID[abil[2]]}, ${friendship}], // ${dex} ${species[dex - 1]}`);
 }
 
@@ -252,6 +257,12 @@ export const INTERNAL_TO_DEX: readonly number[] = ${JSON.stringify(internalToDex
 export const BASE_TABLE: readonly [hp: number, atk: number, def: number, spe: number, spa: number, spd: number, type1: string, type2: string, gender: number, growth: number, eggCycles: number, ability1: number, ability2: number, friendship: number][] = [
 ${base.join('\n')}
 ];
+
+/**
+ * Per species, by dex number - 1: its two egg groups (constants/pokemon.h EGG_GROUP_*: 13 is Ditto, 15 is "No Eggs
+ * Discovered"), which decide which Day-Care pairs can have an egg.
+ */
+export const EGG_GROUPS: readonly (readonly [number, number])[] = ${JSON.stringify(eggGroups)};
 
 /** Ability names by id (0 is none). */
 export const ABILITY_NAMES: readonly string[] = ${JSON.stringify(abilityNames)};

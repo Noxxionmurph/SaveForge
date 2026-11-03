@@ -318,7 +318,7 @@ export const mountGen1Editor: MountEditor<Gen1Save> = (container, s, host) => {
       dayCareList(dayCare, draw);
       afterDraw.forEach((f) => f());
     };
-    const dayCare = h('div', { class: 'mon-list' });
+    const dayCare = h('div', { class: 'day-care-list' });
     draw();
     return h('div', { class: 'stack' },
       wrap,

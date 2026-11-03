@@ -490,7 +490,7 @@ input[type="checkbox"] { width: 20px; min-height: 20px; height: 20px; accent-col
 .card .count, dialog h3 .count { margin-left: 6px; }
 
 /* ---- Pokémon lists ---- */
-.mon-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+.mon-list, .day-care-list { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
 .mon { display: flex; gap: 6px; align-items: stretch; }
 .mon-main {
   flex: 1; min-width: 0; display: grid; grid-template-columns: 1fr auto; gap: 6px 10px; text-align: left;
