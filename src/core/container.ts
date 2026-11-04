@@ -7,12 +7,14 @@ export interface Unwrapped {
   /** Name of the wrapper, or null for a plain save. */
   format: string | null;
   wrap(save: Uint8Array): Uint8Array;
+  /** Set when the edited file can't go back in the wrapper and is saved as a plain save with this extension. */
+  saveAs?: string;
 }
 
 const plain = (data: Uint8Array): Unwrapped => ({ data, format: null, wrap: (s) => s });
 
 export function unwrapSave(data: Uint8Array): Unwrapped {
-  return sharkPort(data) ?? plain(data);
+  return sharkPort(data) ?? gameSharkGsv(data) ?? plain(data);
 }
 
 // ---------- SharkPort (.sps) ----------
@@ -66,4 +68,26 @@ function sharkPort(data: Uint8Array): Unwrapped | null {
       return out;
     },
   };
+}
+
+// ---------- GameShark Advance SP (.gsv) ----------
+// Layout as mGBA reads it (src/gba/sharkport.c): "ADVSAVEG", a u32 checksum, a 12-byte game title, padding, a u32 save
+// type, 12 unknown bytes, a 0x400-byte description, the bytes 78 56 34 12, and the save itself at 0x430. Nobody has
+// worked out the checksum, so an edited save can't be put back in a .gsv the GameShark would accept: it is saved as a
+// plain .sav, which every emulator reads.
+
+const GSV_MAGIC = 'ADVSAVEG';
+const GSV_FOOTER_AT = 0x42c;
+const GSV_PAYLOAD = 0x430;
+/** Save size for each save type number, as mGBA has them. */
+const GSV_SIZES: Record<number, number> = { 2: 0x8000, 3: 0x200, 4: 0x2000, 5: 0x10000, 6: 0x20000 };
+
+function gameSharkGsv(data: Uint8Array): Unwrapped | null {
+  if (data.length <= GSV_PAYLOAD) return null;
+  if (String.fromCharCode(...data.subarray(0, GSV_MAGIC.length)) !== GSV_MAGIC) return null;
+  const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
+  if (view.getUint32(GSV_FOOTER_AT, true) !== 0x12345678) return null;
+  const size = GSV_SIZES[view.getUint32(0x1c, true)] ?? data.length - GSV_PAYLOAD;
+  if (GSV_PAYLOAD + size > data.length) return null;
+  return { data: data.slice(GSV_PAYLOAD, GSV_PAYLOAD + size), format: 'GameShark SP', wrap: (s) => s, saveAs: '.sav' };
 }

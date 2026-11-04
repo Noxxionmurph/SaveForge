@@ -78,3 +78,20 @@ test('RetroArch .srm files and saves with extra bytes on the end open and keep t
     }
   }
 });
+
+test('a GameShark Advance SP .gsv opens as the save inside, and saves as a plain .sav', () => {
+  const sav = buildSampleSave('emerald');
+  const gsv = new Uint8Array(0x430 + sav.length);
+  gsv.set([...'ADVSAVEG'].map((c) => c.charCodeAt(0)));
+  gsv.set([...'POKEMON EMER'].map((c) => c.charCodeAt(0)), 0xc);
+  const dv = new DataView(gsv.buffer);
+  dv.setUint32(0x1c, 6, true); // 128 KB flash
+  dv.setUint32(0x42c, 0x12345678, true);
+  gsv.set(sav, 0x430);
+  const u = unwrapSave(gsv);
+  assert.equal(u.format, 'GameShark SP');
+  assert.equal(u.saveAs, '.sav');
+  assert.deepEqual(u.data, sav);
+  assert.equal(detectGames(u.data)[0].module.id, 'pokemon-emerald');
+  assert.deepEqual(u.wrap(u.data), sav);
+});

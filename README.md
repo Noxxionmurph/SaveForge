@@ -113,7 +113,9 @@ Everything runs client-side; saves never leave the browser. **Back up your real 
 
 Besides plain `.sav` files it opens SharkPort `.sps` exports (the GameShark SP format, which some emulators and phone
 apps write): the save inside is edited and Save gives back a `.sps` with the same header and a fresh checksum
-(`src/core/container.ts`). Game Boy saves with an emulator's clock footer on the end already open as they are.
+(`src/core/container.ts`). GameShark Advance SP `.gsv` files open too, but come back as a plain `.sav`: nobody has worked
+out the `.gsv` checksum, so an edited one couldn't be put back in a file the GameShark accepts. Plain saves open under any
+name (`.sav`, `.srm`, `.sa1`, ...). Game Boy saves with an emulator's clock footer on the end already open as they are.
 
 ## Gen 1 features
 

@@ -17,6 +17,8 @@ const root = document.getElementById('app')!;
 let fileName = 'save.sav';
 /** Puts an edited save back into the wrapper the opened file came in (a SharkPort .sps, say); plain saves pass through. */
 let wrapSave = (save: Uint8Array): Uint8Array => save;
+/** The extension the edited file gets when it can't keep the opened one (a .gsv comes back as a plain .sav). */
+let saveExt: string | undefined;
 let dirty = false;
 let saveButton: HTMLElement | null = null;
 const APP_NAME = 'SaveForge';
@@ -36,6 +38,7 @@ async function loadFile(file: File): Promise<void> {
   const opened = unwrapSave(new Uint8Array(await file.arrayBuffer()));
   const data = opened.data;
   wrapSave = opened.wrap;
+  saveExt = opened.saveAs;
   fileName = file.name;
   const matches = detectGames(data);
   if (matches.length === 1) await openGame(matches[0].module, data);
@@ -74,7 +77,7 @@ function applyConsole(game?: GameModule): void {
 
 function exportName(): string {
   const m = fileName.match(/^(.*?)(\.[^./\\]+)?$/);
-  return `${m?.[1] || 'save'}-edited${m?.[2] ?? '.sav'}`;
+  return `${m?.[1] || 'save'}-edited${saveExt ?? m?.[2] ?? '.sav'}`;
 }
 
 interface DownloadsApi { save(req: { filename: string; data: Uint8Array }): Promise<{ status: string }> }
@@ -135,6 +138,7 @@ async function openSample(game: GameModule): Promise<void> {
     const sample = await game.sample!();
     fileName = sample.fileName;
     wrapSave = (save) => save;
+    saveExt = undefined;
     await openGame(game, sample.data, true);
   } catch (e) {
     renderError("Couldn't build the sample save.", `${e instanceof Error ? e.message : String(e)} Reload the page and try again.`, renderWelcome);
