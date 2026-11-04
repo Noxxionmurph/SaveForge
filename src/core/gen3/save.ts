@@ -23,12 +23,12 @@ import {
 } from './data.ts';
 import { describeGen3Changes } from './diff.ts';
 import {
-  GEN3_LAYOUTS, MONEY_MAX, SAVE_SIZE, SB1, SB2, SECTOR, SECTOR_DATA, STORAGE, detectGen3, sectorChecksum, sectorSize, validSlots, type Layout, type Slot,
+  GEN3_LAYOUTS, MONEY_MAX, SAVE_SIZE, SB2, SECTOR, SECTOR_DATA, STORAGE, detectGen3, sectorChecksum, sectorSize, validSlots, type Layout, type Slot,
 } from './layout.ts';
 
 export { GEN3_LAYOUTS, MONEY_MAX, SAVE_SIZE, detectGen3, sectorChecksum };
 import { VAR_SECRET_BASE_MAP, baseMapSection, readSecretBase, writeSecretBase, type SecretBase } from './bases.ts';
-import { readDecorations, writeDecorations } from './decorations.ts';
+import { DECOR_CATEGORIES, readDecorations, writeDecorations } from './decorations.ts';
 import { CARD_BATTLE_POINTS, readStreaks, writeStreaks, type Streak } from './frontier.ts';
 import { readPokeblocks, writePokeblocks, type Pokeblock } from './pokeblocks.ts';
 import { DAYCARE, PENDING_EGG_FLAG, clearDayCareMail, compatibility, dayCareSteps, eggPersonality, hasDayCareMail } from './daycare.ts';
@@ -37,6 +37,7 @@ import { RIBBON_MASK } from './ribbons.ts';
 import { GAME_STAT_MAX, HOF_TIME_STAT, gameStatCount } from './stats.ts';
 import { decodeText, encodeText } from './text.ts';
 import { EVENT_ISLANDS } from './events.ts';
+import { FLY_SPOTS, KANTO, SEVII_RAINBOW_PASS, VAR_SEVII_STORY, clearQuestLog, questLogScenes, readFame, writeFame, type FamePerson } from './kanto.ts';
 import { GEN3_LEGENDS, type Gen3Legend } from './legends.ts';
 
 
@@ -44,13 +45,11 @@ import { GEN3_LEGENDS, type Gen3Legend } from './legends.ts';
 export function pocketSizes(game: Gen3Game): Record<Pocket | 'pc', { slots: number; count: number }> {
   const L = GEN3_LAYOUTS[game];
   return {
-    item: { slots: L.itemsMax, count: 99 }, key: { slots: L.keyItemsMax, count: 99 }, ball: { slots: L.ballsMax, count: 99 },
-    tmhm: { slots: L.tmhmMax, count: 99 }, berry: { slots: L.berriesMax, count: 999 }, pc: { slots: 50, count: 999 },
+    item: { slots: L.itemsMax, count: L.itemCap }, key: { slots: L.keyItemsMax, count: L.itemCap }, ball: { slots: L.ballsMax, count: L.itemCap },
+    tmhm: { slots: L.tmhmMax, count: L.itemCap }, berry: { slots: L.berriesMax, count: L.berryCap }, pc: { slots: L.pcItemsMax, count: 999 },
   };
 }
 
-const PC_ITEMS_MAX = 50;
-const VAR_NATIONAL_DEX = 0x4046;
 // Emerald only (pokeemerald include/global.h): SaveBlock2's BerryCrush.berryPowderAmount (under the key) and
 // BattleFrontier.battlePoints, and the Frontier symbols, a silver then a gold flag per facility from SYSTEM_FLAGS + 0x64.
 const EM = { berryPowder: 0x1f4, battlePoints: 0xeb8, symbolFlag: 0x860 + 0x64 };
@@ -58,7 +57,6 @@ export const BATTLE_POINTS_MAX = 9999;
 export const BERRY_POWDER_MAX = 99999;
 /** The seven Battle Frontier facilities, in the order of their symbol flags. */
 export const FRONTIER_FACILITIES = ['Battle Tower', 'Battle Dome', 'Battle Palace', 'Battle Arena', 'Battle Factory', 'Battle Pike', 'Battle Pyramid'] as const;
-const NATIONAL_MAGIC = 0xda;
 
 /** The roamer as saved (pokeemerald include/global.h struct Roamer). Its trainer ID is the player's. */
 export interface Roamer { species: number; pid: number; ivs: Ivs; hp: number; level: number; status: number; active: boolean }
@@ -312,7 +310,7 @@ export function newMon(dex: number, level: number, trainer: { name: string; id: 
     pid: pid >>> 0, otId: trainer.id >>> 0, nickname: defaultNickname(dex, false, name), language: ENGLISH, otName: trainer.name, markings: 0,
     species: dex, item: 0, exp: expForLevel(growthOf(dex), level), ppUps: [0, 0, 0, 0], friendship: base?.friendship ?? 70,
     moves: [33, 0, 0, 0], pp: [35, 0, 0, 0], evs: { hp: 0, atk: 0, def: 0, spe: 0, spa: 0, spd: 0 }, contest: [0, 0, 0, 0, 0, 0],
-    pokerus: 0, metLocation: 0x10, metLevel: level, metGame: game === 'emerald' ? 3 : 2, ball: 4, otGender: trainer.gender,
+    pokerus: 0, metLocation: 0x10, metLevel: level, metGame: game === 'emerald' ? 3 : game === 'frlg' ? 4 : 2, ball: 4, otGender: trainer.gender,
     ivs: { hp: 15, atk: 15, def: 15, spe: 15, spa: 15, spd: 15 }, isEgg: false, abilityBit: 0, ribbons: 0,
     level, status: 0, mail: 0xff, hp: 1, maxHp: 1, atk: 1, def: 1, spe: 1, spa: 1, spd: 1, raw,
   };
@@ -360,7 +358,7 @@ export interface Gen3Options {
 }
 
 /** The blocks that are written back only when edited, so unedited ones keep their exact bytes. */
-const TRACKED = ['islands', 'pockets', 'pcItems', 'frontier', 'gameStats', 'pokeblocks', 'decorations', 'secretBase', 'roamer', 'rematches'] as const;
+const TRACKED = ['islands', 'pockets', 'pcItems', 'frontier', 'gameStats', 'pokeblocks', 'decorations', 'secretBase', 'roamer', 'rematches', 'kanto'] as const;
 type Tracked = typeof TRACKED[number];
 
 export class Gen3Save implements EditableSave {
@@ -398,6 +396,15 @@ export class Gen3Save implements EditableSave {
   readonly homeName = 'the last Pokémon Center (or home) you healed at';
   /** Per legend (see legends.ts), whether saving brings it back. */
   bringBack: boolean[];
+  /** FireRed and LeafGreen's own things (kanto.ts), else null: the Vs. Seeker's battery (0-100), the Fame Checker, and
+   * per place in FLY_SPOTS whether Fly can take you there. */
+  kanto: { vsSeeker: number; fame: FamePerson[]; fly: boolean[] } | null;
+  /** FireRed and LeafGreen: how many scenes the "Previously on your quest" recap will play on Continue, and whether to
+   * wipe them on saving. */
+  readonly questLogScenes: number;
+  clearQuestLog = false;
+  /** Hoenn's secret bases, decorations and Pokéblocks are in this game (not FireRed or LeafGreen, which keep them empty). */
+  readonly hoenn: boolean;
   /** The decorations in the PC, one id list per category (decorations.ts). */
   decorations: number[][];
   /** The player's secret base (bases.ts), or null before they've made one. */
@@ -455,7 +462,7 @@ export class Gen3Save implements EditableSave {
     const sb2 = this.sb2 = block(0, 0);
     const sb1 = this.sb1 = block(1, 4);
     const st = this.storage = block(5, 13);
-    this.key = L.encrypted ? u32(sb2, SB2.key) : 0;
+    this.key = L.keyAt === null ? 0 : u32(sb2, L.keyAt);
     const key16 = this.key & 0xffff;
 
     this.trainerName = decodeText(sb2.subarray(SB2.name, SB2.name + 8));
@@ -472,12 +479,12 @@ export class Gen3Save implements EditableSave {
     };
     this.dexOwned = sb2.slice(SB2.dexOwned, SB2.dexOwned + DEX_BYTES);
     this.dexSeen = sb2.slice(SB2.dexSeen, SB2.dexSeen + DEX_BYTES);
-    this.money = (u32(sb1, SB1.money) ^ this.key) >>> 0;
-    this.coins = (u16(sb1, SB1.coins) ^ key16) & 0xffff;
+    this.money = (u32(sb1, L.money) ^ this.key) >>> 0;
+    this.coins = (u16(sb1, L.coins) ^ key16) & 0xffff;
     this.badges = 0;
     for (let i = 0; i < 8; i++) if (this.flag(L.badgeFlag + i)) this.badges |= 1 << i;
-    this.nationalDex = sb2[SB2.nationalMagic] === NATIONAL_MAGIC && u16(sb1, L.vars + (VAR_NATIONAL_DEX - 0x4000) * 2) === 0x302
-      && this.flag(L.nationalDexFlag);
+    const nd = L.national;
+    this.nationalDex = sb2[nd.magicAt] === nd.magic && u16(sb1, L.vars + (nd.varId - 0x4000) * 2) === nd.value && this.flag(nd.flag);
     this.frontier = this.game === 'emerald' ? {
       battlePoints: u16(sb2, EM.battlePoints),
       battlePointsWon: u16(sb2, CARD_BATTLE_POINTS),
@@ -486,8 +493,14 @@ export class Gen3Save implements EditableSave {
       streaks: readStreaks(sb2),
     } : null;
     this.gameStats = Array.from({ length: gameStatCount(this.game) }, (_, i) => (u32(sb1, L.gameStats + i * 4) ^ this.key) >>> 0);
-    this.pokeblocks = readPokeblocks(sb1, L.pokeblocks);
-    this.decorations = readDecorations(sb1, L.decorations);
+    this.hoenn = L.secretBase !== null;
+    const frlg = this.game === 'frlg';
+    this.kanto = frlg ? {
+      vsSeeker: sb1[KANTO.vsSeeker], fame: readFame(sb1), fly: FLY_SPOTS.map((p) => this.flag(p.flag)),
+    } : null;
+    this.questLogScenes = frlg ? questLogScenes(sb1) : 0;
+    this.pokeblocks = L.pokeblocks === null ? [] : readPokeblocks(sb1, L.pokeblocks);
+    this.decorations = L.decorations === null ? DECOR_CATEGORIES.map(() => []) : readDecorations(sb1, L.decorations);
     this.rematches = this.game === 'emerald' ? REMATCH_TRAINERS.map(([, teams], i) => ({
       available: rematchAvailable(i, (n) => this.flag(n)), next: nextRematchTeam(i, teams, (id) => this.flag(TRAINER_FLAGS_START + id)),
       team: sb1[REMATCHES_AT + i],
@@ -497,8 +510,8 @@ export class Gen3Save implements EditableSave {
       species: dexOf(roamerSpecies), pid: u32(sb1, ro + 4), ivs: unpackIvs(u32(sb1, ro)), hp: u16(sb1, ro + 10), level: sb1[ro + 12],
       status: sb1[ro + 13], active: !!sb1[ro + 19],
     } : null;
-    this.roomDecorations = [...sb1.subarray(L.roomDecor, L.roomDecor + 12)].filter((id) => id !== 0);
-    this.secretBase = readSecretBase(sb1, L.secretBase);
+    this.roomDecorations = L.roomDecor === null ? [] : [...sb1.subarray(L.roomDecor, L.roomDecor + 12)].filter((id) => id !== 0);
+    this.secretBase = L.secretBase === null ? null : readSecretBase(sb1, L.secretBase);
     this.pockets = {
       item: readItems(sb1, L.items, L.itemsMax, key16),
       key: readItems(sb1, L.keyItems, L.keyItemsMax, key16),
@@ -506,15 +519,15 @@ export class Gen3Save implements EditableSave {
       tmhm: readItems(sb1, L.tmhm, L.tmhmMax, key16),
       berry: readItems(sb1, L.berries, L.berriesMax, key16),
     };
-    this.pcItems = readItems(sb1, SB1.pcItems, PC_ITEMS_MAX, 0);
+    this.pcItems = readItems(sb1, L.pcItems, L.pcItemsMax, 0);
     this.islands = EVENT_ISLANDS[this.game].map((isle) => this.flag(isle.flag) && this.pockets.key.some((it) => it.id === isle.item));
     this.legends = GEN3_LEGENDS[this.game];
     this.bringBack = this.legends.map(() => false);
 
-    const count = Math.min(sb1[SB1.partyCount], PARTY_MAX);
+    const count = Math.min(sb1[L.partyCount], PARTY_MAX);
     this.party = [];
     for (let i = 0; i < count; i++) {
-      const mon = readMon(sb1, SB1.party + i * PARTY_MON_SIZE, true);
+      const mon = readMon(sb1, L.party + i * PARTY_MON_SIZE, true);
       if (mon) this.party.push(mon);
     }
     const dc = DAYCARE[this.game];
@@ -581,7 +594,13 @@ export class Gen3Save implements EditableSave {
 
   /** Whether the game has been cleared (the Hall of Fame): the ferry to the event islands only sails after it. */
   get gameCleared(): boolean {
-    return this.flag(this.L.badgeFlag - 7 + 4);
+    return this.flag(this.L.gameClearFlag);
+  }
+
+  /** Whether the ferry to the event islands sails yet: after the Hall of Fame in Hoenn; in FireRed and LeafGreen once
+   * the Rainbow Pass has opened the far Sevii Islands. */
+  get ferryReady(): boolean {
+    return this.game === 'frlg' ? u16(this.sb1, this.L.vars + (VAR_SEVII_STORY - 0x4000) * 2) >= SEVII_RAINBOW_PASS : this.gameCleared;
   }
 
   /** Whether a legend (see legends.ts) was gone in the file as opened. */
@@ -674,20 +693,21 @@ export class Gen3Save implements EditableSave {
 
     // The two copies of "seen" in SaveBlock1 must match the main one, or the game forgets the Pokémon.
     for (const at of L.seenCopies) sb1.set(this.dexSeen, at);
-    setU32(sb1, SB1.money, (clamp(this.money, 0, MONEY_MAX) ^ this.key) >>> 0);
-    setU16(sb1, SB1.coins, (clamp(this.coins, 0, COINS_MAX) ^ key16) & 0xffff);
+    setU32(sb1, L.money, (clamp(this.money, 0, MONEY_MAX) ^ this.key) >>> 0);
+    setU16(sb1, L.coins, (clamp(this.coins, 0, COINS_MAX) ^ key16) & 0xffff);
     for (let i = 0; i < 8; i++) this.setFlagIn(sb1, L.badgeFlag + i, !!(this.badges & (1 << i)));
 
-    const wasNational = sb2[SB2.nationalMagic] === NATIONAL_MAGIC && u16(sb1, L.vars + (VAR_NATIONAL_DEX - 0x4000) * 2) === 0x302;
+    const nd = L.national, ndVar = L.vars + (nd.varId - 0x4000) * 2;
+    const wasNational = sb2[nd.magicAt] === nd.magic && u16(sb1, ndVar) === nd.value;
     if (this.nationalDex && !wasNational) {
-      // What the game does when Professor Birch upgrades the Pokédex (pokeemerald: EnableNationalPokedex).
-      sb2[SB2.nationalMagic] = NATIONAL_MAGIC;
-      setU16(sb1, L.vars + (VAR_NATIONAL_DEX - 0x4000) * 2, 0x302);
-      this.setFlagIn(sb1, L.nationalDexFlag, true);
+      // What the game does when the professor upgrades the Pokédex (pokeemerald, pokefirered: EnableNationalPokedex).
+      sb2[nd.magicAt] = nd.magic;
+      setU16(sb1, ndVar, nd.value);
+      this.setFlagIn(sb1, nd.flag, true);
     } else if (!this.nationalDex && wasNational) {
-      sb2[SB2.nationalMagic] = 0;
-      setU16(sb1, L.vars + (VAR_NATIONAL_DEX - 0x4000) * 2, 0);
-      this.setFlagIn(sb1, L.nationalDexFlag, false);
+      sb2[nd.magicAt] = 0;
+      setU16(sb1, ndVar, 0);
+      this.setFlagIn(sb1, nd.flag, false);
       sb2[SB2.dexMode] = 0;
     }
 
@@ -713,17 +733,18 @@ export class Gen3Save implements EditableSave {
     });
 
     // The PokéNav's RIBBONS menu opens once a Pokémon has a ribbon (FLAG_SYS_RIBBON_GET, which the game sets with each one).
-    const ribbonFlag = L.badgeFlag - 7 + 0x3b;
-    const anyRibbon = [...this.party, ...this.boxes.flat()].some((m) => m && !m.bad && (m.ribbons & RIBBON_MASK));
+    const ribbonFlag = L.ribbonFlag;
+    // Only when a ribbon was given here, so a file from another editor with ribbons and no flag comes back unchanged.
+    const anyRibbon = [...this.party, ...this.boxes.flat()].some((m) => m && !m.bad && (m.ribbons & RIBBON_MASK) && m.ribbons !== u32(m.raw, 76));
     if (anyRibbon && !this.flag(ribbonFlag)) this.setFlagIn(sb1, ribbonFlag, true);
 
     // Pockets are rewritten only when they changed, so an unedited bag keeps its exact bytes (gaps and all).
     if (this.edited('pockets')) {
-      writeItems(sb1, L.items, this.pockets.item, L.itemsMax, key16, 99);
-      writeItems(sb1, L.keyItems, this.pockets.key, L.keyItemsMax, key16, 99);
-      writeItems(sb1, L.balls, this.pockets.ball, L.ballsMax, key16, 99);
-      writeItems(sb1, L.tmhm, this.pockets.tmhm, L.tmhmMax, key16, 99);
-      writeItems(sb1, L.berries, this.pockets.berry, L.berriesMax, key16, 999);
+      writeItems(sb1, L.items, this.pockets.item, L.itemsMax, key16, L.itemCap);
+      writeItems(sb1, L.keyItems, this.pockets.key, L.keyItemsMax, key16, L.itemCap);
+      writeItems(sb1, L.balls, this.pockets.ball, L.ballsMax, key16, L.itemCap);
+      writeItems(sb1, L.tmhm, this.pockets.tmhm, L.tmhmMax, key16, L.itemCap);
+      writeItems(sb1, L.berries, this.pockets.berry, L.berriesMax, key16, L.berryCap);
     }
     EVENT_ISLANDS[this.game].forEach((isle, i) => {
       if (this.islands[i] !== this.loaded.islands[i]) this.setFlagIn(sb1, isle.flag, this.islands[i]);
@@ -749,8 +770,18 @@ export class Gen3Save implements EditableSave {
       sb1[L.roamer + 13] = ro.status & 0xff;
       sb1[L.roamer + 19] = +ro.active;
     }
-    if (this.edited('decorations')) writeDecorations(sb1, L.decorations, this.decorations);
-    if (this.edited('secretBase')) {
+    const k = this.kanto, k0 = this.loaded.kanto;
+    if (k && k0 && this.edited('kanto')) {
+      if (k.vsSeeker !== k0.vsSeeker) sb1[KANTO.vsSeeker] = clamp(k.vsSeeker, 0, 100);
+      writeFame(sb1, k.fame, k0.fame);
+      FLY_SPOTS.forEach((p, i) => {
+        if (k.fly[i] === k0.fly[i]) return;
+        this.setFlagIn(sb1, p.flag, k.fly[i]);
+      });
+    }
+    if (this.clearQuestLog) clearQuestLog(sb1);
+    if (L.decorations !== null && this.edited('decorations')) writeDecorations(sb1, L.decorations, this.decorations);
+    if (L.secretBase !== null && this.edited('secretBase')) {
       const before = this.loaded.secretBase, base = this.secretBase;
       // The game's own language, as on the player's own Pokémon (English if there are none).
       const own = [...this.party, ...this.boxes.flat()].find((m) => m && !m.bad && m.otId === ((this.secretId << 16 | this.trainerId) >>> 0));
@@ -760,15 +791,15 @@ export class Gen3Save implements EditableSave {
       });
       if (base && base.id !== before?.id) setU16(sb1, L.vars + (VAR_SECRET_BASE_MAP - 0x4000) * 2, baseMapSection(base.id));
     }
-    if (this.edited('pokeblocks')) writePokeblocks(sb1, L.pokeblocks, this.pokeblocks);
-    if (this.edited('pcItems')) writeItems(sb1, SB1.pcItems, this.pcItems, PC_ITEMS_MAX, 0, 999);
+    if (L.pokeblocks !== null && this.edited('pokeblocks')) writePokeblocks(sb1, L.pokeblocks, this.pokeblocks);
+    if (this.edited('pcItems')) writeItems(sb1, L.pcItems, this.pcItems, L.pcItemsMax, 0, 999);
 
     const party = this.party.slice(0, PARTY_MAX);
-    sb1[SB1.partyCount] = party.length;
-    party.forEach((mon, i) => writeMon(sb1, SB1.party + i * PARTY_MON_SIZE, mon, true));
+    sb1[L.partyCount] = party.length;
+    party.forEach((mon, i) => writeMon(sb1, L.party + i * PARTY_MON_SIZE, mon, true));
     // Slots past the end of the party are emptied, as the game does.
-    for (let i = party.length; i < Math.min(this.sb1[SB1.partyCount], PARTY_MAX); i++) {
-      sb1.fill(0, SB1.party + i * PARTY_MON_SIZE, SB1.party + (i + 1) * PARTY_MON_SIZE);
+    for (let i = party.length; i < Math.min(this.sb1[L.partyCount], PARTY_MAX); i++) {
+      sb1.fill(0, L.party + i * PARTY_MON_SIZE, L.party + (i + 1) * PARTY_MON_SIZE);
     }
 
     this.writeDayCare(sb1);
@@ -829,7 +860,7 @@ export class Gen3Save implements EditableSave {
       else setU16(sb1, dc.egg, pid);
     } else if (dc.eggBytes === 4) setU32(sb1, dc.egg, 0);
     else setU16(sb1, dc.egg, 0);
-    this.setFlagIn(sb1, PENDING_EGG_FLAG, want);
+    this.setFlagIn(sb1, PENDING_EGG_FLAG[this.game], want);
   }
 
   private setFlagIn(sb1: Uint8Array, n: number, on: boolean): void {

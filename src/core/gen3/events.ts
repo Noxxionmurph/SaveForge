@@ -3,6 +3,9 @@
 // the ticket in the Key Items pocket and a system flag the Mystery Gift sets alongside it (FLAG_ENABLE_SHIP_* in
 // Emerald, FLAG_SYS_HAS_EON_TICKET in Ruby and Sapphire). The ferry only takes you after the Hall of Fame
 // (FLAG_SYS_GAME_CLEAR), and the legendary only waits there until you have met it (the "met" flags below).
+// In FireRed and LeafGreen the Seagallop in Vermilion City does the same checks (pokefirered
+// data/maps/VermilionCity/scripts.inc), once the Rainbow Pass has opened the far Sevii Islands rather than after the
+// Hall of Fame.
 
 import type { Gen3Game } from './data.ts';
 
@@ -27,5 +30,10 @@ export const EVENT_ISLANDS: Record<Gen3Game, readonly EventIsland[]> = {
     { name: 'Birth Island', legend: 'Deoxys', item: 371, flag: 0x8d5, met: [[0x1ad]] },
     { name: 'Faraway Island', legend: 'Mew', item: 376, flag: 0x8d6, met: [[0x1c7, 0x1ca]] },
     { name: 'Navel Rock', legend: 'Lugia and Ho-Oh', item: 370, flag: 0x8e0, met: [[0x91, 0x1dd], [0x92, 0x1dc]] },
+  ],
+  frlg: [
+    // FLAG_ENABLE_SHIP_NAVEL_ROCK / _BIRTH_ISLAND; met: FLAG_FOUGHT_LUGIA, _HO_OH, _DEOXYS.
+    { name: 'Navel Rock', legend: 'Lugia and Ho-Oh', item: 370, flag: 0x84a, met: [[0x2f2], [0x2f3]] },
+    { name: 'Birth Island', legend: 'Deoxys', item: 371, flag: 0x84b, met: [[0x2e4]] },
   ],
 };

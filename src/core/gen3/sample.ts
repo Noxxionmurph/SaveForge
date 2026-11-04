@@ -8,6 +8,7 @@ import { MOVE_NAMES, UNOWN, findPid, maxPp, speciesName, type Gen3Game } from '.
 import {
   BOX_COUNT, GEN3_LAYOUTS, Gen3Save, SAVE_SIZE, depositInBox, newMon, recalcPartyStats, sectorChecksum, type Gen3Mon,
 } from './save.ts';
+import { FLY_SPOTS } from './kanto.ts';
 import { encodeText } from './text.ts';
 
 const SECTOR_DATA = 3968;
@@ -32,22 +33,35 @@ export function blankGen3Save(game: Gen3Game = 'rs', trainer = 'MAY', female = t
   sb2.set([trainerId & 0xff, (trainerId >>> 8) & 0xff, (trainerId >>> 16) & 0xff, trainerId >>> 24], 0x0a);
   sb2[0x09] = 1; // Continue warps in (to the continue-game warp below), so the map and the player get set up fresh
   sb2[0x14] = 1; // text speed Mid, frame 1, mono
-  if (game === 'emerald') sb2.set([0x4d, 0x3c, 0x2b, 0x1a], 0xac); // the money key
-  // Littleroot Town (map group 0, number 9 in both games), just below the door of the player's house, which is also
-  // where Continue and blacking out put you.
-  const warp = [0, 9, 0xff, 0, 5, 0, 9, 0];
-  sb1.set([5, 0, 9, 0], 0x00); // pos
+  const frlg = game === 'frlg';
+  if (L.keyAt !== null) sb2.set([0x4d, 0x3c, 0x2b, 0x1a], L.keyAt); // the money key
+  if (frlg) sb2[0xac] = 1; // unkFlag1, set by every new FireRed and LeafGreen game
+  // Littleroot Town (map group 0, number 9 in Ruby, Sapphire and Emerald) or Pallet Town (group 3, number 0 in FireRed
+  // and LeafGreen), just below the door of the player's house, which is also where Continue and blacking out put you.
+  const warp = frlg ? [3, 0, 0xff, 0, 6, 0, 8, 0] : [0, 9, 0xff, 0, 5, 0, 9, 0];
+  sb1.set(warp.slice(4), 0x00); // pos
   sb1.set(warp, 0x04); // location
   sb1.set(warp, 0x0c); // continue-game warp
   sb1.set(warp, 0x1c); // last heal location
-  const key = game === 'emerald' ? 0x1a2b3c4d : 0;
+  // FireRed and LeafGreen also keep the map's layout (SaveBlock1 mapLayoutId) and reset on Continue without it:
+  // LAYOUT_PALLET_TOWN is 78.
+  if (frlg) sb1[0x32] = 78;
+  const key = L.keyAt !== null ? 0x1a2b3c4d : 0;
   const k16 = key & 0xffff;
   // Empty pockets still hold quantity 0 under the key.
   for (const [at, n] of [[L.items, L.itemsMax], [L.keyItems, L.keyItemsMax], [L.balls, L.ballsMax], [L.tmhm, L.tmhmMax], [L.berries, L.berriesMax]]) {
     for (let i = 0; i < n; i++) { sb1[at + i * 4 + 2] = k16 & 0xff; sb1[at + i * 4 + 3] = k16 >> 8; }
   }
-  for (let i = 0; i < 4; i++) sb1[0x490 + i] = (key >>> (i * 8)) & 0xff; // ¥0 under the key
-  for (let i = 0; i < 2; i++) sb1[0x494 + i] = (k16 >>> (i * 8)) & 0xff; // no coins
+  for (let i = 0; i < 4; i++) sb1[L.money + i] = (key >>> (i * 8)) & 0xff; // ¥0 under the key
+  for (let i = 0; i < 2; i++) sb1[L.coins + i] = (k16 >>> (i * 8)) & 0xff; // no coins
+  if (frlg) {
+    // FireRed and LeafGreen key their game stats, Berry Powder and Trainer Tower best times too
+    // (pokefirered: ApplyNewEncryptionKeyToAllEncryptedData).
+    for (let n = 0; n < 64; n++) for (let i = 0; i < 4; i++) sb1[L.gameStats + n * 4 + i] = (key >>> (i * 8)) & 0xff;
+    for (let i = 0; i < 4; i++) sb2[0xaf8 + i] = (key >>> (i * 8)) & 0xff;
+    for (let t = 0; t < 4; t++) for (let i = 0; i < 4; i++) sb1[0x3d38 + t * 0xc + 4 + i] = (key >>> (i * 8)) & 0xff;
+    sb1[0x3a54] = 2; // the Fame Checker starts with Professor Oak (ResetFameChecker)
+  }
   if (game === 'emerald') {
     // Emerald also keys its Berry Powder and its 64 game stats (pokeemerald: ApplyNewEncryptionKeyToAllEncryptedData).
     for (let i = 0; i < 4; i++) sb2[0x1f4 + i] = (key >>> (i * 8)) & 0xff;
@@ -63,7 +77,7 @@ export function blankGen3Save(game: Gen3Game = 'rs', trainer = 'MAY', female = t
     // Rose, Andres and Dusty registered in the PokéNav's Match Call (FLAG_REGISTERED_ROSE ...: 0x15C + their rematch id).
     for (const n of [0x15c, 0x15d, 0x15e]) sb1[L.flags + (n >> 3)] |= 1 << (n & 7);
   }
-  const sys = L.badgeFlag - 7; // SYSTEM_FLAGS: 0x800 in Ruby/Sapphire, 0x860 in Emerald
+  const sys = L.pokemonGetFlag;
   for (const n of [sys, sys + 1]) sb1[L.flags + (n >> 3)] |= 1 << (n & 7); // FLAG_SYS_POKEMON_GET and _POKEDEX_GET: the start menu has POKéMON and POKéDEX
   for (let i = 0; i < BOX_COUNT; i++) {
     st.set(encodeText(`BOX${i + 1}`, 9, undefined, 8), 0x8344 + i * 9);
@@ -93,21 +107,29 @@ const move = (name: string): number => {
 };
 
 /** The sample: blank save, then filled in through the editor's own model (so its writer is what makes the file). */
-export function buildSampleSave(game: Gen3Game = 'rs'): Uint8Array {
-  const trainerId = 0x1d2a3b4c;
-  const s = new Gen3Save(blankGen3Save(game, 'MAY', true, trainerId), game);
-  const random = seeded(386);
-  const trainer = { name: 'MAY', id: trainerId, gender: 'female' as const };
-  const mon = (dex: number, level: number, moves: string[], wish: Parameters<typeof findPid>[3] = {}): Gen3Mon => {
-    const pid = findPid(dex, trainerId, Math.floor(random() * 0x100000000), wish, random);
+type Wish = Parameters<typeof findPid>[3];
+
+/** Makes the sample's Pokémon: caught by the sample's trainer, with random IVs and somewhere in the game to be met. */
+function monMaker(game: Gen3Game, trainer: { name: string; id: number; gender: 'male' | 'female' }, random: () => number, firstPlace: number) {
+  return (dex: number, level: number, moves: string[], wish: Wish = {}): Gen3Mon => {
+    const pid = findPid(dex, trainer.id, Math.floor(random() * 0x100000000), wish, random);
     const m = newMon(dex, level, trainer, game, pid, speciesName(dex));
     m.moves = [0, 1, 2, 3].map((i) => (moves[i] ? move(moves[i]) : 0)) as Gen3Mon['moves'];
     m.pp = m.moves.map((id) => maxPp(id, 0)) as Gen3Mon['pp'];
     m.ivs = { hp: Math.floor(random() * 32), atk: Math.floor(random() * 32), def: Math.floor(random() * 32), spe: Math.floor(random() * 32), spa: Math.floor(random() * 32), spd: Math.floor(random() * 32) };
-    m.metLocation = 0x10 + Math.floor(random() * 20);
+    m.metLocation = firstPlace + Math.floor(random() * 20);
     recalcPartyStats(m, true);
     return m;
   };
+}
+
+export function buildSampleSave(game: Gen3Game = 'rs'): Uint8Array {
+  if (game === 'frlg') return buildKantoSample();
+  const trainerId = 0x1d2a3b4c;
+  const s = new Gen3Save(blankGen3Save(game, 'MAY', true, trainerId), game);
+  const random = seeded(386);
+  const trainer = { name: 'MAY', id: trainerId, gender: 'female' as const };
+  const mon = monMaker(game, trainer, random, 0x10);
 
   s.money = 12345;
   s.coins = 50;
@@ -151,5 +173,58 @@ export function buildSampleSave(game: Gen3Game = 'rs'): Uint8Array {
   ];
   for (let dex = 252; dex <= 300; dex++) s.setSeen(dex, true);
   for (const dex of [257, 282, 277, 263, 270, 304, 25, 184, 201, 360, 255, 256, 280, 281, 276]) s.setOwned(dex, true);
+  return s.serialize();
+}
+
+/** FireRed and LeafGreen's sample: Leaf with four Kanto badges, a party and box from Kanto, a partly charged Vs. Seeker,
+ * a few towns to Fly to and two people in the Fame Checker. */
+function buildKantoSample(): Uint8Array {
+  const game = 'frlg';
+  const trainerId = 0x2b3c4d5e;
+  const s = new Gen3Save(blankGen3Save(game, 'LEAF', true, trainerId), game);
+  const random = seeded(151);
+  const mon = monMaker(game, { name: 'LEAF', id: trainerId, gender: 'female' }, random, 0x65);
+
+  s.money = 23456;
+  s.coins = 120;
+  s.playHours = 14; s.playMinutes = 42; s.playSeconds = 5;
+  s.badges = 0b1111;
+
+  const venusaur = mon(3, 34, ['Razor Leaf', 'Sleep Powder', 'Leech Seed', 'Take Down'], { nature: 15 }); // Modest
+  venusaur.item = 205; // Miracle Seed
+  venusaur.nickname = 'BUD';
+  venusaur.metLocation = 0x58; venusaur.metLevel = 5; // the starter, from Pallet Town
+  const pikachu = mon(25, 28, ['Thunderbolt', 'Quick Attack', 'Thunder Wave', 'Double Team'], { shiny: true });
+  const pidgeotto = mon(17, 27, ['Wing Attack', 'Gust', 'Quick Attack', 'Sand-Attack'], { gender: 'male' });
+  const egg = mon(175, 5, ['Growl', 'Charm'], {}); // Togepi
+  egg.isEgg = true; egg.nickname = 'EGG'; egg.friendship = 10; egg.metLevel = 0;
+  const lapras = mon(131, 25, ['Surf', 'Body Slam', 'Confuse Ray', 'Sing'], {});
+  lapras.metLocation = 0x86; // Silph Co.
+  s.party = [venusaur, pikachu, pidgeotto, egg, lapras];
+
+  const box = (dex: number, level: number, moves: string[]) => { const m = mon(dex, level, moves); depositInBox(m); return m; };
+  s.boxes[0][0] = box(19, 4, ['Tackle', 'Tail Whip']);
+  s.boxes[0][1] = box(10, 6, ['Tackle', 'String Shot']);
+  s.boxes[0][3] = box(54, 21, ['Scratch', 'Tail Whip', 'Disable', 'Confusion']); // a gap at spot 3, as the game allows
+  s.boxes[0][4] = box(74, 12, ['Tackle', 'Defense Curl', 'Mud Sport']);
+  s.boxes[1][0] = box(129, 10, ['Splash']);
+  s.currentBoxIndex = 0;
+  s.boxNames[1] = 'FRIENDS';
+
+  s.pockets.item = [{ id: 13, count: 5 }, { id: 22, count: 3 }, { id: 68, count: 2 }, { id: 86, count: 1 }];
+  s.pockets.ball = [{ id: 4, count: 10 }, { id: 3, count: 4 }];
+  // Bicycle, Old Rod, Town Map, Vs. Seeker, Fame Checker, TM Case, Berry Pouch.
+  s.pockets.key = [361, 360, 262, 362, 363, 364, 365].map((id) => ({ id, count: 1 }));
+  s.setTmCounts([...new Array(27).fill(0), 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0]);
+  s.pockets.berry = [{ id: 139, count: 4 }];
+  s.pcItems = [{ id: 13, count: 1 }];
+  const k = s.kanto!;
+  k.vsSeeker = 60;
+  for (const name of ['Pallet Town', 'Viridian City', 'Pewter City', 'Cerulean City', 'Vermilion City', 'Route 4']) k.fly[FLY_SPOTS.findIndex((p) => p.name === name)] = true;
+  k.fame[2] = { state: 2, facts: 0b000111 }; // Brock, three facts found
+  k.fame[3] = { state: 2, facts: 0b000011 }; // Misty
+  k.fame[4] = { state: 1, facts: 0 }; // Lt. Surge, heard of
+  for (let dex = 1; dex <= 60; dex++) s.setSeen(dex, true);
+  for (const dex of [1, 2, 3, 25, 17, 175, 131, 19, 10, 54, 74, 129, 16, 13, 21]) s.setOwned(dex, true);
   return s.serialize();
 }

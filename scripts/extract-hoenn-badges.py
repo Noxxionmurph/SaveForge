@@ -4,7 +4,11 @@
 
     python3 scripts/extract-hoenn-badges.py path/to/pokeemerald/graphics/trainer_card/badges.png
 
-Writes assets/sprites/badges/hoenn/1.png ... 8.png (16x16).
+Writes assets/sprites/badges/hoenn/1.png ... 8.png (16x16). FireRed and LeafGreen's Kanto badges (Boulder to Earth)
+come from pret/pokefirered's sheet of the same name and shape, into badges/frlg:
+
+    python3 scripts/extract-hoenn-badges.py path/to/pokefirered/graphics/trainer_card/badges.png frlg
+
 The finished files live in the artwork repository (checked out as ./assets/), so you only need this to redo them.
 Needs Pillow."""
 import sys
@@ -15,7 +19,8 @@ sheet = Image.open(sys.argv[1])
 if sheet.size != (128, 16) or sheet.mode != 'P':
     sys.exit(f'expected a 128x16 indexed sheet, got {sheet.size[0]}x{sheet.size[1]} {sheet.mode}')
 pal = sheet.getpalette()
-out = Path(__file__).resolve().parent.parent / 'assets' / 'sprites' / 'badges' / 'hoenn'
+region = sys.argv[2] if len(sys.argv) > 2 else 'hoenn'
+out = Path(__file__).resolve().parent.parent / 'assets' / 'sprites' / 'badges' / region
 out.mkdir(parents=True, exist_ok=True)
 for n in range(8):
     cell = sheet.crop((n * 16, 0, n * 16 + 16, 16))

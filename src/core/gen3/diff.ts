@@ -4,12 +4,13 @@
 import type { ChangeGroup } from '../types.ts';
 import { legendLines } from '../legends.ts';
 import {
-  ABILITY_NAMES, BUTTON_MODES, DEX_COUNT, HOENN_BADGES, MOVE_NAMES, NATURE_NAMES, TEXT_SPEEDS, TMHM_LABELS, TMHM_MOVES, UNOWN,
+  ABILITY_NAMES, BUTTON_MODES, DEX_COUNT, badgeNames, MOVE_NAMES, NATURE_NAMES, TEXT_SPEEDS, TMHM_LABELS, TMHM_MOVES, UNOWN,
   genderOf, isShiny, itemName, natureOf, speciesName, unownForm,
 } from './data.ts';
 import { BOX_NAME_LEN, FRONTIER_FACILITIES, NICKNAME_MAX, PLAYER_NAME_MAX, monAbility, type BagItem, type Gen3Mon, type Gen3Save } from './save.ts';
 import { baseSpotLabel, type SecretBase } from './bases.ts';
 import { DECOR_CATEGORIES, decorName } from './decorations.ts';
+import { FAME_FACTS, FAME_PEOPLE, FAME_STATES, FLY_SPOTS, VS_SEEKER_FULL } from './kanto.ts';
 import { STREAK_ROWS, rowLabel } from './frontier.ts';
 import { pokeblockLevel, pokeblockName, type Pokeblock } from './pokeblocks.ts';
 import { EVENT_ISLANDS } from './events.ts';
@@ -52,8 +53,9 @@ function trainerLines(b: Gen3Save, a: Gen3Save): string[] {
   if (b.money !== a.money) out.push(`Money: ${money(b.money)} → ${money(a.money)}`);
   if (b.coins !== a.coins) out.push(`Coins: ${b.coins.toLocaleString('en-US')} → ${a.coins.toLocaleString('en-US')}`);
   if (clock(b) !== clock(a)) out.push(`Play time: ${clock(b)} → ${clock(a)}`);
-  const gained = HOENN_BADGES.filter((_, i) => !((b.badges >> i) & 1) && (a.badges >> i) & 1);
-  const lost = HOENN_BADGES.filter((_, i) => (b.badges >> i) & 1 && !((a.badges >> i) & 1));
+  const BADGES = badgeNames(a.game);
+  const gained = BADGES.filter((_, i) => !((b.badges >> i) & 1) && (a.badges >> i) & 1);
+  const lost = BADGES.filter((_, i) => (b.badges >> i) & 1 && !((a.badges >> i) & 1));
   if (gained.length) out.push(`Badges earned: ${gained.join(', ')}`);
   if (lost.length) out.push(`Badges removed: ${lost.join(', ')}`);
   if (b.nationalDex !== a.nationalDex) out.push(a.nationalDex ? 'National Pokédex unlocked' : 'National Pokédex locked again');
@@ -295,7 +297,9 @@ function islandLines(b: Gen3Save, a: Gen3Save): string[] {
   EVENT_ISLANDS[a.game].forEach((isle, i) => {
     if (b.islands[i] !== a.islands[i]) out.push(`${isle.name}: ${a.islands[i] ? 'the ferry will sail there' : 'ticket taken away'}`);
   });
-  if (out.length && a.islands.some(Boolean) && !a.gameCleared) out.push('Warning: the ferry only sails after the Hall of Fame.');
+  if (out.length && a.islands.some(Boolean) && !a.ferryReady) {
+    out.push(a.game === 'frlg' ? 'Warning: the Seagallop only sails there once you have the Rainbow Pass.' : 'Warning: the ferry only sails after the Hall of Fame.');
+  }
   return out;
 }
 
@@ -388,9 +392,38 @@ function statLines(b: Gen3Save, a: Gen3Save): string[] {
   return out;
 }
 
+// ---------- FireRed and LeafGreen ----------
+
+function flyLines(b: Gen3Save, a: Gen3Save): string[] {
+  const x = b.kanto, y = a.kanto;
+  if (!x || !y) return [];
+  const on = FLY_SPOTS.filter((_, i) => y.fly[i] && !x.fly[i]).map((p) => p.name);
+  const off = FLY_SPOTS.filter((_, i) => x.fly[i] && !y.fly[i]).map((p) => p.name);
+  return [...(on.length ? [`Can fly to: ${on.join(', ')}`] : []), ...(off.length ? [`Can no longer fly to: ${off.join(', ')}`] : [])];
+}
+
+function vsSeekerLines(b: Gen3Save, a: Gen3Save): string[] {
+  const x = b.kanto, y = a.kanto;
+  return x && y && x.vsSeeker !== y.vsSeeker ? [`Vs. Seeker: ${y.vsSeeker >= VS_SEEKER_FULL ? 'charged' : 'battery empty'}`] : [];
+}
+
+function fameLines(b: Gen3Save, a: Gen3Save): string[] {
+  const x = b.kanto, y = a.kanto;
+  if (!x || !y) return [];
+  const out: string[] = [];
+  const facts = (n: number) => { let c = 0; for (let v = n; v; v &= v - 1) c++; return c; };
+  FAME_PEOPLE.forEach((name, i) => {
+    const p = x.fame[i], q = y.fame[i], parts: string[] = [];
+    if (p.state !== q.state) parts.push(`${FAME_STATES[p.state]?.label ?? p.state} → ${FAME_STATES[q.state]?.label ?? q.state}`);
+    if (p.facts !== q.facts) parts.push(`facts ${facts(p.facts)} → ${facts(q.facts)} of ${FAME_FACTS}`);
+    if (parts.length) out.push(`${name}: ${parts.join(', ')}`);
+  });
+  return out;
+}
+
 export function describeGen3Changes(before: Gen3Save, after: Gen3Save): ChangeGroup[] {
   return [
-    group('Trainer', trainerLines(before, after)),
+    group('Trainer', [...trainerLines(before, after), ...vsSeekerLines(before, after)]),
     group('Items pocket', itemLines(before.pockets.item, after.pockets.item)),
     group('Poké Balls pocket', itemLines(before.pockets.ball, after.pockets.ball)),
     group('Key Items pocket', itemLines(before.pockets.key, after.pockets.key)),
@@ -400,6 +433,8 @@ export function describeGen3Changes(before: Gen3Save, after: Gen3Save): ChangeGr
     group('Event islands', islandLines(before, after)),
     group('Roaming Pokémon', roamerLines(before, after)),
     group('Trainer rematches', rematchLines(before, after)),
+    group('Fly', flyLines(before, after)),
+    group('Fame Checker', fameLines(before, after)),
     group('Secret base', baseLines(before.secretBase, after.secretBase)),
     group('Decorations', decorationLines(before, after)),
     group('Pokéblock case', pokeblockLines(before.pokeblocks, after.pokeblocks)),
@@ -409,7 +444,10 @@ export function describeGen3Changes(before: Gen3Save, after: Gen3Save): ChangeGr
     group('Box names', boxNameLines(before, after)),
     group('Pokédex', dexLines(before, after)),
     group('Legendary Pokémon', legendLines(after)),
-    group('Continue', after.sendHome ? [`Start in ${after.homeName} (a way out if you're stuck)`] : []),
+    group('Continue', [
+      ...(after.sendHome ? [`Start in ${after.homeName} (a way out if you're stuck)`] : []),
+      ...(after.clearQuestLog ? ['Skip the "Previously on your quest" recap'] : []),
+    ]),
     group('Game stats', statLines(before, after)),
     group('Options', optionLines(before, after)),
   ].filter((g): g is ChangeGroup => g !== null);

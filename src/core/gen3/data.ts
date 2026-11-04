@@ -11,8 +11,9 @@ export const DEX_COUNT = 386;
 export const DEX_NAMES = SPECIES_NAMES;
 export { ABILITY_NAMES, NATURE_NAMES, TMHM_MOVES };
 
-/** Which layout and item list a save uses: Ruby and Sapphire share one, Emerald moved things and added a few items. */
-export type Gen3Game = 'rs' | 'emerald';
+/** Which layout and item list a save uses: Ruby and Sapphire share one, Emerald moved things and added a few items, and
+ * FireRed and LeafGreen (which share one too) rebuilt most of the save around Kanto. */
+export type Gen3Game = 'rs' | 'emerald' | 'frlg';
 
 // ---------- species ----------
 
@@ -230,11 +231,18 @@ export const TMHM_LABELS: readonly string[] = TMHM_MOVES.map((_, i) => (i < TM_C
 export type Pocket = 'item' | 'ball' | 'tmhm' | 'berry' | 'key';
 /** Emerald can hold its own two key items on top of Ruby and Sapphire's; FireRed and LeafGreen's are left out. */
 const EMERALD_ONLY = new Set([375, 376]);
+/** FireRed and LeafGreen keep every Ruby and Sapphire item but the Hoenn key items, except the Coin Case, Itemfinder, the
+ * three rods, the S.S. Ticket and the Meteorite, which Kanto uses too; their own key items are 349 (Oak's Parcel) to 374
+ * (Sapphire). pokefirered src/data/items.json. */
+const FRLG_HOENN_KEYS = new Set([260, 261, 262, 263, 264, 265, 280]);
+const FRLG_FIRST = 349, FRLG_LAST = 374;
 const ITEMS = new Map(ITEM_TABLE.map(([id, name, pocket, rs]) => [id, { name, pocket, rs }]));
 
 const inGame = (id: number, game: Gen3Game): boolean => {
   const it = ITEMS.get(id);
-  return !!it && (it.rs || (game === 'emerald' && EMERALD_ONLY.has(id)));
+  if (!it) return false;
+  if (game === 'frlg') return (it.rs && (it.pocket !== 'key' || FRLG_HOENN_KEYS.has(id))) || (id >= FRLG_FIRST && id <= FRLG_LAST);
+  return it.rs || (game === 'emerald' && EMERALD_ONLY.has(id));
 };
 
 export function itemName(id: number): string {
@@ -258,13 +266,15 @@ export const BALLS = ITEM_TABLE.filter(([id, , pocket]) => pocket === 'ball' && 
 // ---------- trainer ----------
 
 export const HOENN_BADGES = ['Stone', 'Knuckle', 'Dynamo', 'Heat', 'Balance', 'Feather', 'Mind', 'Rain'] as const;
+export const KANTO_BADGES = ['Boulder', 'Cascade', 'Thunder', 'Rainbow', 'Soul', 'Marsh', 'Volcano', 'Earth'] as const;
+export const badgeNames = (game: Gen3Game) => (game === 'frlg' ? KANTO_BADGES : HOENN_BADGES);
 
 /** OPTION menu text speed (pokeemerald: OPTIONS_TEXT_SPEED_*). */
 export const TEXT_SPEEDS = [{ value: 0, label: 'Slow' }, { value: 1, label: 'Mid' }, { value: 2, label: 'Fast' }] as const;
 /** OPTION menu BUTTON MODE (OPTIONS_BUTTON_MODE_*). */
 export const BUTTON_MODES = [{ value: 0, label: 'Normal' }, { value: 1, label: 'LR' }, { value: 2, label: 'L=A' }] as const;
-/** The OPTION menu's FRAME has 20 types. */
-export const FRAME_COUNT = 20;
+/** The OPTION menu's FRAME has 20 types (10 in FireRed and LeafGreen). */
+export const frameCount = (game: Gen3Game) => (game === 'frlg' ? 10 : 20);
 
 /** Pokérus: the high four bits are the strain, the low four the days left (0 with a strain means cured). */
 export function pokerusState(byte: number): 'none' | 'infected' | 'cured' {
@@ -297,12 +307,16 @@ export function placeName(id: number): string {
   return PLACE_NAMES[id] || `Place ${id}`;
 }
 
-/** Places a picker offers for a game: Ruby and Sapphire's Hoenn ones, or every one Emerald names. */
+/** FireRed and LeafGreen's own places: Pallet Town (0x58) to the Special Area (0xC4). */
+const FRLG_PLACES = [0x58, 0xc4] as const;
+
+/** Places a picker offers for a game: Ruby and Sapphire's Hoenn ones, FireRed and LeafGreen's Kanto and Sevii ones, or
+ * every one Emerald names. */
 export function placeChoices(game: Gen3Game): { id: number; name: string }[] {
-  const count = game === 'rs' ? RS_PLACE_COUNT : PLACE_NAMES.length;
+  const [from, to] = game === 'rs' ? [0, RS_PLACE_COUNT - 1] : game === 'frlg' ? FRLG_PLACES : [0, PLACE_NAMES.length - 1];
   const seen = new Set<string>();
   const out: { id: number; name: string }[] = [];
-  for (let id = 0; id < count; id++) {
+  for (let id = from; id <= to; id++) {
     const name = PLACE_NAMES[id];
     // Several ids share a name (the underwater areas, both halves of a cave); the picker offers the first.
     if (!name || seen.has(name)) continue;

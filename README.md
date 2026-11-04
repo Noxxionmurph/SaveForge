@@ -2,7 +2,7 @@
 
 One site, many games. Drop a save on the landing page, the game is detected from the file's structure
 (size, checksums, layout; never a hash, since saves change on every write), and that game's editor is
-lazy-loaded. Currently supported: Pokémon Red / Blue / Yellow, Gold / Silver / Crystal and Ruby / Sapphire / Emerald (English).
+lazy-loaded. Currently supported: Pokémon Red / Blue / Yellow, Gold / Silver / Crystal and Ruby / Sapphire / FireRed / LeafGreen / Emerald (English).
 Everything is a self-contained "game module", so adding Pokémon FireRed / LeafGreen, Gen 4–5, Final Fantasy, Mega Man Battle Network, etc. never touches the shell.
 
 ## Look and feel
@@ -189,7 +189,7 @@ one block in bank 0; see `GEN2_LAYOUTS` in `src/core/gen2/save.ts`). It also has
 - Where each Pokémon was caught: the place, the level, the time of day and whether its trainer was a boy or a girl
   (two bytes Gold and Silver leave empty; `src/core/gen2/caught.ts`).
 
-## Gen 3 features (Ruby / Sapphire / Emerald)
+## Gen 3 features (Ruby / Sapphire / FireRed / LeafGreen / Emerald)
 
 Ruby and Sapphire share a save layout and can't be told apart, so those saves ask which one yours is; Emerald's blocks
 are longer and it hides money, coins and bag counts under a per-save key, so it is recognised on its own and opens in
@@ -236,6 +236,13 @@ the same editor (`GEN3_LAYOUTS` in `src/core/gen3/save.ts`).
   Desert Ruins, and Groudon in the Cave of Origin.
 - Stuck? Start in a safe place: the next Continue starts you at the last Pokémon Center (or home) you healed at.
   Checked in Emerald.
+- FireRed and LeafGreen (their saves are identical inside, so the file asks which one yours is; told apart from Emerald,
+  whose layout a FireRed file also fits, by a word only FireRed and LeafGreen set): the Kanto badges (grey, as the
+  game's trainer card shows them), Fly destinations in Kanto and the Sevii Islands, the Fame Checker (who is in it and
+  how many facts you've found), a charged Vs. Seeker, and skipping the "Previously on your quest" recap on the next
+  Continue. The MysticTicket and AuroraTicket go in the Key Items with their Seagallop flags (the boat only sails there
+  once you have the Rainbow Pass), and the legends are Snorlax, the three birds, Mewtwo, Lugia, Ho-Oh and Deoxys.
+  The Day-Care is Four Island's. No Pokéblocks, decorations or secret bases (Hoenn only). Checked in LeafGreen.
 - Pokémon editor with what Gen 3 changed: nature (the raised and lowered stats marked on the stats), ability, IVs 0-31,
   EVs 0-255 with the 510 total, gender, shininess and Unown's 28 forms (all from the personality value, so changing one
   picks a new value that keeps the rest), Poké Ball, where and at what level it was met and in which game, its language,
@@ -388,7 +395,12 @@ Every screen explains itself in plain words, so keep it that way when you add a 
   made and decorated in the editor. Offsets come
   from pokeruby and pokeemerald. Event flags (other than badges, the National Pokédex, the event tickets, the legendary
   Pokémon and Emerald's Frontier symbols), map position, the clock, friends' secret bases, records and the rest of the Battle Frontier data
-  (Battle Tower opponents, rental Pokémon and so on) are left untouched. FireRed and LeafGreen aren't supported yet.
+  (Battle Tower opponents, rental Pokémon and so on) are left untouched.
+- FireRed / LeafGreen: English only. Offsets come from pokefirered. Tested against one real LeafGreen save: it loads and
+  saves back byte for byte, and an edited copy and the sample load and play in LeafGreen 1.0 (checked in an emulator):
+  party, trainer card, bag, the Fame Checker, a charged Vs. Seeker, Fly, the skipped recap and a Snorlax brought back.
+  The Route 5 Day-Care (one Pokémon), the Union Room, wireless and Trainer Tower data, and the Sevii Islands story are
+  left untouched.
 - A Pokémon's stats can be a point behind the editor's numbers in a real save: the game only recalculates stats when a
   Pokémon levels up, so stat experience earned since then hasn't counted yet. The editor shows both and leaves the
   stored ones alone unless you change the Pokémon.
