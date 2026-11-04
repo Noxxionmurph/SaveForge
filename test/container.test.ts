@@ -64,3 +64,17 @@ test('a real .sps in SPS_FILE opens and round-trips', { skip: real && existsSync
   assert.equal(detectGames(u.data).length, 1);
   assert.deepEqual(u.wrap(u.data), raw);
 });
+
+test('RetroArch .srm files and saves with extra bytes on the end open and keep them', async () => {
+  const { openSave } = await import('../src/core/registry.ts');
+  const { buildSampleSave: gen2 } = await import('../src/core/gen2/sample.ts');
+  for (const save of [buildSampleSave('frlg'), buildSampleSave('emerald'), gen2('crystal')]) {
+    for (const extra of [0x2000, 48]) {
+      const file = new Uint8Array(save.length + extra);
+      file.set(save); file.fill(0xff, save.length);
+      const found = await openSave(file);
+      assert.ok(found, `${save.length} + ${extra}`);
+      assert.deepEqual(found.save.serialize(), file);
+    }
+  }
+});
