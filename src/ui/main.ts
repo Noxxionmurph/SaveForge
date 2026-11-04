@@ -1,6 +1,7 @@
 // Game-agnostic site shell: pick a file, identify the game, lazy-load that game's editor, export.
 // Nothing here knows about any particular game.
 
+import { unwrapSave } from '../core/container.ts';
 import { GAMES, detectGames, gamesByFamily, type Match } from '../core/registry.ts';
 import type { ChangeGroup, EditableSave, EditorHost, GameIdentity, GameModule, SummaryLine } from '../core/types.ts';
 import { initArt } from './art.ts';
@@ -14,6 +15,10 @@ import { makeZip } from './zip.ts';
 
 const root = document.getElementById('app')!;
 let fileName = 'save.sav';
+/** Puts an edited save back into the wrapper the opened file came in (a SharkPort .sps, say); plain saves pass through. */
+let wrapSave = (save: Uint8Array): Uint8Array => save;
+/** The extension the edited file gets when it can't keep the opened one (a .gsv comes back as a plain .sav). */
+let saveExt: string | undefined;
 let dirty = false;
 let saveButton: HTMLElement | null = null;
 const APP_NAME = 'SaveForge';
@@ -30,7 +35,10 @@ const host: EditorHost = { markDirty: () => setDirty(true) };
 // ---------- file handling ----------
 
 async function loadFile(file: File): Promise<void> {
-  const data = new Uint8Array(await file.arrayBuffer());
+  const opened = unwrapSave(new Uint8Array(await file.arrayBuffer()));
+  const data = opened.data;
+  wrapSave = opened.wrap;
+  saveExt = opened.saveAs;
   fileName = file.name;
   const matches = detectGames(data);
   if (matches.length === 1) await openGame(matches[0].module, data);
@@ -69,7 +77,7 @@ function applyConsole(game?: GameModule): void {
 
 function exportName(): string {
   const m = fileName.match(/^(.*?)(\.[^./\\]+)?$/);
-  return `${m?.[1] || 'save'}-edited${m?.[2] ?? '.sav'}`;
+  return `${m?.[1] || 'save'}-edited${saveExt ?? m?.[2] ?? '.sav'}`;
 }
 
 interface DownloadsApi { save(req: { filename: string; data: Uint8Array }): Promise<{ status: string }> }
@@ -122,13 +130,15 @@ async function reviewThenSave(game: GameModule, save: EditableSave, original: Ui
     try { summary = save.summary?.() ?? []; } catch { summary = []; }
     if (!await askReview(groups, !sameBytes(bytes, original), summary)) return;
   }
-  await download(bytes);
+  await download(wrapSave(bytes));
 }
 
 async function openSample(game: GameModule): Promise<void> {
   try {
     const sample = await game.sample!();
     fileName = sample.fileName;
+    wrapSave = (save) => save;
+    saveExt = undefined;
     await openGame(game, sample.data, true);
   } catch (e) {
     renderError("Couldn't build the sample save.", `${e instanceof Error ? e.message : String(e)} Reload the page and try again.`, renderWelcome);
@@ -279,7 +289,7 @@ function renderWelcome(): void {
     h('div', { class: 'slot-art', 'aria-hidden': 'true' }, cartridge(92, 'slot-cart'), h('div', { class: 'slot-bar' })),
     h('div', { class: 'slot-text' },
       h('strong', {}, 'Open a save file'),
-      h('span', { class: 'muted' }, 'Drop a .sav file here, or tap to choose one. SaveForge detects the game for you.'),
+      h('span', { class: 'muted' }, 'Drop a save file here (.sav, .srm or .sps), or tap to choose one. SaveForge detects the game for you.'),
       h('span', { class: 'slot-cta' }, 'Choose file'),
     ),
   );
@@ -306,7 +316,7 @@ function renderWelcome(): void {
       h('h2', {}, 'How it works'),
       h('div', { class: 'how-body' },
         h('ol', { class: 'steps' },
-          h('li', {}, h('strong', {}, 'Open your save'), h('span', {}, 'The .sav file (battery save) from your emulator or cartridge dumper. Save states won’t work.')),
+          h('li', {}, h('strong', {}, 'Open your save'), h('span', {}, 'The battery save (.sav, .srm or .sps) from your emulator or cartridge dumper. Save states won’t work.')),
           h('li', {}, h('strong', {}, 'Edit what you like'), h('span', {}, 'Checksums are fixed for you.')),
           h('li', {}, h('strong', {}, 'Save the new file'), h('span', {}, 'Check the list of changes, then give the copy your original file’s name.')),
         ),
@@ -373,7 +383,7 @@ function renderChooser(data: Uint8Array, matches: Match[]): void {
         : h('div', { class: 'why' },
           h('p', {}, `${fileName} is ${data.length.toLocaleString()} bytes. ${hints.join(' ')}`),
           h('ul', {},
-            h('li', {}, 'Use the battery save (usually a .sav file), not a save state.'),
+            h('li', {}, 'Use the battery save (usually .sav, .srm or .sps), not a save state.'),
             h('li', {}, 'Only the versions listed on the home page are supported, in English.'),
             h('li', {}, 'A damaged save can fail the checks too.')),
           h('p', {}, 'If you are sure which game it is, you can try opening it anyway. If it is the wrong game, the editor may show nonsense, so keep a backup.')),
