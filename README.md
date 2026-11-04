@@ -111,6 +111,10 @@ python3 scripts/extract-frames.py <pokecrystal> <pokeruby> <pokeemerald>   # the
 
 Everything runs client-side; saves never leave the browser. **Back up your real .sav before editing.**
 
+Besides plain `.sav` files it opens SharkPort `.sps` exports (the GameShark SP format, which some emulators and phone
+apps write): the save inside is edited and Save gives back a `.sps` with the same header and a fresh checksum
+(`src/core/container.ts`). Game Boy saves with an emulator's clock footer on the end already open as they are.
+
 ## Gen 1 features
 
 - Trainer: name, rival, ID, money, coins, play time, badges; in-game options (text speed, battle animations,

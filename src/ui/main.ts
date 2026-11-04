@@ -1,6 +1,7 @@
 // Game-agnostic site shell: pick a file, identify the game, lazy-load that game's editor, export.
 // Nothing here knows about any particular game.
 
+import { unwrapSave } from '../core/container.ts';
 import { GAMES, detectGames, gamesByFamily, type Match } from '../core/registry.ts';
 import type { ChangeGroup, EditableSave, EditorHost, GameIdentity, GameModule, SummaryLine } from '../core/types.ts';
 import { initArt } from './art.ts';
@@ -14,6 +15,8 @@ import { makeZip } from './zip.ts';
 
 const root = document.getElementById('app')!;
 let fileName = 'save.sav';
+/** Puts an edited save back into the wrapper the opened file came in (a SharkPort .sps, say); plain saves pass through. */
+let wrapSave = (save: Uint8Array): Uint8Array => save;
 let dirty = false;
 let saveButton: HTMLElement | null = null;
 const APP_NAME = 'SaveForge';
@@ -30,7 +33,9 @@ const host: EditorHost = { markDirty: () => setDirty(true) };
 // ---------- file handling ----------
 
 async function loadFile(file: File): Promise<void> {
-  const data = new Uint8Array(await file.arrayBuffer());
+  const opened = unwrapSave(new Uint8Array(await file.arrayBuffer()));
+  const data = opened.data;
+  wrapSave = opened.wrap;
   fileName = file.name;
   const matches = detectGames(data);
   if (matches.length === 1) await openGame(matches[0].module, data);
@@ -122,13 +127,14 @@ async function reviewThenSave(game: GameModule, save: EditableSave, original: Ui
     try { summary = save.summary?.() ?? []; } catch { summary = []; }
     if (!await askReview(groups, !sameBytes(bytes, original), summary)) return;
   }
-  await download(bytes);
+  await download(wrapSave(bytes));
 }
 
 async function openSample(game: GameModule): Promise<void> {
   try {
     const sample = await game.sample!();
     fileName = sample.fileName;
+    wrapSave = (save) => save;
     await openGame(game, sample.data, true);
   } catch (e) {
     renderError("Couldn't build the sample save.", `${e instanceof Error ? e.message : String(e)} Reload the page and try again.`, renderWelcome);
