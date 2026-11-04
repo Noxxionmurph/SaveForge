@@ -90,9 +90,10 @@ export interface GameModule<S extends EditableSave = EditableSave> {
   /**
    * Which handheld the page is styled as while this game's editor is open: 'gb' (the grey Game Boy with an olive screen,
    * the default), 'gbc' (the Game Boy Color, in teal) or 'gba' (the Game Boy Advance, in indigo). Colours (and, for
-   * 'gba', the frame of the big readout windows); the layout is the same. See styles.css.
+   * 'gba', the frame of the big readout windows); the layout is the same. 'nes' is the grey and black NES, with its
+   * screens drawn as the deep blue windows NES role-playing games use. See styles.css.
    */
-  readonly theme?: 'gb' | 'gbc' | 'gba';
+  readonly theme?: 'gb' | 'gbc' | 'gba' | 'nes';
   /** Optional small picture per game name (a path inside the artwork, e.g. "sprites/pokemon/25.png"), shown on the landing page. */
   readonly icons?: Readonly<Record<string, string>>;
   /**

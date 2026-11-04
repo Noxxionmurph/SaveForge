@@ -1,7 +1,10 @@
 # Credits
 
 SaveForge is an unofficial, free, non-commercial fan tool. It is not affiliated with or endorsed by Nintendo,
-Game Freak or Creatures Inc. Pokémon and everything that belongs to it is theirs.
+Game Freak, Creatures Inc. or Square Enix. Pokémon and Final Fantasy, and everything that belongs to them, are theirs.
+
+Final Fantasy (NES) names and numbers are read from Disch's disassembly of the game
+(https://github.com/Entroper/FF1Disassembly) by `scripts/gen-ff1-data.mjs`.
 
 The pictures are not part of this code repository. They live in a separate repository,
 [SaveHub-assets](https://github.com/Noxxionmurph/SaveHub-assets), and the site loads them from there, so the editor works

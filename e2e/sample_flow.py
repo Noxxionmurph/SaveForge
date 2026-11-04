@@ -17,19 +17,19 @@ with sync_playwright() as p:
 
     # --- sample save from the landing page
     buttons = page.locator('.sample-row button')
-    assert [buttons.nth(i).inner_text() for i in range(buttons.count())] == ['Pokémon Yellow', 'Pokémon Crystal', 'Pokémon Emerald']
+    assert [buttons.nth(i).inner_text() for i in range(buttons.count())] == ['Pokémon Yellow', 'Pokémon Crystal', 'Pokémon Emerald', 'Final Fantasy']
     # the first screen names each series and links to its shelf
     chips = page.locator('.works-with .series-chip')
-    assert chips.all_inner_texts() == ['Pokémon Red to Emerald'], chips.all_inner_texts()
+    assert chips.all_inner_texts() == ['Pokémon Red to Emerald', 'Final Fantasy'], chips.all_inner_texts()
     assert chips.nth(0).get_attribute('href') == '#shelf-pokemon' and page.locator('h3#shelf-pokemon').count() == 1
     page.screenshot(path=f'{SP}/c1-welcome.png')
     # one row per generation: Gold, Silver and Crystal share a row and one "you can edit" line
     rows = page.locator('section.supported ul.tiles')
     assert [rows.nth(i).locator('.tile-name').all_inner_texts() for i in range(rows.count())] == [
         ['Pokémon Red', 'Pokémon Blue', 'Pokémon Yellow'], ['Pokémon Gold', 'Pokémon Silver', 'Pokémon Crystal'],
-        ['Pokémon Ruby', 'Pokémon Sapphire', 'Pokémon FireRed', 'Pokémon LeafGreen', 'Pokémon Emerald']]
+        ['Pokémon Ruby', 'Pokémon Sapphire', 'Pokémon FireRed', 'Pokémon LeafGreen', 'Pokémon Emerald'], ['Final Fantasy']]
     edits = page.locator('.family-edits').all_inner_texts()
-    assert len(edits) == 3 and edits[1].startswith('In Gold, Silver and Crystal you can edit: Everything from Red, Blue and Yellow'), edits
+    assert len(edits) == 4 and edits[1].startswith('In Gold, Silver and Crystal you can edit: Everything from Red, Blue and Yellow'), edits
     assert edits[2].startswith('In Ruby, Sapphire, FireRed, LeafGreen and Emerald you can edit: Everything from the Game Boy games'), edits
     page.click('.sample-row button >> nth=0')
     page.wait_for_selector('.tabs')

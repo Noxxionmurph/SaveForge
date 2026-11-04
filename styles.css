@@ -129,6 +129,38 @@
   box-shadow: inset 0 0 0 2px var(--lcd), inset 0 0 0 3px var(--lcd-inner);
 }
 
+/* NES (grey and black, red buttons), for games that set theme: 'nes' (?console=nes previews it). The screens are drawn as
+   the deep blue, white-edged windows NES role-playing games put their menus in, since a TV showed them, not an LCD. */
+:root[data-console="nes"] {
+  --caught: color-mix(in srgb, var(--cart) 35%, var(--surface)); --caught-ink: var(--text); --caught-dim: var(--muted); --caught-edge: var(--cart-shade);
+  --bg: #d3d3d1; --surface: #e6e6e4; --surface-2: #f3f3f1; --line: #b0b0ad; --line-strong: #85857f;
+  --text: #1a1a1a; --muted: #4a4a47;
+  --button: #b8161c; --button-edge: #800e12; --button-ink: #ffffff;
+  --lcd: #1a2894; --lcd-ink: #ffffff; --lcd-dim: #bcc4ff; --lcd-edge: #0d1660;
+  --cart: #8a8a86; --cart-shade: #6b6b67; --pin: #262626; --slot-bar: #141414;
+  --focus: #0b5cad; --danger: #a4161a;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-console="nes"]:not([data-theme="light"]) {
+    --bg: #151515; --surface: #202020; --surface-2: #282828; --line: #3a3a3a; --line-strong: #5c5c5c;
+    --text: #ececea; --muted: #aaaaa6;
+    --button: #ff5c61; --button-edge: #c73a3f; --button-ink: #210406;
+    --lcd: #0e1866; --lcd-ink: #ffffff; --lcd-dim: #aab4ff; --lcd-edge: #050a33;
+    --cart: #9a9a96; --cart-shade: #7c7c78; --pin: #e0e0dc; --slot-bar: #5c5c5c;
+    --focus: #8bb8ff; --danger: #ff9a9a;
+  }
+}
+:root[data-console="nes"][data-theme="dark"] {
+  --bg: #151515; --surface: #202020; --surface-2: #282828; --line: #3a3a3a; --line-strong: #5c5c5c;
+  --text: #ececea; --muted: #aaaaa6;
+  --button: #ff5c61; --button-edge: #c73a3f; --button-ink: #210406;
+  --lcd: #0e1866; --lcd-ink: #ffffff; --lcd-dim: #aab4ff; --lcd-edge: #050a33;
+  --cart: #9a9a96; --cart-shade: #7c7c78; --pin: #e0e0dc; --slot-bar: #5c5c5c;
+  --focus: #8bb8ff; --danger: #ff9a9a;
+}
+/* The windows' white edge, inside the dark outline. */
+:root[data-console="nes"] .lcd { box-shadow: inset 0 0 0 2px #ffffff, inset 0 0 0 4px var(--lcd); }
+
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body {
@@ -1035,3 +1067,38 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
 .fold[open] > summary::before { content: '▾'; }
 .fold > summary h3 { margin: 0; }
 .fold[open] > summary { margin-bottom: 4px; }
+
+/* ---- Final Fantasy (NES) ---- */
+/* The main menu's four party windows. */
+.ff-party { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; padding: 10px; }
+@media (min-width: 720px) { .ff-party { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+.ff-member {
+  display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; text-align: left; align-items: baseline;
+  font: 500 1rem/1.2 var(--font-display); color: var(--lcd-ink); background: transparent;
+  border: 2px solid transparent; border-radius: 6px; padding: 8px 10px 8px 22px; min-height: 0; position: relative; box-shadow: none;
+}
+.ff-member:hover { border-color: color-mix(in srgb, var(--lcd-ink) 35%, transparent); }
+.ff-member.on { border-color: var(--lcd-ink); }
+.ff-member.on::before { content: '▸'; position: absolute; left: 6px; top: 8px; }
+.ff-name { font-weight: 700; font-size: 1.25rem; }
+.ff-lv { color: var(--lcd-dim); }
+.ff-class, .ff-hp { grid-column: 1 / -1; color: var(--lcd-dim); font-size: 0.875rem; }
+.ff-gear-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; }
+.ff-gear-row + .ff-gear-row { margin-top: 8px; }
+.ff-worn { display: flex; align-items: center; gap: 6px; font-size: 0.875rem; font-weight: 500; }
+.ff-magic-row { display: grid; grid-template-columns: 2.25em minmax(0, 1fr); gap: 6px 10px; align-items: center; }
+.ff-magic-row + .ff-magic-row { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+.ff-magic-lv { font: 700 1rem var(--font-display); }
+.ff-spells { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.ff-mp { grid-column: 2; display: flex; align-items: center; gap: 6px; max-width: 12em; }
+@media (min-width: 640px) {
+  .ff-magic-row { grid-template-columns: 2.25em minmax(0, 1fr) 11em; }
+  .ff-mp { grid-column: auto; }
+}
+.ff-toggles { display: flex; flex-wrap: wrap; gap: 8px; }
+.ff-toggles + .field-hint { margin-top: 10px; }
+.ff-toggle { border-radius: 6px; min-height: 38px; padding: 4px 14px; color: var(--muted); }
+.ff-toggle[aria-pressed="true"] {
+  font: 600 1rem var(--font-display); color: var(--lcd-ink); background: var(--lcd); border-color: var(--lcd-edge);
+}
+.ff-toggle[aria-pressed="false"] { font-family: var(--font-display); border-style: dashed; }
