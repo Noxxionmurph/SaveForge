@@ -62,7 +62,7 @@ function setMember(ctx: Stream, data: Uint8Array): void {
 }
 
 function streamFor(mode: number, header: Uint8Array, key: Uint8Array | null): Stream {
-  const iv = header.slice(0, 16);
+  const iv = Uint8Array.from(header.subarray(0, 16)); // a copy even when given a Node Buffer (whose slice is a view)
   if (!isNull(key)) xor(iv, key!);
   return { mode, counter: 1, iv };
 }
@@ -168,7 +168,7 @@ export function encryptSavedata(plain: Uint8Array, gameKey: Uint8Array | null, h
   const body = new Uint8Array(aligned(plain.length));
   body.set(plain);
   const mac = new Mac(mode);
-  mac.update(header.slice(0, 16));
+  mac.update(Uint8Array.from(header.subarray(0, 16)));
   setMember(streamFor(mode, header, gameKey), body);
   body.fill(0, plain.length);
   mac.update(body);

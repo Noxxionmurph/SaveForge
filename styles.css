@@ -161,6 +161,41 @@
 /* The windows' white edge, inside the dark outline. */
 :root[data-console="nes"] .lcd { box-shadow: inset 0 0 0 2px #ffffff, inset 0 0 0 4px var(--lcd); }
 
+/* PSP (piano black, silver buttons), for games that set theme: 'psp' (?console=psp previews it). The screens are the PSP
+   remake's menu windows: a deep blue that fades down the window, with a thin silver edge. */
+:root[data-console="psp"] {
+  --caught: color-mix(in srgb, var(--cart) 30%, var(--surface)); --caught-ink: var(--text); --caught-dim: var(--muted); --caught-edge: var(--cart-shade);
+  --bg: #d9dbe0; --surface: #eceef2; --surface-2: #f6f7f9; --line: #b6bac4; --line-strong: #7d8392;
+  --text: #15171c; --muted: #474c58;
+  --button: #23262e; --button-edge: #0c0d10; --button-ink: #ffffff;
+  --lcd: #1f3a9e; --lcd-ink: #ffffff; --lcd-dim: #c4d0ff; --lcd-edge: #0b1640; --lcd-low: #0e1d5c;
+  --cart: #2a2d35; --cart-shade: #15171c; --pin: #c9ccd3; --slot-bar: #0c0d10;
+  --focus: #0b5cad; --danger: #a4161a;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-console="psp"]:not([data-theme="light"]) {
+    --bg: #0d0e11; --surface: #17191e; --surface-2: #1e2127; --line: #2d3139; --line-strong: #4f5562;
+    --text: #eceef3; --muted: #a6acb9;
+    --button: #d7dae2; --button-edge: #9aa0ad; --button-ink: #0d0e11;
+    --lcd: #1a3290; --lcd-ink: #ffffff; --lcd-dim: #b7c5ff; --lcd-edge: #050b26; --lcd-low: #0a1445;
+    --cart: #3a3e48; --cart-shade: #2a2d35; --pin: #d7dae2; --slot-bar: #4f5562;
+    --focus: #8bb8ff; --danger: #ff9a9a;
+  }
+}
+:root[data-console="psp"][data-theme="dark"] {
+  --bg: #0d0e11; --surface: #17191e; --surface-2: #1e2127; --line: #2d3139; --line-strong: #4f5562;
+  --text: #eceef3; --muted: #a6acb9;
+  --button: #d7dae2; --button-edge: #9aa0ad; --button-ink: #0d0e11;
+  --lcd: #1a3290; --lcd-ink: #ffffff; --lcd-dim: #b7c5ff; --lcd-edge: #050b26; --lcd-low: #0a1445;
+  --cart: #3a3e48; --cart-shade: #2a2d35; --pin: #d7dae2; --slot-bar: #4f5562;
+  --focus: #8bb8ff; --danger: #ff9a9a;
+}
+/* The fade and the silver edge. */
+:root[data-console="psp"] .lcd {
+  background-image: linear-gradient(to bottom, var(--lcd), var(--lcd-low));
+  box-shadow: inset 0 0 0 1px #c9d2ea, inset 0 0 0 3px var(--lcd);
+}
+
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body {

@@ -2,7 +2,7 @@
 
 One site, many games. Drop a save on the landing page, the game is detected from the file's structure
 (size, checksums, layout; never a hash, since saves change on every write), and that game's editor is
-lazy-loaded. Currently supported: Pokémon Red / Blue / Yellow, Gold / Silver / Crystal and Ruby / Sapphire / FireRed / LeafGreen / Emerald (English), and Final Fantasy (NES, English).
+lazy-loaded. Currently supported: Pokémon Red / Blue / Yellow, Gold / Silver / Crystal and Ruby / Sapphire / FireRed / LeafGreen / Emerald (English), and Final Fantasy (NES, English; PSP Anniversary Edition, US).
 Everything is a self-contained "game module", so adding Gen 4–5, more Final Fantasy versions, Mega Man Battle Network, etc. never touches the shell.
 
 ## Look and feel
@@ -16,7 +16,8 @@ a dark bezel, teal shell, dark teal buttons) or `theme: 'gba'` for an indigo Gam
 indigo shell and buttons, and the two-line frame and ruled paper of the Gen 3 trainer card on the big readouts): only
 the tokens (and that one frame rule) change, in the `data-console` blocks of `styles.css`. No game uses either yet.
 `theme: 'nes'` is the NES: grey and black, red buttons, and the deep blue, white-edged windows NES role-playing games
-draw their menus in, in place of an LCD. Add `?console=gbc`, `?console=gba` or `?console=nes` (or `?console=gb`) to the
+draw their menus in, in place of an LCD. `theme: 'psp'` is the black PSP with silver buttons, its screens drawn as the
+PSP remake's blue gradient menu windows. Add `?console=gbc`, `?console=gba`, `?console=nes` or `?console=psp` (or `?console=gb`) to the
 address to preview a theme on every screen.
 Touches borrowed from the games themselves: HP bars use the game's own length and colour rules (`src/core/gen1/hp.ts`, from
 the disassembly in pret/pokered), the review dialog opens with the PLAYER / BADGES / POKÉDEX / TIME window the game shows when you
@@ -283,6 +284,23 @@ tables straight out of its data banks into `tables.ts`.
   north of Coneria and the canal.
 - Japanese Famicom saves aren't recognised yet (different text, unchecked layout).
 
+## Final Fantasy (PSP, Anniversary Edition)
+
+`src/core/ff1psp/` and `src/core/psp/`. Tables (names, who can equip and learn what) come from the game's own data as
+dumped by FF1PSP-Archipelago (https://github.com/1-800-thewolf/FF1PSP-Archipelago), and the name screen's letters from
+FM_NAME_SEL in the disc's ff1psp.dpk; `scripts/gen-ff1psp-data.mjs` writes them into `tables.ts`. US release (ULUS10251).
+
+- **Opening**: a zip of the save folder (`ULUS10251DATA00` with PARAM.SFO and SAVE.BIN), as a PSP's memory stick or
+  PPSSPP's `PSP/SAVEDATA` holds it. Save gives back the same zip. SAVE.BIN alone also opens and saves, but then PARAM.SFO
+  isn't updated, so only PPSSPP (which doesn't check it) will load it.
+- **Format**: SAVE.BIN is PSP savedata encryption (`src/core/psp/`: the KIRK AES-CBC steps of the chnnlsv module in
+  plain TypeScript, with the game's key). PARAM.SFO holds a hash of SAVE.BIN and hashes of itself; Save redoes them all,
+  in the order the PSP firmware does. Decrypted it is a 4-byte header and 20 save files of 0x10A4 bytes, with no checksum.
+- **Party**: name (up to 6 letters from the name screen, which has no spaces), class (all 12), level, Exp, HP / MP,
+  fallen, the five stats and magic level; gear in five slots and spells (three per level), marked when the class can't
+  equip or learn them.
+- **Items**: gil, consumables, weapons, armor and the 36 key items, per save file.
+
 ## Layout
 
 ```
@@ -381,6 +399,11 @@ Every screen explains itself in plain words, so keep it that way when you add a 
   `editable` (what the editor can change) and `fileHint` (what a valid file looks like) on its module.
 
 ## Known limitations
+
+- Final Fantasy (PSP): two real saves decrypt, open and encrypt back to the same bytes, and the editor's SFO hashes match
+  the game's, but an edited save hasn't been loaded in the game yet. Level and Exp aren't kept in step (the Exp table isn't
+  known yet, and the game levels up after the next battle), the per-level growth numbers are left alone, Japanese names
+  show as "?", and only the US release is recognised.
 
 - Final Fantasy (NES) was checked in the real game (US ROM, which matches the disassembly byte for byte, in the cynes
   emulator, 2026-11-04): a save the game wrote opens and saves back byte for byte; an edited copy (name, level 20, HP,

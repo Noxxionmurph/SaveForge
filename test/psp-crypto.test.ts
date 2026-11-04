@@ -36,3 +36,12 @@ test('savedata hashes differ by mode and by content', () => {
   d[0x4ff] = 4;
   assert.notDeepEqual(savedataHash(d, 1), a);
 });
+
+test('savedata: a Node Buffer input is not changed (Buffer.slice is a view)', () => {
+  const plain = new Uint8Array(100).fill(9);
+  const key = hex('437beaa762302fb7c8762c17cff01460');
+  const { file } = encryptSavedata(plain, key, hex('00112233445566778899aabbccddeeff'));
+  const buf = Buffer.from(file);
+  assert.deepEqual(decryptSavedata(buf, key), plain);
+  assert.deepEqual(new Uint8Array(buf), file);
+});

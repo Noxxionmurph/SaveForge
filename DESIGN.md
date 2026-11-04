@@ -1,6 +1,6 @@
 # SaveForge design
 
-One save editor for many series (Pokémon today, then Final Fantasy, Mega Man Battle Network and others), styled as the console the game ran on. Each page takes on its console: grey Game Boy, teal Game Boy Color, indigo Game Boy Advance or the grey and black NES. Each game's own screens (for Pokémon: the trainer card, the OPTION menu, the Pokédex) come back as LCD panels. Everything else stays quiet so the game art stands out.
+One save editor for many series (Pokémon today, then Final Fantasy, Mega Man Battle Network and others), styled as the console the game ran on. Each page takes on its console: grey Game Boy, teal Game Boy Color, indigo Game Boy Advance, the grey and black NES or the black PSP. Each game's own screens (for Pokémon: the trainer card, the OPTION menu, the Pokédex) come back as LCD panels. Everything else stays quiet so the game art stands out.
 
 ## Shell and series
 
@@ -26,6 +26,8 @@ The values below are the tokens in `styles.css`. Pages use the token names, neve
 | `--lcd`, `--lcd-ink`, `--lcd-dim`, `--lcd-edge` | In-game screens: trainer card, options, change list (also the landing page's example) | pea green `#aebf6e` | pale grey-green `#e4e9e4` | blue-white `#e8eefa` with scanline rule |
 
 NES (`data-console="nes"`): `--bg` `#d3d3d1` / `#151515`, `--button` NES red `#b8161c` / `#ff5c61`, and `--lcd` is the deep blue NES role-playing window, `#1a2894` / `#0e1866` with white ink and a white inner edge, since a TV showed these games, not an LCD.
+
+PSP (`data-console="psp"`): `--bg` `#d9dbe0` / `#0d0e11`, `--button` piano black `#23262e` / silver `#d7dae2`, and `--lcd` is the PSP remake's menu window, `#1f3a9e` / `#1a3290` fading down to `--lcd-low`, with a thin silver edge.
 | `--cart`, `--cart-shade`, `--pin`, `--slot-bar` | The cartridge mark and the file slot | grey cart | teal cart | indigo cart |
 | `--focus` | Focus ring | `#1a56db` / `#7fb0ff` | `#0b5cad` / `#8bd0ff` | `#0b5cad` / `#a9c4ff` |
 | `--danger` | Remove, errors | `#a4161a` / `#ff9a9a` | same | same |
