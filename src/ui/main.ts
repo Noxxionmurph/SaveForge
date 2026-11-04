@@ -63,9 +63,9 @@ const setPageTitle = (name?: string) => { document.title = name ? `${name} · ${
 
 /**
  * Style the page as the handheld the open game ran on (see GameModule.theme and the data-console rules in styles.css).
- * Adding ?console=gb, ?console=gbc or ?console=gba to the address forces one for every screen, to preview a theme.
+ * Adding ?console=gb, gbc, gba or nes to the address forces one for every screen, to preview a theme.
  */
-const CONSOLES = ['gb', 'gbc', 'gba'] as const;
+const CONSOLES = ['gb', 'gbc', 'gba', 'nes'] as const;
 const forcedConsole = CONSOLES.find((c) => c === new URLSearchParams(location.search).get('console'));
 function applyConsole(game?: GameModule): void {
   // An editor whose game has a FRAME setting puts its frame back when it mounts (see windowFrame.ts).
@@ -244,13 +244,19 @@ function titleRange(names: string[]): string {
   return names.join(', ').replace(/, ([^,]*)$/, ' and $1');
 }
 
+/** " Red to Emerald" after the series name, or nothing when the series' only game is named just that ("Final Fantasy"). */
+function seriesRange(family: string, games: GameModule[]): string {
+  const names = games.flatMap(shortNames).filter((n) => n !== family);
+  return names.length ? ` ${titleRange(names)}` : '';
+}
+
 /** One chip per series under the file slot, so the first screen says what opens today. Each jumps to its shelf. */
 function worksWith(): HTMLElement {
   return h('nav', { class: 'works-with', 'aria-label': 'Supported series' },
     h('span', { class: 'muted' }, 'Works with'),
     [...gamesByFamily()].map(([family, games]) =>
       h('a', { class: 'series-chip', href: `#${shelfId(family)}` },
-        h('strong', {}, family), ` ${titleRange(games.flatMap(shortNames))}`)));
+        h('strong', {}, family), seriesRange(family, games))));
 }
 
 /** "No save handy?" and a button per game that can build a sample, named in full so they stay clear across series. */
@@ -364,8 +370,8 @@ function siteFooter(): HTMLElement {
       externalLink(`${REPO}/issues`, 'Contact'),
       externalLink(`${REPO}/blob/main/CREDITS.md`, 'Credits')),
     h('p', { class: 'legal' },
-      'Unofficial fan tool, free and non-commercial. Not affiliated with or endorsed by Nintendo, Game Freak or Creatures Inc. ',
-      'Pokémon and its artwork belong to their owners.'));
+      'Unofficial fan tool, free and non-commercial. Not affiliated with or endorsed by Nintendo, Game Freak, Creatures Inc. or Square Enix. ',
+      'Pokémon, Final Fantasy and their artwork belong to their owners.'));
 }
 
 /** Shown when a file matches no game, or more than one. The user decides; load() validates. */

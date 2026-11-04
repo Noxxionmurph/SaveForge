@@ -5,6 +5,7 @@ import pokemonEmerald from '../games/pokemon-emerald.ts';
 import pokemonGen2 from '../games/pokemon-gen2.ts';
 import pokemonGen3 from '../games/pokemon-gen3.ts';
 import pokemonFrlg from '../games/pokemon-frlg.ts';
+import finalFantasyNes from '../games/final-fantasy-nes.ts';
 import type { Detection, EditableSave, GameModule } from './types.ts';
 
 export const GAMES: GameModule[] = [
@@ -14,7 +15,8 @@ export const GAMES: GameModule[] = [
   pokemonGen3,
   pokemonFrlg,
   pokemonEmerald,
-  // finalFantasy..., megaManBattleNetwork... go here.
+  finalFantasyNes,
+  // megaManBattleNetwork... goes here.
 ];
 
 export interface Match {

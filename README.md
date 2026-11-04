@@ -2,8 +2,8 @@
 
 One site, many games. Drop a save on the landing page, the game is detected from the file's structure
 (size, checksums, layout; never a hash, since saves change on every write), and that game's editor is
-lazy-loaded. Currently supported: Pokémon Red / Blue / Yellow, Gold / Silver / Crystal and Ruby / Sapphire / FireRed / LeafGreen / Emerald (English).
-Everything is a self-contained "game module", so adding Pokémon FireRed / LeafGreen, Gen 4–5, Final Fantasy, Mega Man Battle Network, etc. never touches the shell.
+lazy-loaded. Currently supported: Pokémon Red / Blue / Yellow, Gold / Silver / Crystal and Ruby / Sapphire / FireRed / LeafGreen / Emerald (English), and Final Fantasy (NES, English).
+Everything is a self-contained "game module", so adding Gen 4–5, more Final Fantasy versions, Mega Man Battle Network, etc. never touches the shell.
 
 ## Look and feel
 
@@ -15,7 +15,9 @@ light and a dark set. A game module can set `theme: 'gbc'` to restyle the page a
 a dark bezel, teal shell, dark teal buttons) or `theme: 'gba'` for an indigo Game Boy Advance (a bright white-blue window,
 indigo shell and buttons, and the two-line frame and ruled paper of the Gen 3 trainer card on the big readouts): only
 the tokens (and that one frame rule) change, in the `data-console` blocks of `styles.css`. No game uses either yet.
-Add `?console=gbc` or `?console=gba` (or `?console=gb`) to the address to preview a theme on every screen.
+`theme: 'nes'` is the NES: grey and black, red buttons, and the deep blue, white-edged windows NES role-playing games
+draw their menus in, in place of an LCD. Add `?console=gbc`, `?console=gba` or `?console=nes` (or `?console=gb`) to the
+address to preview a theme on every screen.
 Touches borrowed from the games themselves: HP bars use the game's own length and colour rules (`src/core/gen1/hp.ts`, from
 the disassembly in pret/pokered), the review dialog opens with the PLAYER / BADGES / POKÉDEX / TIME window the game shows when you
 save, the open tab has the menu cursor, the big readouts have a two-line frame like the in-game text boxes (on Gen 2 and Gen 3 pages, the frame the save's OPTION menu has chosen, in the game's own art, redrawn as you step through FRAME: `src/ui/windowFrame.ts`, `scripts/extract-frames.py`), the Options card is
@@ -81,7 +83,7 @@ the editor carries on without pictures (a picture that can't load hides itself, 
 ## Not affiliated
 
 SaveForge is an unofficial fan tool, free and non-commercial, with no ads or donation links. It is not affiliated with
-or endorsed by Nintendo, Game Freak or Creatures Inc. The site says so in its footer, with links to this repository, the
+or endorsed by Nintendo, Game Freak, Creatures Inc. or Square Enix. The site says so in its footer, with links to this repository, the
 issue tracker (the contact address) and the credits.
 
 ## Run it
@@ -260,6 +262,27 @@ the same editor (`GEN3_LAYOUTS` in `src/core/gen3/save.ts`).
 - Every Pokémon is re-encrypted and re-checksummed, and every sector of the save slot gets a fresh checksum; an unedited
   save round-trips byte for byte.
 
+## Final Fantasy (NES)
+
+`src/core/ff1nes/`. Facts come from Disch's disassembly of the US release (https://github.com/Entroper/FF1Disassembly);
+`scripts/gen-ff1-data.mjs` reads names, equipment stats, equip and spell permissions, the Exp table and the new-game
+tables straight out of its data banks into `tables.ts`.
+
+- **Format**: an 8 KB battery file. The game plays from a working copy at file offset 0x000 and Save copies it to 0x400,
+  with $55 $AA at 0x4FE-0x4FF and a checksum byte at 0x4FD. The checksum is an add-with-carry over the 1 KB block, taken a
+  column of four pages at a time, that must come to $FF (`layout.ts`). Continue checks all three and starts a new game if
+  any fails, so only the block at 0x400 matters; the editor writes that and leaves everything else in the file as it was.
+- **Party**: name (4 letters), class (all 12, so promotion too), status, level and Exp (kept in step, with the status
+  screen's "Exp to next level"), HP, the five stats and the battle numbers (Damage, Hit %, Absorb, Evade %, Magic defense).
+- **Gear**: four weapons and four armor per character, each worn or not. The game works the battle numbers out only when
+  you leave its equip menu, so a change here takes the old gear's bonuses off and puts the new ones on exactly as its
+  UnadjustEquipStats / ReadjustEquipStats routines do (Black Belt and Master included). Gear a class can't equip is
+  marked and can be carried but not worn; wearing a second weapon, or a second helmet etc., takes the first off.
+- **Magic**: three spells per level from the ones the class can learn, and current / max MP (charges) per level.
+- **Items**: gold, the six consumables, the 17 key items. **World**: the four Orbs, ship, canoe, airship, the bridge
+  north of Coneria and the canal.
+- Japanese Famicom saves aren't recognised yet (different text, unchecked layout).
+
 ## Layout
 
 ```
@@ -359,6 +382,8 @@ Every screen explains itself in plain words, so keep it that way when you add a 
 
 ## Known limitations
 
+- Final Fantasy (NES) is checked against the disassembly and a save built from the game's own new-game tables, not yet
+  against a save written by the real game.
 - Tested against synthetic saves built from documented offsets and against real saves: a Yellow and a Blue from
   emulators, and a Red and a Yellow started in the real games (checked with `scripts/gbrun.py`, 2026-11-03). They load,
   save back byte for byte, and every stored party stat and experience value matches the editor's formulas. An edited
