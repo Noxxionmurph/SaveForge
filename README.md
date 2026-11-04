@@ -382,8 +382,11 @@ Every screen explains itself in plain words, so keep it that way when you add a 
 
 ## Known limitations
 
-- Final Fantasy (NES) is checked against the disassembly and a save built from the game's own new-game tables, not yet
-  against a save written by the real game.
+- Final Fantasy (NES) was checked in the real game (US ROM, which matches the disassembly byte for byte, in the cynes
+  emulator, 2026-11-04): a save the game wrote opens and saves back byte for byte; an edited copy (name, level 20, HP,
+  Strength, a Long Sword and Iron Armor worn, a Black Belt's nunchuck, a Red Wizard with CURE and FIRE, gold, Heal Potions,
+  the Floater, ship, canoe and Fire Orb) loads with Continue, the game's own equip menus work out the same battle numbers
+  the editor wrote, and saving again with a Tent changes nothing but the HP the Tent restored.
 - Tested against synthetic saves built from documented offsets and against real saves: a Yellow and a Blue from
   emulators, and a Red and a Yellow started in the real games (checked with `scripts/gbrun.py`, 2026-11-03). They load,
   save back byte for byte, and every stored party stat and experience value matches the editor's formulas. An edited

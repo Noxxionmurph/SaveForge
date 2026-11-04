@@ -159,3 +159,11 @@ test('diff names what changed', () => {
   assert.ok(groups[1].lines.includes('Gold: 4,210 → 10'));
   assert.ok(groups[2].lines.includes('Fire Orb: lit'));
 });
+
+test('diff tells apart party members with the same name', () => {
+  const before = new Ff1NesSave(buildFf1NesSample());
+  const s = new Ff1NesSave(buildFf1NesSample());
+  s.party[1].name = 'Brom';
+  s.party[1].setLevel(2);
+  assert.deepEqual(s.describeChanges(before).map((g) => g.title), ['Brom (2)']);
+});

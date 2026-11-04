@@ -285,7 +285,9 @@ function describeFf1Changes(b: Ff1NesSave, a: Ff1NesSave): ChangeGroup[] {
 
   a.party.forEach((ca, i) => {
     const cb = b.party[i];
-    const who = ca.name || `Character ${i + 1}`;
+    // Party members can share a name (a new game's default is four of the same), so say which slot when they do.
+    const shared = a.party.filter((c) => c.name === ca.name).length > 1;
+    const who = !ca.name ? `Character ${i + 1}` : shared ? `${ca.name} (${i + 1})` : ca.name;
     const out: string[] = [];
     if (cb.name !== ca.name) out.push(`Name: ${cb.name || '—'} → ${ca.name || '—'}`);
     if (cb.cls !== ca.cls) out.push(`Class: ${CLASS_NAMES[cb.cls]} → ${CLASS_NAMES[ca.cls]}`);
