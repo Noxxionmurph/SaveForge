@@ -6,6 +6,12 @@ Game Freak, Creatures Inc. or Square Enix. Pokémon and Final Fantasy, and every
 Final Fantasy (NES) names and numbers are read from Disch's disassembly of the game
 (https://github.com/Entroper/FF1Disassembly) by `scripts/gen-ff1-data.mjs`.
 
+Final Fantasy (PSP) item, equipment and spell tables come from the game data dumped by
+[FF1PSP-Archipelago](https://github.com/1-800-thewolf/FF1PSP-Archipelago), read by `scripts/gen-ff1psp-data.mjs`. The PSP
+savedata encryption follows the open implementations in jpcsp and cielavenir's psp-savedata-endecrypter; the game's
+save key is the one listed in the Apollo Save Tool's database, and the save layout was cross-checked with the CWCheat
+code database. [FireyFly's notes](https://github.com/FireyFly/reversing) on the PSP release's resource files helped read its name-screen font.
+
 The pictures are not part of this code repository. They live in a separate repository,
 [SaveHub-assets](https://github.com/Noxxionmurph/SaveHub-assets), and the site loads them from there, so the editor works
 the same (without the pictures) if they are ever removed. This is who made them.

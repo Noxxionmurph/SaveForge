@@ -11,7 +11,7 @@ import { trackPixelRatio } from './pixels.ts';
 import { askReview } from './review.ts';
 import { pictureIcon } from './sprites.ts';
 import { hideFrame } from './windowFrame.ts';
-import { makeZip } from './zip.ts';
+import { makeZip } from '../core/zip.ts';
 
 const root = document.getElementById('app')!;
 let fileName = 'save.sav';
@@ -65,7 +65,7 @@ const setPageTitle = (name?: string) => { document.title = name ? `${name} · ${
  * Style the page as the handheld the open game ran on (see GameModule.theme and the data-console rules in styles.css).
  * Adding ?console=gb, gbc, gba or nes to the address forces one for every screen, to preview a theme.
  */
-const CONSOLES = ['gb', 'gbc', 'gba', 'nes'] as const;
+const CONSOLES = ['gb', 'gbc', 'gba', 'nes', 'psp'] as const;
 const forcedConsole = CONSOLES.find((c) => c === new URLSearchParams(location.search).get('console'));
 function applyConsole(game?: GameModule): void {
   // An editor whose game has a FRAME setting puts its frame back when it mounts (see windowFrame.ts).
@@ -244,9 +244,13 @@ function titleRange(names: string[]): string {
   return names.join(', ').replace(/, ([^,]*)$/, ' and $1');
 }
 
-/** " Red to Emerald" after the series name, or nothing when the series' only game is named just that ("Final Fantasy"). */
+/**
+ * " Red to Emerald" after the series name, or nothing when one of its games is named just that ("Final Fantasy", whose
+ * other entries so far are versions of the same game, like "Final Fantasy Anniversary Edition").
+ */
 function seriesRange(family: string, games: GameModule[]): string {
-  const names = games.flatMap(shortNames).filter((n) => n !== family);
+  if (games.some((g) => g.games.includes(family))) return '';
+  const names = games.flatMap(shortNames);
   return names.length ? ` ${titleRange(names)}` : '';
 }
 

@@ -1,0 +1,128 @@
+// Generates src/core/ff1psp/tables.ts for Final Fantasy (PSP, US, ULUS10251).
+//
+//   node scripts/gen-ff1psp-data.mjs <FF1PSP-Archipelago clone> <ff1psp.dpk from the UMD>
+//
+// Sources:
+// - Item, weapon, armor, key item and spell names, by the id the save uses, and the game's own weapon / armor / magic
+//   tables (who can equip or learn what), from the FF1 PSP Archipelago randomizer
+//   (https://github.com/1-800-thewolf/FF1PSP-Archipelago): client/ff1_data.py, spell_data.py and rando_data.py, the
+//   last a byte-for-byte dump of the tables in the game's BOOT.BIN. Cross-checked against real saves: every character's
+//   gear and spells in them are allowed by these tables.
+// - The character-name letters, from the name-entry screen's font table (FM_NAME_SEL.PCK -> FM_NAME_SEL.FIF in
+//   PSP_GAME/USRDIR/data/ff1psp.dpk): an ASCII-indexed table of glyph codes, which is what the save stores.
+
+import { readFileSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+
+const [ap, dpkPath] = process.argv.slice(2);
+if (!ap || !dpkPath) {
+  console.error('usage: node scripts/gen-ff1psp-data.mjs <FF1PSP-Archipelago> <ff1psp.dpk>');
+  process.exit(1);
+}
+
+const ff1Data = readFileSync(join(ap, 'client/ff1_data.py'), 'utf8');
+const dict = (name, count) => {
+  const m = ff1Data.match(new RegExp(`\\n${name} = \\{([\\s\\S]*?)\\n\\}`));
+  if (!m) throw new Error(`no ${name}`);
+  const out = [];
+  for (const [, k, v] of m[1].matchAll(/(\d+):\s*"([^"]*)"/g)) out[Number(k) - 1] = v;
+  if (out.length !== count || out.includes(undefined)) throw new Error(`${name}: expected ${count} names`);
+  return out;
+};
+const CONSUMABLES = dict('CONSUMABLE_ITEMS', 43);
+const WEAPONS = dict('WEAPONS', 67);
+const ARMOR = dict('ARMOR', 75);
+const KEY_ITEMS = dict('KEY_ITEMS', 36);
+const SPELLS = [...readFileSync(join(ap, 'spell_data.py'), 'utf8').split('SPELL_NAMES')[1].matchAll(/"([^"]+)"/g)].map((m) => m[1]);
+if (SPELLS.length !== 64) throw new Error('expected 64 spells');
+
+const rd = readFileSync(join(ap, 'rando_data.py'), 'utf8');
+const table = (name, size) => {
+  const m = rd.match(new RegExp(`'${name}': '([A-Za-z0-9+/=]+)'`));
+  const b = Buffer.from(m[1], 'base64');
+  if (b.length !== size) throw new Error(`${name}: ${b.length} bytes, expected ${size}`);
+  return b;
+};
+const weapons = table('weapons', 67 * 28);
+const armor = table('armor', 75 * 28);
+const learn = table('magic_learn', 64 * 2);
+
+// Records are 28 bytes: +0 sort order (u16), +2 base classes that can equip (bit = class 0-5), +3 promoted classes
+// (bit = class 6-11). As a 12-bit mask: bit n = class n.
+const jobs = (b, i) => b[i * 28 + 2] | (b[i * 28 + 3] << 6);
+const WEAPON_JOBS = WEAPONS.map((_, i) => jobs(weapons, i));
+const ARMOR_JOBS = ARMOR.map((_, i) => jobs(armor, i));
+// Which slot a piece of armor goes in. The game's sort order groups armor as body, shield, helmet, gloves.
+const ARMOR_SLOT = ARMOR.map((_, i) => {
+  const sort = armor[i * 28] | (armor[i * 28 + 1] << 8);
+  return sort < 30 ? 2 : sort < 45 ? 0 : sort < 62 ? 1 : 3; // the save's order after the weapon: shield, helmet, body, gloves
+});
+// magic_learn: a u16 per spell, bit (class % 6) + 8 * (class >= 6).
+const SPELL_JOBS = SPELLS.map((_, i) => {
+  const v = learn[i * 2] | (learn[i * 2 + 1] << 8);
+  let mask = 0;
+  for (let c = 0; c < 12; c++) if (v & (1 << ((c % 6) + (c >= 6 ? 8 : 0)))) mask |= 1 << c;
+  return mask;
+});
+
+// ---- name letters, from the dpk ----
+const dpk = readFileSync(dpkPath);
+const entry = (buf, wanted) => {
+  const n = buf.readUInt32LE(0);
+  for (let i = 0; i < n; i++) {
+    const o = 0x10 + i * 0x24;
+    const name = buf.subarray(o, o + 0x16).toString('latin1').split('\0')[0];
+    if (name === wanted) return buf.subarray(buf.readUInt32LE(o + 0x18), buf.readUInt32LE(o + 0x18) + buf.readUInt32LE(o + 0x1c));
+  }
+  throw new Error(`no ${wanted}`);
+};
+// Wp16: 16-bit LZ. A u32 of flags (LSB first) for each 32 words: 1 = a literal word, 0 = copy (w & 31) + 2 words from
+// (w >> 5) words back.
+const wp16 = (b) => {
+  if (b.toString('latin1', 0, 4) !== 'Wp16') throw new Error('not Wp16');
+  const words = b.readUInt32LE(4) / 2;
+  const out = new Uint16Array(words);
+  let n = 0, p = 8;
+  while (n < words) {
+    const flags = b.readUInt32LE(p); p += 4;
+    for (let bit = 0; bit < 32 && n < words; bit++) {
+      const v = b.readUInt16LE(p); p += 2;
+      if ((flags >>> bit) & 1) out[n++] = v;
+      else for (let k = (v & 31) + 2, d = v >> 5; k > 0 && n < words; k--, n++) out[n] = n >= d ? out[n - d] : 0;
+    }
+  }
+  return Buffer.from(out.buffer);
+};
+const fif = entry(wp16(entry(dpk, 'FM_NAME_SEL.PCK')), 'FM_NAME_SEL.FIF');
+const NAME_GLYPHS = {};
+for (let c = 0x21; c < 0x7f; c++) {
+  const g = fif.readUInt16LE(4 + 2 * c);
+  if (g !== 0xffff) NAME_GLYPHS[g] = String.fromCharCode(c);
+}
+
+const list = (a) => `[\n${a.map((s) => `  ${JSON.stringify(s)},`).join('\n')}\n]`;
+const nums = (a) => `[${a.join(',')}]`;
+const out = `// Generated by scripts/gen-ff1psp-data.mjs. Do not edit by hand.
+// Final Fantasy (PSP, US) names by save id, and the game's equip and magic tables. Sources are listed in the script.
+
+/** Consumable items, id 1-43. */
+export const CONSUMABLES: readonly string[] = ${list(CONSUMABLES)};
+/** Weapons, id 1-67. */
+export const WEAPONS: readonly string[] = ${list(WEAPONS)};
+/** Armor, id 1-75. */
+export const ARMOR: readonly string[] = ${list(ARMOR)};
+/** Key items, id 1-36, in the order of the possession bits and the Key Items menu. */
+export const KEY_ITEMS: readonly string[] = ${list(KEY_ITEMS)};
+/** Spells, id 1-64: 1-32 white, 33-64 black, four per spell level. */
+export const SPELLS: readonly string[] = ${list(SPELLS)};
+/** Classes that can equip each weapon / armor / learn each spell: bit n = class n (0-11). */
+export const WEAPON_JOBS: readonly number[] = ${nums(WEAPON_JOBS)};
+export const ARMOR_JOBS: readonly number[] = ${nums(ARMOR_JOBS)};
+export const SPELL_JOBS: readonly number[] = ${nums(SPELL_JOBS)};
+/** The slot each armor goes in: 0 shield, 1 helmet, 2 body, 3 gloves (the order a character's gear is saved in). */
+export const ARMOR_SLOT: readonly number[] = ${nums(ARMOR_SLOT)};
+/** Name-entry glyph code -> letter. */
+export const NAME_GLYPHS: Readonly<Record<number, string>> = ${JSON.stringify(NAME_GLYPHS)};
+`;
+writeFileSync(new URL('../src/core/ff1psp/tables.ts', import.meta.url), out);
+console.log('wrote src/core/ff1psp/tables.ts');

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { crc32 as nodeCrc32 } from 'node:zlib';
-import { crc32, makeZip } from '../src/ui/zip.ts';
+import { crc32, makeZip } from '../src/core/zip.ts';
 
 test('crc32 matches Node zlib', () => {
   const data = new Uint8Array(5000).map((_, i) => (i * 31 + 7) & 0xff);

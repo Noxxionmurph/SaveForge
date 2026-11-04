@@ -11,6 +11,7 @@ import { buildSampleSave } from '../src/core/gen1/sample.ts';
 import { GEN1_OFFSETS as O, checksum8 } from '../src/core/gen1/save.ts';
 import { buildSampleSave as buildGen2Sample } from '../src/core/gen2/sample.ts';
 import { buildSampleSave as buildGen3Sample } from '../src/core/gen3/sample.ts';
+import { buildFf1PspSample } from '../src/core/ff1psp/sample.ts';
 
 const out = process.argv[2] ?? 'e2e/out';
 mkdirSync(out, { recursive: true });
@@ -29,4 +30,5 @@ writeFileSync(`${out}/gold.sav`, buildGen2Sample('gs'));
 writeFileSync(`${out}/ruby.sav`, buildGen3Sample('rs'));
 writeFileSync(`${out}/emerald.sav`, buildGen3Sample('emerald'));
 writeFileSync(`${out}/firered.sav`, buildGen3Sample('frlg'));
-console.log(`wrote sample.sav, rb.sav, rb-footer.sav, gold.sav, ruby.sav, emerald.sav and firered.sav to ${out}`);
+writeFileSync(`${out}/ULUS10251DATA00.zip`, buildFf1PspSample());
+console.log(`wrote sample.sav, rb.sav, rb-footer.sav, gold.sav, ruby.sav, emerald.sav, firered.sav and ULUS10251DATA00.zip to ${out}`);
