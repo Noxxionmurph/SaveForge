@@ -2,7 +2,7 @@
 
 One site, many games. Drop a save on the landing page, the game is detected from the file's structure
 (size, checksums, layout; never a hash, since saves change on every write), and that game's editor is
-lazy-loaded. Currently supported: Pokémon Red / Blue / Yellow, Gold / Silver / Crystal and Ruby / Sapphire / FireRed / LeafGreen / Emerald (English), and Final Fantasy (NES, English; Dawn of Souls on GBA, US; PSP Anniversary Edition, US).
+lazy-loaded. Currently supported: Pokémon Red / Blue / Yellow, Gold / Silver / Crystal and Ruby / Sapphire / FireRed / LeafGreen / Emerald (English), and Final Fantasy (NES, English; I and II from Dawn of Souls on GBA, US; PSP Anniversary Edition, US).
 Everything is a self-contained "game module", so adding Gen 4–5, more Final Fantasy versions, Mega Man Battle Network, etc. never touches the shell.
 
 ## Look and feel
@@ -299,7 +299,21 @@ tables straight out of its data banks into `tables.ts`.
   marked when the class can't equip or learn them. The game works out attack, defence and the like again from the gear.
 - **Items**: gil, consumables, weapons, armor and the 36 key items, per file. The bag's cells carry a fourth byte that
   belongs to something else; it is never touched.
-- Final Fantasy II files are found but can't be edited yet.
+- A save with files of both games asks which to open (two modules: `final-fantasy-gba.ts` and `final-fantasy-2-gba.ts`).
+
+## Final Fantasy II (GBA, Dawn of Souls)
+
+`src/core/ff2gba/` (the file layout is shared, in `src/core/ff1gba/layout.ts`). Item and spell names come from the ROM:
+`scripts/gen-ff2gba-data.mjs <rom>`.
+
+- **Characters**: eight records of 0x80 bytes from file + 0x22 (Firion, Maria, Guy, then Minwu, Josef, Gordon, Leila
+  and Ricard). The party is the first three and the record named at file + 0x4B2 (the fourth place).
+- **Party**: name, HP / MP, the six stats (the record also keeps them with gear bonuses; that copy moves with them),
+  the eight weapon skills (unarmed, knife, sword, staff, axe, spear, bow, shield: level 1-16), 16 spell places (spell and
+  level 1-16), and gear in both hands, head, body and arms (an empty hand is the "Hands" item, 0x30).
+- **Items**: gil (+0x4A8), and the bag: 150 item ids at +0x4B4 and their counts at +0x54A. Key items are in the bag
+  too; they're shown but not changed.
+- Portraits in the party window come from the game's own party menu (SaveHub-assets).
 
 ## Final Fantasy (PSP, Anniversary Edition)
 
@@ -422,7 +436,10 @@ Every screen explains itself in plain words, so keep it that way when you add a 
   Flare learned, gil, Potions, key items added and removed) loads with every edit showing in the load screen and menus.
   The level 1 to 8 "magic level" byte and the per-level growth numbers are left alone, and only the US release is
   recognised. There's no sample button: a save the game would start from needs map and story data the editor doesn't
-  build.
+  build. Final Fantasy II was checked the same way with a real save (a renamed Firion with 9,999 HP, 99 Strength, sword
+  skill 16 and Excalibur, Fire at 16, Ultima learned in place of Toad, Maria's Ribbon, Josef's MP, gil, Elixirs and a
+  Holy Tome all show in its menus). Its key terms, the fourth party member and the record of who has left aren't
+  editable, and progress towards the next skill or spell level is left as it is.
 
 - Final Fantasy (PSP): two real saves decrypt, open and encrypt back to the same bytes, and the editor's SFO hashes match
   the game's. Checked in the real game (US disc in PPSSPP's headless build, `scripts/psprun.sh`, 2026-11-05): an edited save

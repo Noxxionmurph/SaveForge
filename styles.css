@@ -1054,6 +1054,7 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
 .mon-icon, .tile-icon, .item-icon, .badge-icon, .ribbon-icon, .pokeblock-icon, .pika-frame, .job-sprite { image-rendering: pixelated; }
 .job-sprite.nes { --art: var(--px2); width: calc(16 * var(--art)); height: calc(24 * var(--art)); }
 .job-sprite.gba { --art: var(--px2); width: calc(26 * var(--art)); height: calc(24 * var(--art)); }
+.job-sprite.ff2 { --art: var(--px2); width: calc(28 * var(--art)); height: calc(28 * var(--art)); }
 .job-sprite.psp { --art: var(--px1); width: calc(48 * var(--art)); height: calc(42 * var(--art)); }
 .mon-icon, .tile-icon {
   --art: var(--px1);
@@ -1125,6 +1126,9 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
 .ff-member > .job-sprite { grid-row: 1 / span 3; align-self: center; }
 .tile-icon.job-sprite { margin: 0 4px; }
 .ff-member > .job-sprite.fallen { opacity: 0.35; }
+.ff2-spells { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px 16px; margin-bottom: 12px; }
+.ff-spell-row { display: flex; gap: 8px; align-items: flex-end; }
+.ff-spell-row > .field { flex: 1; min-width: 0; }
 /* On phones the PSP picture is too wide to sit beside the text in a half-width window, so it goes on top. */
 @media (max-width: 719px) {
   .ff-member:has(> .job-sprite.psp) { grid-template-columns: minmax(0, 1fr) auto; }

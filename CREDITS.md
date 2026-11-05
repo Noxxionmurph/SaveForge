@@ -4,7 +4,7 @@ SaveForge is an unofficial, free, non-commercial fan tool. It is not affiliated 
 Game Freak, Creatures Inc. or Square Enix. Pokémon and Final Fantasy, and everything that belongs to them, are theirs.
 
 Final Fantasy (PSP) was checked in [PPSSPP](https://github.com/hrydgard/ppsspp) (`scripts/psprun.sh`), and Final Fantasy I (GBA)
-in [mGBA](https://mgba.io/) (`scripts/gbarun.c`). The GBA tables are read from the game's ROM by `scripts/gen-ff1gba-data.mjs`.
+in [mGBA](https://mgba.io/) (`scripts/gbarun.c`). The GBA tables are read from the game's ROM by `scripts/gen-ff1gba-data.mjs` and `scripts/gen-ff2gba-data.mjs`.
 
 Final Fantasy (NES) names and numbers are read from Disch's disassembly of the game
 (https://github.com/Entroper/FF1Disassembly) by `scripts/gen-ff1-data.mjs`.

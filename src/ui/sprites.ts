@@ -61,10 +61,14 @@ const FF1_CLASS_FILES = ['warrior', 'thief', 'monk', 'red-mage', 'white-mage', '
   'knight', 'ninja', 'master', 'red-wizard', 'white-wizard', 'black-wizard'];
 
 /** A Final Fantasy class's picture: the NES standing sprite (16x24) or the PSP party picture (48x42). */
-/** Each version's class sprites are drawn at their own size, in art pixels. */
-export const FF1_SPRITE_SIZE = { nes: [16, 24], gba: [26, 24], psp: [48, 42] } as const;
+/** Each version's class sprites (and Final Fantasy II's portraits, 'ff2') are drawn at their own size, in art pixels. */
+export const FF1_SPRITE_SIZE = { nes: [16, 24], gba: [26, 24], psp: [48, 42], ff2: [28, 28] } as const;
 export type Ff1Platform = keyof typeof FF1_SPRITE_SIZE;
-export function ff1ClassSprite(cls: number, platform: Ff1Platform, cls2 = ''): HTMLImageElement {
+/** A Final Fantasy II (Dawn of Souls) character's menu portrait. */
+export function ff2Portrait(who: string): HTMLImageElement {
+  return icon(`${BASE}/ff2/gba/${who}.png`, 28, 28, 'job-sprite ff2');
+}
+export function ff1ClassSprite(cls: number, platform: Exclude<Ff1Platform, 'ff2'>, cls2 = ''): HTMLImageElement {
   const [w, hgt] = FF1_SPRITE_SIZE[platform];
   return icon(`${BASE}/ff1/${platform}/${FF1_CLASS_FILES[cls] ?? 'warrior'}.png`, w, hgt, `job-sprite ${platform} ${cls2}`.trim());
 }

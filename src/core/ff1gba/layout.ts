@@ -42,9 +42,13 @@ export const fileOk = (d: Uint8Array, game: { base: number; size: number }, inde
 };
 
 export type GbaDetection = 'ok' | 'empty' | null;
-/** 'ok' when the header matches and at least one file loads; 'empty' when the header matches but no file does. */
-export function detectDawnOfSouls(d: Uint8Array): GbaDetection {
+const hasFiles = (d: Uint8Array, game: { base: number; size: number }) => [0, 1, 2].some((i) => fileOk(d, game, i));
+/**
+ * For one of the two games: 'ok' when the header matches and at least one of that game's files loads; 'empty' (for
+ * Final Fantasy I only, so a damaged save is offered once) when the header matches but no file of either game does.
+ */
+export function detectDawnOfSouls(d: Uint8Array, game: 1 | 2 = 1): GbaDetection {
   if (d.length < SRAM_SIZE || !hasMagic(d, 0) || d[0x20] !== HEADER_SIZE || d[0x21] || d[0x22] || d[0x23]) return null;
-  for (const game of [FF1, FF2]) for (let i = 0; i < FILE_COUNT; i++) if (fileOk(d, game, i)) return 'ok';
-  return 'empty';
+  if (hasFiles(d, game === 1 ? FF1 : FF2)) return 'ok';
+  return game === 1 && !hasFiles(d, FF2) ? 'empty' : null;
 }

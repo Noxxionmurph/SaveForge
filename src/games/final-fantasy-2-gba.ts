@@ -1,0 +1,19 @@
+import { detectDawnOfSouls } from '../core/ff1gba/layout.ts';
+import type { Ff2GbaSave } from '../core/ff2gba/save.ts';
+import { defineGame } from '../core/types.ts';
+
+export default defineGame<Ff2GbaSave>({
+  id: 'final-fantasy-2-gba',
+  family: 'Final Fantasy',
+  games: ['Final Fantasy II'],
+  shelf: 'dawn-of-souls',
+  platform: 'Game Boy Advance · Dawn of Souls (US)',
+  editable: 'Every Final Fantasy II file’s party: names, HP and MP, stats, weapon skills, spells and gear; gil and items.',
+  fileHint: 'Dawn of Souls saves are 32,768 bytes (32 KB); 64 KB copies and .sps files open too.',
+  colors: { 'Final Fantasy II': '#6a3b9e' },
+  icons: { 'Final Fantasy II': 'sprites/ff2/gba/firion.png' },
+  theme: 'gba',
+  detect: (data) => (detectDawnOfSouls(data, 2) === 'ok' ? { confidence: 'certain' } : null),
+  load: async (data) => new (await import('../core/ff2gba/save.ts')).Ff2GbaSave(data),
+  loadEditor: async () => (await import('../ui/editors/ff2gba/index.ts')).mountFf2GbaEditor,
+});

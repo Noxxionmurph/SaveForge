@@ -228,7 +228,7 @@ export class Ff1GbaSave implements EditableSave {
   constructor(data: Uint8Array) {
     this.data = data.slice();
     this.files = Array.from({ length: FILE_COUNT }, (_, i) => new Ff1GbaFile(this.data, i));
-    if (!this.usedFiles.length) throw new Error('This Dawn of Souls save has no Final Fantasy I files. Final Fantasy II files can’t be edited yet.');
+    if (!this.usedFiles.length) throw new Error('This Dawn of Souls save has no Final Fantasy I files.');
   }
   get usedFiles() { return this.files.filter((f) => f.used); }
 
