@@ -10,7 +10,7 @@ export default defineGame<Ff2GbaSave>({
   platform: 'Game Boy Advance · US',
   fileHint: 'Dawn of Souls saves are 32,768 bytes (32 KB); 64 KB copies and .sps files open too.',
   colors: { 'Final Fantasy II': '#6a3b9e' },
-  icons: { 'Final Fantasy II': 'sprites/ff2/gba/firion.png' },
+  icons: { 'Final Fantasy II': 'sprites/ff2/gba/battle/firion.png' },
   theme: 'gba',
   detect: (data) => (detectDawnOfSouls(data, 2) === 'ok' ? { confidence: 'certain' } : null),
   load: async (data) => new (await import('../core/ff2gba/save.ts')).Ff2GbaSave(data),

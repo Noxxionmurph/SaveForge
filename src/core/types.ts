@@ -83,6 +83,11 @@ export interface GameModule<S extends EditableSave = EditableSave> {
    * line (Gold / Silver and Crystal are two modules but one generation). Leave it out for a row of its own.
    */
   readonly shelf?: string;
+  /**
+   * Put this module's game on another module's landing tile, named by that tile's game: Final Fantasy's GBA and PSP
+   * versions share the NES "Final Fantasy" tile, which then lists every platform. Leave it out for a tile of its own.
+   */
+  readonly tile?: string;
   /** What a valid file looks like (size, extension), shown when a file isn't recognised, e.g. "Saves are 32,768 bytes." */
   readonly fileHint?: string;
   /** Optional cartridge-label color per game name (any CSS color), shown on the landing page. */

@@ -9,6 +9,7 @@ export default defineGame<Ff1GbaSave>({
   family: 'Final Fantasy',
   games: ['Final Fantasy I'],
   shelf: 'final-fantasy',
+  tile: 'Final Fantasy', // listed on the NES tile
   platform: 'Game Boy Advance · US',
   fileHint: 'Dawn of Souls saves are 32,768 bytes (32 KB); 64 KB copies and .sps files open too.',
   colors: { 'Final Fantasy I': '#3b3f9e' },
