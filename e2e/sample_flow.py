@@ -29,7 +29,7 @@ with sync_playwright() as p:
         ['Pokémon Red', 'Pokémon Blue', 'Pokémon Yellow'], ['Pokémon Gold', 'Pokémon Silver', 'Pokémon Crystal'],
         ['Pokémon Ruby', 'Pokémon Sapphire', 'Pokémon FireRed', 'Pokémon LeafGreen', 'Pokémon Emerald'], ['Final Fantasy'], ['Final Fantasy I & II: Dawn of Souls'], ['Final Fantasy Anniversary Edition']]
     edits = page.locator('.family-edits').all_inner_texts()
-    assert len(edits) == 5 and edits[1].startswith('In Gold, Silver and Crystal you can edit: Everything from Red, Blue and Yellow'), edits
+    assert len(edits) == 6 and edits[1].startswith('In Gold, Silver and Crystal you can edit: Everything from Red, Blue and Yellow'), edits
     assert edits[2].startswith('In Ruby, Sapphire, FireRed, LeafGreen and Emerald you can edit: Everything from the Game Boy games'), edits
     page.click('.sample-row button >> nth=0')
     page.wait_for_selector('.tabs')

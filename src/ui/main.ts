@@ -57,7 +57,11 @@ function shelves(games: GameModule[]): GameModule[][] {
   for (const g of games) rows.set(g.shelf ?? g.id, [...(rows.get(g.shelf ?? g.id) ?? []), g]);
   return [...rows.values()];
 }
-const shortNames = (g: GameModule): string[] => g.games.map((n) => (n.startsWith(`${g.family} `) ? n.slice(g.family.length + 1) : n));
+// A subtitle stands for the whole name ("Final Fantasy I & II: Dawn of Souls" is "Dawn of Souls").
+const shortNames = (g: GameModule): string[] => g.games.map((n) => {
+  const short = n.startsWith(`${g.family} `) ? n.slice(g.family.length + 1) : n;
+  return short.includes(': ') ? short.slice(short.indexOf(': ') + 2) : short;
+});
 
 const setPageTitle = (name?: string) => { document.title = name ? `${name} · ${APP_NAME}` : APP_NAME; };
 
