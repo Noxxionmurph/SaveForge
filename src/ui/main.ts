@@ -57,6 +57,19 @@ function shelves(games: GameModule[]): GameModule[][] {
   for (const g of games) rows.set(g.shelf ?? g.id, [...(rows.get(g.shelf ?? g.id) ?? []), g]);
   return [...rows.values()];
 }
+/** A shelf's landing tiles: one per game, except modules with a `tile` join that tile, which lists each one's platform. */
+function landingTiles(shelf: GameModule[]): { g: GameModule; name: string; ports: string[] }[] {
+  const tiles = new Map<string, { g: GameModule; name: string; ports: string[] }>();
+  const port = (g: GameModule) => g.platform.split(' · ')[0].replace('Game Boy Advance', 'GBA');
+  for (const g of shelf) {
+    for (const name of g.games) {
+      const t = tiles.get(g.tile ?? name);
+      if (t) t.ports.push(port(g));
+      else tiles.set(name, { g, name, ports: [port(g)] });
+    }
+  }
+  return [...tiles.values()];
+}
 // A bare number keeps the series name ("Final Fantasy II", not "II").
 const shortNames = (g: GameModule): string[] => g.games.map((n) => {
   const short = n.startsWith(`${g.family} `) ? n.slice(g.family.length + 1) : n;
@@ -71,8 +84,9 @@ const setPageTitle = (name?: string) => { document.title = name ? `${name} · ${
  */
 /** A landing tile's picture: a Pokémon icon (68x56), or a Final Fantasy class sprite at its own size. */
 function tilePicture(path: string): HTMLImageElement {
-  const m = path.match(/\/(ff1)\/(nes|gba|psp)\/|\/(ff2)\/gba\//);
-  const job = (m?.[2] ?? m?.[3]) as Ff1Platform | undefined;
+  // FF2's battle sprites share FF1 GBA's 26x24 frame; its other pictures are the 28x28 menu portraits.
+  const m = path.match(/\/(ff1)\/(nes|gba|psp)\/|\/ff2\/(gba)\/battle\/|\/(ff2)\/gba\//);
+  const job = (m?.[2] ?? m?.[3] ?? m?.[4]) as Ff1Platform | undefined;
   if (!job) return pictureIcon(path, 68, 56, 'tile-icon');
   const [w, hgt] = FF1_SPRITE_SIZE[job];
   return pictureIcon(path, w, hgt, `tile-icon job-sprite ${job}`);
@@ -357,19 +371,22 @@ function renderWelcome(): void {
             shelf[0].editable ? h('p', { class: 'muted family-edits' },
               // A shelf holding the whole series (every Final Fantasy version) is named by the series, not each game.
               h('strong', {}, `In ${shelf.length === games.length && shelf.length > 1 ? family : shelf.flatMap(shortNames).join(', ').replace(/, ([^,]*)$/, ' and $1')} you can edit: `), shelf[0].editable) : null,
-            h('ul', { class: 'tiles' }, shelf.flatMap((g) => g.games.map((name) => {
+            h('ul', { class: 'tiles' }, landingTiles(shelf).map(({ g, name, ports }) => {
               const picture = g.icons?.[name];
               const tile = h('li', { class: 'tile' },
                 h('span', { class: 'tile-label', 'aria-hidden': 'true' }),
                 h('span', { class: 'tile-name' }, name),
                 // "Game Boy Color · English": each part stays whole, so a narrow tile breaks between them, never inside one.
-                h('span', { class: 'muted tile-platform' }, g.platform.split(' · ').flatMap((part, i) =>
-                  [i ? h('span', { class: 'tile-sep' }, ' · ') : null, h('span', { class: 'tile-part' }, part)])),
+                // A tile for several ports lists them on one line instead: "NES · GBA · PSP".
+                ports.length > 1
+                  ? h('span', { class: 'muted tile-platform tile-ports' }, ports.join(' · '))
+                  : h('span', { class: 'muted tile-platform' }, g.platform.split(' · ').flatMap((part, i) =>
+                    [i ? h('span', { class: 'tile-sep' }, ' · ') : null, h('span', { class: 'tile-part' }, part)])),
                 picture ? tilePicture(picture) : null);
               const color = g.colors?.[name];
               if (color) tile.style.setProperty('--label', color);
               return tile;
-            }))),
+            })),
           ]))),
       h('p', { class: 'request' }, 'Want another game? ', externalLink(`${REPO}/issues/new`, 'Request it on GitHub'), '.'),
     ),

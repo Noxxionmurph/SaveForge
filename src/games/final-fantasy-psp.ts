@@ -8,6 +8,7 @@ export default defineGame<Ff1PspSave>({
   games: ['Final Fantasy Anniversary Edition'],
   icons: { 'Final Fantasy Anniversary Edition': 'sprites/ff1/psp/warrior.png' },
   shelf: 'final-fantasy',
+  tile: 'Final Fantasy', // listed on the NES tile
   platform: 'PSP · US',
   fileHint: 'Open a zip of the save folder (ULUS10251DATA00, with SAVE.BIN and PARAM.SFO inside), or SAVE.BIN on its own.',
   colors: { 'Final Fantasy Anniversary Edition': '#2a3f9b' },
