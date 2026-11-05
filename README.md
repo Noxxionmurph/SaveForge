@@ -401,7 +401,10 @@ Every screen explains itself in plain words, so keep it that way when you add a 
 ## Known limitations
 
 - Final Fantasy (PSP): two real saves decrypt, open and encrypt back to the same bytes, and the editor's SFO hashes match
-  the game's, but an edited save hasn't been loaded in the game yet. Level and Exp aren't kept in step (the Exp table isn't
+  the game's. Checked in the real game (US disc in PPSSPP's headless build, `scripts/psprun.sh`, 2026-11-05): an edited save
+  (a renamed character, HP, a level, gil, Elixirs, Excalibur count) shows the edits on the load screen and in the menus,
+  and a save the game then wrote opens in the editor with them intact. PPSSPP doesn't check PARAM.SFO, so a real PSP's
+  check of the redone SFO hashes is still untested. Level and Exp aren't kept in step (the Exp table isn't
   known yet, and the game levels up after the next battle), the per-level growth numbers are left alone, Japanese names
   show as "?", and only the US release is recognised.
 

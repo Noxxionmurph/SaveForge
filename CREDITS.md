@@ -3,6 +3,8 @@
 SaveForge is an unofficial, free, non-commercial fan tool. It is not affiliated with or endorsed by Nintendo,
 Game Freak, Creatures Inc. or Square Enix. Pokémon and Final Fantasy, and everything that belongs to them, are theirs.
 
+Final Fantasy (PSP) was checked in [PPSSPP](https://github.com/hrydgard/ppsspp) (`scripts/psprun.sh`).
+
 Final Fantasy (NES) names and numbers are read from Disch's disassembly of the game
 (https://github.com/Entroper/FF1Disassembly) by `scripts/gen-ff1-data.mjs`.
 
