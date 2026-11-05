@@ -9,7 +9,7 @@ import { cartridge } from './brand.ts';
 import { askConfirm, clear, h, toast } from './dom.ts';
 import { trackPixelRatio } from './pixels.ts';
 import { askReview } from './review.ts';
-import { pictureIcon } from './sprites.ts';
+import { FF1_SPRITE_SIZE, type Ff1Platform, pictureIcon } from './sprites.ts';
 import { hideFrame } from './windowFrame.ts';
 import { makeZip } from '../core/zip.ts';
 
@@ -65,11 +65,12 @@ const setPageTitle = (name?: string) => { document.title = name ? `${name} · ${
  * Style the page as the handheld the open game ran on (see GameModule.theme and the data-console rules in styles.css).
  * Adding ?console=gb, gbc, gba or nes to the address forces one for every screen, to preview a theme.
  */
-/** A landing tile's picture: a Pokémon icon (68x56), or a Final Fantasy class sprite at its own size (NES 16x24, PSP 48x42). */
+/** A landing tile's picture: a Pokémon icon (68x56), or a Final Fantasy class sprite at its own size. */
 function tilePicture(path: string): HTMLImageElement {
-  const job = path.match(/\/ff1\/(nes|psp)\//)?.[1];
+  const job = path.match(/\/ff1\/(nes|gba|psp)\//)?.[1] as Ff1Platform | undefined;
   if (!job) return pictureIcon(path, 68, 56, 'tile-icon');
-  return pictureIcon(path, job === 'nes' ? 16 : 48, job === 'nes' ? 24 : 42, `tile-icon job-sprite ${job}`);
+  const [w, hgt] = FF1_SPRITE_SIZE[job];
+  return pictureIcon(path, w, hgt, `tile-icon job-sprite ${job}`);
 }
 
 const CONSOLES = ['gb', 'gbc', 'gba', 'nes', 'psp'] as const;

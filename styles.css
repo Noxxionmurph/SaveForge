@@ -1053,6 +1053,7 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
 }
 .mon-icon, .tile-icon, .item-icon, .badge-icon, .ribbon-icon, .pokeblock-icon, .pika-frame, .job-sprite { image-rendering: pixelated; }
 .job-sprite.nes { --art: var(--px2); width: calc(16 * var(--art)); height: calc(24 * var(--art)); }
+.job-sprite.gba { --art: var(--px2); width: calc(26 * var(--art)); height: calc(24 * var(--art)); }
 .job-sprite.psp { --art: var(--px1); width: calc(48 * var(--art)); height: calc(42 * var(--art)); }
 .mon-icon, .tile-icon {
   --art: var(--px1);
