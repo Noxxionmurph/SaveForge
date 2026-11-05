@@ -56,6 +56,16 @@ export function eggIcon(cls = ''): HTMLElement {
   return img;
 }
 
+/** File names of the twelve Final Fantasy classes' pictures, by class number (Warrior 0 ... Black Wizard 11). */
+const FF1_CLASS_FILES = ['warrior', 'thief', 'monk', 'red-mage', 'white-mage', 'black-mage',
+  'knight', 'ninja', 'master', 'red-wizard', 'white-wizard', 'black-wizard'];
+
+/** A Final Fantasy class's picture: the NES standing sprite (16x24) or the PSP party picture (48x42). */
+export function ff1ClassSprite(cls: number, platform: 'nes' | 'psp', cls2 = ''): HTMLImageElement {
+  const [w, hgt] = platform === 'nes' ? [16, 24] : [48, 42];
+  return icon(`${BASE}/ff1/${platform}/${FF1_CLASS_FILES[cls] ?? 'warrior'}.png`, w, hgt, `job-sprite ${platform} ${cls2}`.trim());
+}
+
 /** Item icon (32x32) from a "<category>/<name>" path. */
 export function itemIcon(path: string, cls = ''): HTMLImageElement {
   return icon(itemIconUrl(path), 32, 32, `item-icon ${cls}`.trim());

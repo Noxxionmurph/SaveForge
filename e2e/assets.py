@@ -22,6 +22,7 @@ KINDS = {
     'badge': ('img.badge-icon', True, None),
     'ribbon': ('img.ribbon-icon', True, 'list'),
     'Pokéblock': ('img.pokeblock-icon', True, 'big'),
+    'Final Fantasy class': ('img.job-sprite', True, None),
     'type icon': ('img.type-icon', False, 24),
     'shiny mark': ('img.shiny-icon', False, 16),
     '♂/♀': ('svg.gender-icon', False, '0.75em'),
@@ -105,14 +106,17 @@ GAMES = [
     ('Gold', lambda page: open_file(page, 'gold.sav')),
     ('Ruby', lambda page: open_file(page, 'ruby.sav')),
     ('Emerald', lambda page: open_file(page, 'emerald.sav')),
+    ('Final Fantasy (NES)', lambda page: page.click('.sample-row button:has-text("Final Fantasy")')),
+    ('Final Fantasy (PSP)', lambda page: open_file(page, 'ULUS10251DATA00.zip')),
 ]
+POKEMON_TABS = ('Trainer', 'Bag', 'Party', 'Boxes', 'Pokédex')
 
 counts = {}
 with sync_playwright() as p:
     b = p.chromium.launch()
     # a plain desktop, a phone in desktop mode, 125% and 150% desktops, a 2x laptop, 2.625 and 3x phones and the smallest phone
-    for width, dpr, games in ((1280, 1, GAMES), (980, 1.1, GAMES), (1280, 1.25, GAMES[:2]), (1280, 1.5, GAMES[:2]),
-                              (1280, 2, GAMES[:2]), (390, 2.625, GAMES), (390, 3, GAMES[:2]), (320, 2, GAMES[:2])):
+    for width, dpr, games in ((1280, 1, GAMES), (980, 1.1, GAMES), (1280, 1.25, GAMES[:2] + GAMES[-2:]), (1280, 1.5, GAMES[:2] + GAMES[-2:]),
+                              (1280, 2, GAMES[:2] + GAMES[-2:]), (390, 2.625, GAMES), (390, 3, GAMES[:2] + GAMES[-2:]), (320, 2, GAMES[:2] + GAMES[-2:])):
         ctx = b.new_context(viewport={'width': width, 'height': 860}, device_scale_factor=dpr)
         page = ctx.new_page()
         page.on('pageerror', lambda e: errors.append(f'pageerror: {e}'))
@@ -131,7 +135,12 @@ with sync_playwright() as p:
         for game, opener in games:
             page.goto(BASE); page.wait_for_selector('.slot')
             opener(page); page.wait_for_selector('.tabs'); page.wait_for_timeout(300)
-            for tab in ('Trainer', 'Bag', 'Party', 'Boxes', 'Pokédex'):
+            if game.startswith('Final Fantasy'):
+                for i in range(page.locator('button.tab').count()):
+                    page.locator('button.tab').nth(i).click(); page.wait_for_timeout(150)
+                    scan(f'{game} tab {i + 1}')
+                continue
+            for tab in POKEMON_TABS:
                 page.click(f'button.tab:has-text("{tab}")'); page.wait_for_timeout(150)
                 scan(f'{game} {tab}')
             page.click('button.tab:has-text("Party")')

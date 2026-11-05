@@ -8,6 +8,7 @@ import {
 import { ARMOR, KEY_ITEMS, SPELLS, WEAPONS } from '../../../core/ff1psp/tables.ts';
 import type { MountEditor } from '../../../core/types.ts';
 import { clear, field, h, numberInput, selectInput, textInput } from '../../dom.ts';
+import { ff1ClassSprite } from '../../sprites.ts';
 import { tabBar, tabPanel } from '../../tabs.ts';
 
 type Tab = 'party' | 'items' | 'gear';
@@ -49,6 +50,7 @@ export const mountFf1PspEditor: MountEditor<Ff1PspSave> = (container, s, host) =
         'aria-label': `${c.name || `Character ${i + 1}`}, ${CLASS_NAMES[c.cls]}, level ${c.level}. Edit`,
         onclick: () => { who = i; onPick(); },
       },
+      ff1ClassSprite(c.cls, 'psp', c.fallen ? 'fallen' : ''),
       h('span', { class: 'ff-name' }, c.name || '—'),
       h('span', { class: 'ff-class' }, CLASS_NAMES[c.cls]),
       h('span', { class: 'ff-lv' }, `Lv ${c.level}`),
