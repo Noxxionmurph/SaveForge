@@ -57,10 +57,10 @@ function shelves(games: GameModule[]): GameModule[][] {
   for (const g of games) rows.set(g.shelf ?? g.id, [...(rows.get(g.shelf ?? g.id) ?? []), g]);
   return [...rows.values()];
 }
-// A subtitle stands for the whole name ("Final Fantasy I & II: Dawn of Souls" is "Dawn of Souls").
+// A bare number keeps the series name ("Final Fantasy II", not "II").
 const shortNames = (g: GameModule): string[] => g.games.map((n) => {
   const short = n.startsWith(`${g.family} `) ? n.slice(g.family.length + 1) : n;
-  return short.includes(': ') ? short.slice(short.indexOf(': ') + 2) : short;
+  return /^[IVX]+$/.test(short) ? n : short;
 });
 
 const setPageTitle = (name?: string) => { document.title = name ? `${name} · ${APP_NAME}` : APP_NAME; };
@@ -71,7 +71,8 @@ const setPageTitle = (name?: string) => { document.title = name ? `${name} · ${
  */
 /** A landing tile's picture: a Pokémon icon (68x56), or a Final Fantasy class sprite at its own size. */
 function tilePicture(path: string): HTMLImageElement {
-  const job = path.match(/\/ff1\/(nes|gba|psp)\//)?.[1] as Ff1Platform | undefined;
+  const m = path.match(/\/(ff1)\/(nes|gba|psp)\/|\/(ff2)\/gba\//);
+  const job = (m?.[2] ?? m?.[3]) as Ff1Platform | undefined;
   if (!job) return pictureIcon(path, 68, 56, 'tile-icon');
   const [w, hgt] = FF1_SPRITE_SIZE[job];
   return pictureIcon(path, w, hgt, `tile-icon job-sprite ${job}`);

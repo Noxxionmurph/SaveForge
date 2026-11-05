@@ -140,9 +140,8 @@ test('diff names what changed', () => {
 const real = process.env.DOS_SAVE;
 test('a real save opens, its gear and spells fit the tables, and it round-trips', { skip: !real || !existsSync(real) }, () => {
   const d = unwrapSave(new Uint8Array(readFileSync(real!))).data;
-  assert.equal(detectDawnOfSouls(d), 'ok');
-  let s: Ff1GbaSave;
-  try { s = new Ff1GbaSave(d); } catch { return; } // only Final Fantasy II files
+  if (detectDawnOfSouls(d, 1) !== 'ok') return; // only Final Fantasy II files
+  const s = new Ff1GbaSave(d);
   for (const f of s.usedFiles) for (const c of f.party) {
     for (let g = 0; g < 5; g++) if (c.gear(g)) assert.ok(c.canWear(g, c.gear(g)), `${c.name} gear ${g}`);
     for (const sp of c.spells) assert.ok(canLearn(c.cls, sp), `${c.name} ${SPELLS[sp - 1]}`);
