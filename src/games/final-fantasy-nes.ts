@@ -6,6 +6,7 @@ export default defineGame<Ff1NesSave>({
   id: 'final-fantasy-nes',
   family: 'Final Fantasy',
   games: ['Final Fantasy'],
+  icons: { 'Final Fantasy': 'sprites/ff1/nes/warrior.png' },
   platform: 'NES · English',
   editable: 'Your party’s names, classes, levels, stats, gear and spells; gold and items; the Orbs, ship, canoe, airship, bridge and canal.',
   fileHint: 'Final Fantasy (NES) saves are 8,192 bytes (8 KB).',

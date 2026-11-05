@@ -16,7 +16,7 @@ errors = []
 # CSS size, or None for "whole multiple, any size")
 KINDS = {
     'Pokémon (lists)': ('img.mon-icon:not(.big)', True, 'list'),
-    'Pokémon (window, landing)': ('img.mon-icon.big, img.tile-icon', True, 'big'),
+    'Pokémon (window, landing)': ('img.mon-icon.big, img.tile-icon:not(.job-sprite)', True, 'big'),
     'item': ('img.item-icon:not(.held > img)', True, 'list'),
     'held item': ('.held > img.item-icon', False, 24),
     'badge': ('img.badge-icon', True, None),

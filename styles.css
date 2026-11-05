@@ -1122,6 +1122,7 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
 .ff-class, .ff-hp { grid-column: 2 / -1; color: var(--lcd-dim); font-size: 0.875rem; }
 /* Each class's picture (NES 16x24 at --px2, PSP 48x42 at --px1) to the left of the name, level, class and HP. */
 .ff-member > .job-sprite { grid-row: 1 / span 3; align-self: center; }
+.tile-icon.job-sprite { margin: 0 4px; }
 .ff-member > .job-sprite.fallen { opacity: 0.35; }
 /* On phones the PSP picture is too wide to sit beside the text in a half-width window, so it goes on top. */
 @media (max-width: 719px) {
