@@ -1124,7 +1124,10 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
 .ff-class, .ff-hp { grid-column: 2 / -1; color: var(--lcd-dim); font-size: 0.875rem; }
 /* Each class's picture (NES 16x24 at --px2, PSP 48x42 at --px1) to the left of the name, level, class and HP. */
 .ff-member > .job-sprite { grid-row: 1 / span 3; align-self: center; }
-.tile-icon.job-sprite { margin: 0 4px; }
+/* On a landing tile every picture gets the room a Pokémon icon takes (40x32 art pixels at --px2), so all tiles are the
+   same height and a class sprite sits whole in the middle of that room. */
+.tile { grid-template-columns: 10px 1fr calc(40 * var(--px2)); min-height: calc(32 * var(--px2) + 14px); }
+.tile-icon.job-sprite { margin: 0; justify-self: center; }
 .ff-member > .job-sprite.fallen { opacity: 0.35; }
 .ff2-spells { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px 16px; margin-bottom: 12px; }
 .ff-spell-row { display: flex; gap: 8px; align-items: flex-end; }

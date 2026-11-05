@@ -355,7 +355,8 @@ function renderWelcome(): void {
           // Each shelf's "You can edit" line sits right above its own games, so it's clear which games it means.
           ...shelves(games).flatMap((shelf) => [
             shelf[0].editable ? h('p', { class: 'muted family-edits' },
-              h('strong', {}, `In ${shelf.flatMap(shortNames).join(', ').replace(/, ([^,]*)$/, ' and $1')} you can edit: `), shelf[0].editable) : null,
+              // A shelf holding the whole series (every Final Fantasy version) is named by the series, not each game.
+              h('strong', {}, `In ${shelf.length === games.length && shelf.length > 1 ? family : shelf.flatMap(shortNames).join(', ').replace(/, ([^,]*)$/, ' and $1')} you can edit: `), shelf[0].editable) : null,
             h('ul', { class: 'tiles' }, shelf.flatMap((g) => g.games.map((name) => {
               const picture = g.icons?.[name];
               const tile = h('li', { class: 'tile' },
