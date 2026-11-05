@@ -1051,7 +1051,9 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
 @supports (width: round(10px, 3px)) {
   :root { --px1: max(var(--dpx), round(1px, var(--dpx))); --px2: max(var(--dpx), round(2px, var(--dpx))); }
 }
-.mon-icon, .tile-icon, .item-icon, .badge-icon, .ribbon-icon, .pokeblock-icon, .pika-frame { image-rendering: pixelated; }
+.mon-icon, .tile-icon, .item-icon, .badge-icon, .ribbon-icon, .pokeblock-icon, .pika-frame, .job-sprite { image-rendering: pixelated; }
+.job-sprite.nes { --art: var(--px2); width: calc(16 * var(--art)); height: calc(24 * var(--art)); }
+.job-sprite.psp { --art: var(--px1); width: calc(48 * var(--art)); height: calc(42 * var(--art)); }
 .mon-icon, .tile-icon {
   --art: var(--px1);
   width: calc(68 * var(--art)); height: calc(56 * var(--art)); max-width: none;
@@ -1108,7 +1110,7 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
 .ff-party { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; padding: 10px; }
 @media (min-width: 720px) { .ff-party { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 .ff-member {
-  display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; text-align: left; align-items: baseline;
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 2px 8px; text-align: left; align-items: baseline;
   font: 500 1rem/1.2 var(--font-display); color: var(--lcd-ink); background: transparent;
   border: 2px solid transparent; border-radius: 6px; padding: 8px 10px 8px 22px; min-height: 0; position: relative; box-shadow: none;
 }
@@ -1117,7 +1119,17 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
 .ff-member.on::before { content: '▸'; position: absolute; left: 6px; top: 8px; }
 .ff-name { font-weight: 700; font-size: 1.25rem; }
 .ff-lv { color: var(--lcd-dim); }
-.ff-class, .ff-hp { grid-column: 1 / -1; color: var(--lcd-dim); font-size: 0.875rem; }
+.ff-class, .ff-hp { grid-column: 2 / -1; color: var(--lcd-dim); font-size: 0.875rem; }
+/* Each class's picture (NES 16x24 at --px2, PSP 48x42 at --px1) to the left of the name, level, class and HP. */
+.ff-member > .job-sprite { grid-row: 1 / span 3; align-self: center; }
+.tile-icon.job-sprite { margin: 0 4px; }
+.ff-member > .job-sprite.fallen { opacity: 0.35; }
+/* On phones the PSP picture is too wide to sit beside the text in a half-width window, so it goes on top. */
+@media (max-width: 719px) {
+  .ff-member:has(> .job-sprite.psp) { grid-template-columns: minmax(0, 1fr) auto; }
+  .ff-member:has(> .job-sprite.psp) > .ff-class, .ff-member:has(> .job-sprite.psp) > .ff-hp { grid-column: 1 / -1; }
+  .ff-member > .job-sprite.psp { grid-row: auto; grid-column: 1 / -1; justify-self: start; margin-bottom: 4px; }
+}
 .ff-gear-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; }
 .ff-gear-row + .ff-gear-row { margin-top: 8px; }
 .ff-worn { display: flex; align-items: center; gap: 6px; font-size: 0.875rem; font-weight: 500; }

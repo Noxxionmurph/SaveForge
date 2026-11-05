@@ -6,6 +6,7 @@ export default defineGame<Ff1PspSave>({
   id: 'final-fantasy-psp',
   family: 'Final Fantasy',
   games: ['Final Fantasy Anniversary Edition'],
+  icons: { 'Final Fantasy Anniversary Edition': 'sprites/ff1/psp/warrior.png' },
   platform: 'PSP · US',
   editable: 'Every save file’s party: names, classes, levels, stats, gear and spells; gil, items, weapons, armor and key items.',
   fileHint: 'Open a zip of the save folder (ULUS10251DATA00, with SAVE.BIN and PARAM.SFO inside), or SAVE.BIN on its own.',
