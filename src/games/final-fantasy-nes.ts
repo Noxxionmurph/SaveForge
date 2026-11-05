@@ -7,8 +7,10 @@ export default defineGame<Ff1NesSave>({
   family: 'Final Fantasy',
   games: ['Final Fantasy'],
   icons: { 'Final Fantasy': 'sprites/ff1/nes/warrior.png' },
+  // Every Final Fantasy version shares one row and this one "you can edit" line.
+  shelf: 'final-fantasy',
   platform: 'NES · English',
-  editable: 'Your party’s names, classes, levels, stats, gear and spells; gold and items; the Orbs, ship, canoe, airship, bridge and canal.',
+  editable: 'Your party’s names, stats, gear and spells, plus classes and levels in I and weapon skills in II; gil, items and key items.',
   fileHint: 'Final Fantasy (NES) saves are 8,192 bytes (8 KB).',
   colors: { 'Final Fantasy': '#b3262d' },
   theme: 'nes',
