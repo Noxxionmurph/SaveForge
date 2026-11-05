@@ -6,7 +6,7 @@ export default defineGame<Ff1NesSave>({
   id: 'final-fantasy-nes',
   family: 'Final Fantasy',
   games: ['Final Fantasy'],
-  icons: { 'Final Fantasy': 'sprites/ff1/nes/warrior.png' },
+  icons: { 'Final Fantasy': 'sprites/ff1/psp/warrior.png' }, // the PSP warrior, on the tile all three ports share
   // Every Final Fantasy version shares one row and this one "you can edit" line.
   shelf: 'final-fantasy',
   platform: 'NES · English',
