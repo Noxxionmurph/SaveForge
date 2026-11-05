@@ -2,7 +2,7 @@
 
 One site, many games. Drop a save on the landing page, the game is detected from the file's structure
 (size, checksums, layout; never a hash, since saves change on every write), and that game's editor is
-lazy-loaded. Currently supported: Pokémon Red / Blue / Yellow, Gold / Silver / Crystal and Ruby / Sapphire / FireRed / LeafGreen / Emerald (English), and Final Fantasy (NES, English; PSP Anniversary Edition, US).
+lazy-loaded. Currently supported: Pokémon Red / Blue / Yellow, Gold / Silver / Crystal and Ruby / Sapphire / FireRed / LeafGreen / Emerald (English), and Final Fantasy (NES, English; Dawn of Souls on GBA, US; PSP Anniversary Edition, US).
 Everything is a self-contained "game module", so adding Gen 4–5, more Final Fantasy versions, Mega Man Battle Network, etc. never touches the shell.
 
 ## Look and feel
@@ -284,6 +284,23 @@ tables straight out of its data banks into `tables.ts`.
   north of Coneria and the canal.
 - Japanese Famicom saves aren't recognised yet (different text, unchecked layout).
 
+## Final Fantasy I (GBA, Dawn of Souls)
+
+`src/core/ff1gba/`. Names and the equip and magic tables come from the ROM itself (game code BFFE, US);
+`scripts/gen-ff1gba-data.mjs <rom>` writes them into `tables.ts`, and its header lists where each table is.
+
+- **Opening**: the cartridge's 32 KB SRAM, a 64 KB padded copy, or a phone's .sps (see `src/core/container.ts`).
+- **Format** (`layout.ts`): a 0x24-byte header, three Final Fantasy I files of 0xD60 bytes from 0x24 and three Final
+  Fantasy II files of 0xEB4 bytes from 0x4012. Each file starts with the header's text and a 16-bit checksum (the sum of
+  its bytes from 0x24, plus its size); a file that fails it shows as Empty in the game. Save redoes it for every file that
+  loaded.
+- **Party**: name (6 full-width letters or digits), class, level, Exp, HP / MP, ailment (KO, stone, poison), the five
+  stats; gear in five slots and spells (three fixed places per spell level, which is how the magic menu lays them out),
+  marked when the class can't equip or learn them. The game works out attack, defence and the like again from the gear.
+- **Items**: gil, consumables, weapons, armor and the 36 key items, per file. The bag's cells carry a fourth byte that
+  belongs to something else; it is never touched.
+- Final Fantasy II files are found but can't be edited yet.
+
 ## Final Fantasy (PSP, Anniversary Edition)
 
 `src/core/ff1psp/` and `src/core/psp/`. Tables (names, who can equip and learn what) come from the game's own data as
@@ -399,6 +416,13 @@ Every screen explains itself in plain words, so keep it that way when you add a 
   `editable` (what the editor can change) and `fileHint` (what a valid file looks like) on its module.
 
 ## Known limitations
+
+- Final Fantasy I (GBA) was checked in the real game (US ROM in mGBA, 2026-11-05): two real saves open and save back
+  byte for byte; an edited file (a renamed Knight at level 42 with Excalibur and a Ribbon, a poisoned Thief, Holy and
+  Flare learned, gil, Potions, key items added and removed) loads with every edit showing in the load screen and menus.
+  The level 1 to 8 "magic level" byte and the per-level growth numbers are left alone, and only the US release is
+  recognised. There's no sample button: a save the game would start from needs map and story data the editor doesn't
+  build.
 
 - Final Fantasy (PSP): two real saves decrypt, open and encrypt back to the same bytes, and the editor's SFO hashes match
   the game's. Checked in the real game (US disc in PPSSPP's headless build, `scripts/psprun.sh`, 2026-11-05): an edited save

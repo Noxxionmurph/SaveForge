@@ -6,6 +6,7 @@ import pokemonGen2 from '../games/pokemon-gen2.ts';
 import pokemonGen3 from '../games/pokemon-gen3.ts';
 import pokemonFrlg from '../games/pokemon-frlg.ts';
 import finalFantasyNes from '../games/final-fantasy-nes.ts';
+import finalFantasyGba from '../games/final-fantasy-gba.ts';
 import finalFantasyPsp from '../games/final-fantasy-psp.ts';
 import type { Detection, EditableSave, GameModule } from './types.ts';
 
@@ -17,6 +18,7 @@ export const GAMES: GameModule[] = [
   pokemonFrlg,
   pokemonEmerald,
   finalFantasyNes,
+  finalFantasyGba,
   finalFantasyPsp,
   // megaManBattleNetwork... goes here.
 ];

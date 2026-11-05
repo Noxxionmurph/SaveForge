@@ -61,8 +61,11 @@ const FF1_CLASS_FILES = ['warrior', 'thief', 'monk', 'red-mage', 'white-mage', '
   'knight', 'ninja', 'master', 'red-wizard', 'white-wizard', 'black-wizard'];
 
 /** A Final Fantasy class's picture: the NES standing sprite (16x24) or the PSP party picture (48x42). */
-export function ff1ClassSprite(cls: number, platform: 'nes' | 'psp', cls2 = ''): HTMLImageElement {
-  const [w, hgt] = platform === 'nes' ? [16, 24] : [48, 42];
+/** Each version's class sprites are drawn at their own size, in art pixels. */
+export const FF1_SPRITE_SIZE = { nes: [16, 24], gba: [26, 24], psp: [48, 42] } as const;
+export type Ff1Platform = keyof typeof FF1_SPRITE_SIZE;
+export function ff1ClassSprite(cls: number, platform: Ff1Platform, cls2 = ''): HTMLImageElement {
+  const [w, hgt] = FF1_SPRITE_SIZE[platform];
   return icon(`${BASE}/ff1/${platform}/${FF1_CLASS_FILES[cls] ?? 'warrior'}.png`, w, hgt, `job-sprite ${platform} ${cls2}`.trim());
 }
 
