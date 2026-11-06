@@ -1088,6 +1088,7 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
 .job-sprite.gba { --art: var(--px2); width: calc(26 * var(--art)); height: calc(24 * var(--art)); }
 .job-sprite.wsc { --art: var(--px2); width: calc(26 * var(--art)); height: calc(24 * var(--art)); }
 .job-sprite.ff2 { --art: var(--px2); width: calc(28 * var(--art)); height: calc(28 * var(--art)); }
+.job-sprite.ff2nes { --art: var(--px2); width: calc(24 * var(--art)); height: calc(32 * var(--art)); }
 .job-sprite.psp { --art: var(--px1); width: calc(48 * var(--art)); height: calc(42 * var(--art)); }
 .mon-icon, .tile-icon {
   --art: var(--px1);
