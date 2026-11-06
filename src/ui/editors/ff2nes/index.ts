@@ -1,14 +1,13 @@
 // Final Fantasy II (Famicom) editor UI. Loaded lazily by the shell via the game module.
 
 import {
-  BAG_SIZE, EMPTY_HAND, GEAR_CHOICES, GEAR_SLOTS, GUEST_NAMES, ITEMS, KIND, MAX_GIL, MAX_HP, MAX_MP, MAX_SKILL, MAX_STAT,
-  SPELLS, SPELL_SLOTS, STAT_KEYS, STAT_LABELS, WEAPON_SKILLS,
+  EMPTY_HAND, GEAR_CHOICES, GEAR_SLOTS, GUEST_NAMES, ITEMS, KIND, MAX_GIL, MAX_HP, MAX_MP, MAX_SKILL, MAX_STAT,
+  SPELLS, SPELL_SLOTS, STAT_KEYS, STAT_LABELS,
   type Ff2NesChar, type Ff2NesSave, type Ff2NesSlot,
 } from '../../../core/ff2nes/save.ts';
-import { NAME_LENGTH, asSaved } from '../../../core/ff2nes/text.ts';
 import type { MountEditor } from '../../../core/types.ts';
 import { clear, field, h, numberInput, selectInput, textInput } from '../../dom.ts';
-import { ff2NesPortrait } from '../../sprites.ts';
+import { ff2NesPortrait, ff2WscPortrait } from '../../sprites.ts';
 import { tabBar, tabPanel } from '../../tabs.ts';
 
 type Tab = 'party' | 'items';
@@ -29,7 +28,8 @@ const BAG_GROUPS: { label: string; ids: readonly number[] }[] = [
 ];
 const BAG_OPTIONS = BAG_GROUPS.flatMap((g) => g.ids.filter((id) => ITEMS[id]).map((id) => ({ value: id, label: ITEMS[id] })));
 
-export const mountFf2NesEditor: MountEditor<Ff2NesSave> = (container, s, host) => {
+const makeEditor = (portrait: (who: string) => HTMLImageElement): MountEditor<Ff2NesSave> => (container, s, host) => {
+  const { weaponSkills: WEAPON_SKILLS, bagSize: BAG_SIZE, name: { length: NAME_LENGTH, asSaved } } = s.format;
   let tab: Tab = 'party';
   let slot: Ff2NesSlot = s.usedSlots[0];
   let who = 0;
@@ -62,7 +62,7 @@ export const mountFf2NesEditor: MountEditor<Ff2NesSave> = (container, s, host) =
         'aria-label': `${nameOf(c)}. Edit`,
         onclick: () => { who = i; onPick(); },
       },
-      ff2NesPortrait(c.portrait),
+      portrait(c.portrait),
       h('span', { class: 'ff-name' }, nameOf(c)),
       h('span', { class: 'ff-hp' }, `HP ${c.hp}/${c.maxHp}`),
       h('span', { class: 'ff-class' }, `MP ${c.mp}/${c.maxMp}`))));
@@ -170,3 +170,6 @@ export const mountFf2NesEditor: MountEditor<Ff2NesSave> = (container, s, host) =
 
   render();
 };
+
+export const mountFf2NesEditor = makeEditor(ff2NesPortrait);
+export const mountFf2WscEditor = makeEditor(ff2WscPortrait);

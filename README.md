@@ -2,7 +2,7 @@
 
 One site, many games. Drop a save on the landing page, the game is detected from the file's structure
 (size, checksums, layout; never a hash, since saves change on every write), and that game's editor is
-lazy-loaded. Currently supported: Pokémon Red / Blue / Yellow, Gold / Silver / Crystal and Ruby / Sapphire / FireRed / LeafGreen / Emerald (English), and Final Fantasy (NES, English; I and II from Dawn of Souls on GBA, US; II on Famicom, English patch; I and II PSP Anniversary Edition, US; WonderSwan Color, Japan).
+lazy-loaded. Currently supported: Pokémon Red / Blue / Yellow, Gold / Silver / Crystal and Ruby / Sapphire / FireRed / LeafGreen / Emerald (English), and Final Fantasy (NES, English; I and II from Dawn of Souls on GBA, US; II on Famicom, English patch; I and II PSP Anniversary Edition, US; I on WonderSwan Color, Japan; II on WonderSwan Color, English patch).
 Everything is a self-contained "game module", so adding Gen 4–5, more Final Fantasy versions, Mega Man Battle Network, etc. never touches the shell.
 
 ## Look and feel
@@ -335,6 +335,23 @@ and were checked by loading edited saves in the game (Neo Demiforce's English pa
   at +0x1A/+0x1B (item k is bit k); they're shown but not changed.
 - Portraits are drawn from the game's own tiles (24x32) in its menu colours (SaveHub-assets).
 
+## Final Fantasy II (WonderSwan Color)
+
+`src/core/ff2wsc/`, on top of the Famicom model (`src/core/ff2nes/save.ts`, through `WSC_FORMAT`). Item ids are the
+Famicom ones. Everything was found by saving in Mednafen's WonderSwan core (the English patch T-Eng 0.10) and by
+writing values into a save and reading them back in the game's menus.
+
+- **Format** (`layout.ts`): 32 KB of SRAM. The text `Final Fantasy2 6` at 0x10, eight save slots of 0x66C bytes from
+  0x20, and the quick save the menu's QckSv makes at 0x3380. Slot + 2 holds a u16 sum of the slot's words from +6 to
+  the end, and slot + 4 is 1 when the slot is used; with a wrong sum the game won't offer the slot.
+- **Party**: nine records of 0x74 bytes from slot + 6, one per character (the first three are Firion, Maria, Guy). Id
+  (low four bits), name (+1, six letters: a-z 0x00-0x19, A-Z 0xA1-0xBA, 0xFF after a short name), HP / MP (+8), the six
+  stats (+0x10; the copy with gear bonuses at +0x20 moves with them), gear (+0x19 right hand, left hand, head, body,
+  arms; 0x30 is an empty hand), 16 spell places (+0x30, spells 1-40 in Dawn of Souls order), and [progress, level]
+  pairs for the eight weapon skills (+0x40: unarmed, knife, sword, staff, axe, spear, bow, shield) and the 16 spells
+  (+0x50).
+- **Items**: gil (u32 at +0x422) and the bag: 63 places of one item each at +0x426.
+
 ## Final Fantasy (WonderSwan Color)
 
 `src/core/ff1wsc/`. Who can equip and learn what comes from the ROM (Japan, 2000); `scripts/gen-ff1wsc-data.mjs <rom>`
@@ -502,6 +519,12 @@ Every screen explains itself in plain words, so keep it that way when you add a 
   Cure 5 learned, Excalibur and a Bronze Helm, 9,999,999 gil, Potions, an Elixir and the Masamune in the bag) loads with
   every edit showing in the menus. Only the English patch's letters are known, so Japanese names show as "?"; key
   terms, key items and the record of who has left aren't editable.
+
+- Final Fantasy II (WonderSwan Color) was checked in the real game (English patch T-Eng 0.10 in Mednafen's WonderSwan
+  core, 2026-11-06): a save made there opens, and edited copies (renamed Firion and Maria, 999 and 777 HP, 99 Strength,
+  sword skill 9, Fire at 5, a Mythril Sword, 9,999,999 and 123,456 gil, Elixirs, Potions and a Ribbon in the bag) load
+  with the edits showing in the menus. Only checked with saves made in the emulator. The fourth party member, key items
+  and the map aren't editable.
 
 - Final Fantasy (WonderSwan Color) was checked in the real game (Japanese ROM in Mednafen's WonderSwan core,
   2026-11-06): a save made there opens, and an edited copy (a renamed character promoted to Knight at level 50 with
