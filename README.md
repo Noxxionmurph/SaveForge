@@ -510,9 +510,12 @@ Every screen explains itself in plain words, so keep it that way when you add a 
   game loads. Only checked with saves made in the emulator, not a real cartridge's; the map, story flags and the four
   crystals aren't editable.
 
-- Final Fantasy II (PSP): a real save decrypts, opens and encrypts back to the same SAVEDATA.SAV. Not yet checked in the
-  real game. The copy of that save we have carries PARAM.SFO hashes that don't match its own contents, so whether a
-  real PSP accepts the redone ones is untested; Soul of Rebirth files aren't editable.
+- Final Fantasy II (PSP): a real save decrypts, opens and encrypts back to the same SAVEDATA.SAV. In the real game (US
+  disc in PPSSPP's headless build, 2026-11-06) an edited file (Firion renamed, his HP, 9,999,999 gil) shows the edits on
+  the load screen. The headless build wouldn't load any file past that screen, the real one included, so the menus
+  weren't checked. The game shows guests (Minwu, Scott and so on) by their own names whatever the save holds, so only
+  the four heroes can be renamed. The copy of that save we have carries PARAM.SFO hashes that don't match its own
+  contents, so whether a real PSP accepts the redone ones is untested; Soul of Rebirth files aren't editable.
 
 - Final Fantasy (PSP): two real saves decrypt, open and encrypt back to the same bytes, and the editor's SFO hashes match
   the game's. Checked in the real game (US disc in PPSSPP's headless build, `scripts/psprun.sh`, 2026-11-05): an edited save

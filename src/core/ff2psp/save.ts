@@ -41,6 +41,7 @@ export const PSP_FORMAT: Ff2Format = {
   writeChecksum: (d, at) => { const v = checksum(d, at); d[at + 0x20] = v & 0xff; d[at + 0x21] = v >> 8; },
   chars: 0x22, charStride: 0x7e, charCount: 9, guest: 0x4a2, steps: 0x494, gil: 0x498, playTime: 0x49c, bagIds: 0x4a4, bagCounts: 0x53a,
   maxGil: MAX_GIL, items: ITEMS, spells: SPELLS, kind: KIND, gearChoices: GEAR_CHOICES, portraits: [...GBA_PORTRAITS, 'leon', '', 'scott'],
+  guestNamesFixed: true,
 };
 
 export class Ff2PspSave extends Ff2GbaSave {

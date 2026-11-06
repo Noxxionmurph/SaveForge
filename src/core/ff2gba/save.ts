@@ -63,6 +63,9 @@ export interface Ff2Format {
   kind: typeof KIND;
   gearChoices: readonly (readonly number[])[];
   portraits: readonly string[];
+  /** The game shows guests under their own names whatever the save says (checked on the PSP), so only the four
+   * heroes can be renamed. */
+  guestNamesFixed?: boolean;
 }
 
 export const GBA_FORMAT: Ff2Format = {
