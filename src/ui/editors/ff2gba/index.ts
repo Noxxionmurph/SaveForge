@@ -1,11 +1,10 @@
 // Final Fantasy II (Dawn of Souls, GBA) editor UI. Loaded lazily by the shell via the game module.
 
 import {
-  BAG_SIZE, EMPTY_HAND, GEAR_CHOICES, GEAR_SLOTS, KIND, MAX_GIL, MAX_HP, MAX_ITEM, MAX_MP, MAX_SKILL, MAX_STAT, NAME_LENGTH,
+  BAG_SIZE, EMPTY_HAND, GEAR_SLOTS, MAX_HP, MAX_ITEM, MAX_MP, MAX_SKILL, MAX_STAT, NAME_LENGTH,
   SPELL_SLOTS, STAT_KEYS, STAT_LABELS, WEAPON_SKILLS, asSaved, formatPlayTime,
   type Ff2GbaChar, type Ff2GbaFile, type Ff2GbaSave,
 } from '../../../core/ff2gba/save.ts';
-import { ITEMS, SPELLS } from '../../../core/ff2gba/tables.ts';
 import type { MountEditor } from '../../../core/types.ts';
 import { clear, field, h, numberInput, selectInput, textInput } from '../../dom.ts';
 import { ff2Portrait } from '../../sprites.ts';
@@ -18,7 +17,9 @@ const TABS: { id: Tab; label: string }[] = [
   { id: 'gear', label: 'Weapons, armor and books' },
 ];
 
-export const mountFf2GbaEditor: MountEditor<Ff2GbaSave> = (container, s, host) => {
+/** The editor for a version that uses this file layout (see Ff2Format), drawing party members with `portrait`. */
+export const makeFf2Editor = (portrait: (who: string) => HTMLImageElement): MountEditor<Ff2GbaSave> => (container, s, host) => {
+  const { items: ITEMS, spells: SPELLS, kind: KIND, gearChoices: GEAR_CHOICES, maxGil: MAX_GIL } = s.format;
   let tab: Tab = 'party';
   let file: Ff2GbaFile = s.usedFiles[0];
   let who = 0;
@@ -50,7 +51,7 @@ export const mountFf2GbaEditor: MountEditor<Ff2GbaSave> = (container, s, host) =
         'aria-label': `${c.name || `Character ${i + 1}`}. Edit`,
         onclick: () => { who = i; onPick(); },
       },
-      ff2Portrait(c.portrait),
+      portrait(c.portrait),
       h('span', { class: 'ff-name' }, c.name || '—'),
       h('span', { class: 'ff-hp' }, `HP ${c.hp}/${c.maxHp}`),
       h('span', { class: 'ff-class' }, `MP ${c.mp}/${c.maxMp}`))));
@@ -132,7 +133,8 @@ export const mountFf2GbaEditor: MountEditor<Ff2GbaSave> = (container, s, host) =
   // ---------- items ----------
 
   function itemsTab(): Node {
-    const keyItems = file.bag.filter((x) => x.id < KIND.item[0] || x.id >= 0xc0);
+    const countable = new Set([...KIND.item, ...KIND.weapon, ...KIND.shield, ...KIND.head, ...KIND.body, ...KIND.arms, ...KIND.tome]);
+    const keyItems = file.bag.filter((x) => !countable.has(x.id) && x.id !== EMPTY_HAND);
     return h('div', { class: 'stack' },
       h('section', { class: 'card' },
         h('h3', {}, 'Gil and items'),
@@ -163,3 +165,5 @@ export const mountFf2GbaEditor: MountEditor<Ff2GbaSave> = (container, s, host) =
 
   render();
 };
+
+export const mountFf2GbaEditor = makeFf2Editor(ff2Portrait);

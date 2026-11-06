@@ -10,6 +10,9 @@ Final Fantasy (WonderSwan Color) was checked in Mednafen's WonderSwan core
 ([beetle-wswan-libretro](https://github.com/libretro/beetle-wswan-libretro), driven by `scripts/wsrun.py`); its equip and
 magic tables are read from the game's ROM by `scripts/gen-ff1wsc-data.mjs`.
 
+Final Fantasy II (Famicom) save offsets come from everything8215's disassembly
+(https://github.com/everything8215/ff2), and were checked in [cynes](https://github.com/Youlixx/cynes) (`scripts/nesrun.py`).
+
 Final Fantasy (NES) names and numbers are read from Disch's disassembly of the game
 (https://github.com/Entroper/FF1Disassembly) by `scripts/gen-ff1-data.mjs`.
 

@@ -44,8 +44,35 @@ export const GEAR_CHOICES: readonly (readonly number[])[] = [
   [...KIND.weapon, ...KIND.shield], [...KIND.weapon, ...KIND.shield], KIND.head, KIND.body, KIND.arms,
 ];
 
-/** Offsets inside a file. */
-const FILE = { chars: 0x22, charStride: 0x80, charCount: 8, guest: 0x4b2, steps: 0x4a4, gil: 0x4a8, playTime: 0x4ac, bagIds: 0x4b4, bagCounts: 0x54a };
+/**
+ * Where one version keeps its Final Fantasy II files, and what it has in them. Dawn of Souls (GBA) and the PSP
+ * Anniversary edition share the file layout apart from these numbers (the PSP character records are two bytes shorter,
+ * and it adds Leon's record and some gear), so one model serves both.
+ */
+export interface Ff2Format {
+  fileCount: number;
+  fileAt(index: number): number;
+  fileOk(d: Uint8Array, index: number): boolean;
+  writeChecksum(d: Uint8Array, at: number): void;
+  /** Offsets inside a file. */
+  chars: number; charStride: number; charCount: number;
+  guest: number; steps: number; gil: number; playTime: number; bagIds: number; bagCounts: number;
+  maxGil: number;
+  items: readonly string[];
+  spells: readonly string[];
+  kind: typeof KIND;
+  gearChoices: readonly (readonly number[])[];
+  portraits: readonly string[];
+}
+
+export const GBA_FORMAT: Ff2Format = {
+  fileCount: FILE_COUNT,
+  fileAt: (i) => fileBase(FF2, i),
+  fileOk: (d, i) => fileOk(d, FF2, i),
+  writeChecksum: (d, at) => writeChecksum(d, at, FF2.size),
+  chars: 0x22, charStride: 0x80, charCount: 8, guest: 0x4b2, steps: 0x4a4, gil: 0x4a8, playTime: 0x4ac, bagIds: 0x4b4, bagCounts: 0x54a,
+  maxGil: MAX_GIL, items: ITEMS, spells: SPELLS, kind: KIND, gearChoices: GEAR_CHOICES, portraits: PORTRAITS,
+};
 /** Offsets inside a character record. */
 const CH = {
   id: 0x02, name: 0x04, hp: 0x14, maxHp: 0x16, mp: 0x18, maxMp: 0x1a, stats: 0x1c, gear: 0x25, worn: 0x2c,
@@ -74,13 +101,15 @@ export interface Spell { slot: number; id: number; level: number; exp: number }
 export class Ff2GbaChar {
   private readonly d: Uint8Array;
   private readonly o: number;
+  private readonly f: Ff2Format;
   readonly index: number;
-  constructor(d: Uint8Array, fileAt: number, index: number) {
+  constructor(d: Uint8Array, fileAt: number, index: number, f: Ff2Format = GBA_FORMAT) {
     this.d = d;
     this.index = index;
-    this.o = fileAt + FILE.chars + index * FILE.charStride;
+    this.f = f;
+    this.o = fileAt + f.chars + index * f.charStride;
   }
-  get portrait() { return PORTRAITS[this.index]; }
+  get portrait() { return this.f.portraits[this.index]; }
 
   get name() {
     let s = '';
@@ -127,14 +156,14 @@ export class Ff2GbaChar {
     const out: Spell[] = [];
     for (let slot = 0; slot < SPELL_SLOTS; slot++) {
       const id = this.d[this.o + CH.spells + slot];
-      if (id >= 1 && id <= SPELLS.length) out.push({ slot, id, level: this.d[this.o + CH.spellLevels + slot * 2 + 1], exp: this.d[this.o + CH.spellLevels + slot * 2] });
+      if (id >= 1 && id <= this.f.spells.length) out.push({ slot, id, level: this.d[this.o + CH.spellLevels + slot * 2 + 1], exp: this.d[this.o + CH.spellLevels + slot * 2] });
     }
     return out;
   }
   knows(id: number) { return this.spells.some((s) => s.id === id); }
   /** Learn a spell at level 1 in the first free place; false when all 16 places are taken. */
   learn(id: number): boolean {
-    if (id < 1 || id > SPELLS.length) return false;
+    if (id < 1 || id > this.f.spells.length) return false;
     if (this.knows(id)) return true;
     for (let slot = 0; slot < SPELL_SLOTS; slot++) {
       if (this.d[this.o + CH.spells + slot]) continue;
@@ -162,7 +191,7 @@ export class Ff2GbaChar {
   gear(slot: number) { return this.d[this.o + CH.gear + slot]; }
   setGear(slot: number, id: number) {
     const empty = slot < 2 ? EMPTY_HAND : 0;
-    if (id !== empty && id !== 0 && !GEAR_CHOICES[slot].includes(id)) return;
+    if (id !== empty && id !== 0 && !this.f.gearChoices[slot].includes(id)) return;
     this.d[this.o + CH.gear + slot] = id === 0 ? empty : id;
   }
   isEmpty(slot: number) { const g = this.gear(slot); return g === 0 || g === EMPTY_HAND; }
@@ -178,48 +207,50 @@ export class Ff2GbaFile {
   readonly number: number;
   readonly used: boolean;
   readonly characters: Ff2GbaChar[];
-  constructor(d: Uint8Array, index: number) {
+  private readonly f: Ff2Format;
+  constructor(d: Uint8Array, index: number, f: Ff2Format = GBA_FORMAT) {
     this.d = d;
+    this.f = f;
     this.number = index + 1;
-    this.at = fileBase(FF2, index);
-    this.used = fileOk(d, FF2, index);
-    this.characters = Array.from({ length: FILE.charCount }, (_, i) => new Ff2GbaChar(d, this.at, i));
+    this.at = f.fileAt(index);
+    this.used = f.fileOk(d, index);
+    this.characters = Array.from({ length: f.charCount }, (_, i) => new Ff2GbaChar(d, this.at, i, f));
   }
   /** Firion, Maria and Guy, and whoever is travelling with them in the fourth place (if anyone). */
   get party(): Ff2GbaChar[] {
-    const guest = this.d[this.at + FILE.guest];
-    return guest >= 3 && guest < FILE.charCount ? [...this.characters.slice(0, 3), this.characters[guest]] : this.characters.slice(0, 3);
+    const guest = this.d[this.at + this.f.guest];
+    return guest >= 3 && guest < this.f.charCount ? [...this.characters.slice(0, 3), this.characters[guest]] : this.characters.slice(0, 3);
   }
-  get gil() { return u32(this.d, this.at + FILE.gil); }
-  set gil(v: number) { setU32(this.d, this.at + FILE.gil, clamp(v, 0, MAX_GIL)); }
-  get steps() { return u32(this.d, this.at + FILE.steps); }
-  get playTime() { return u32(this.d, this.at + FILE.playTime); }
+  get gil() { return u32(this.d, this.at + this.f.gil); }
+  set gil(v: number) { setU32(this.d, this.at + this.f.gil, clamp(v, 0, this.f.maxGil)); }
+  get steps() { return u32(this.d, this.at + this.f.steps); }
+  get playTime() { return u32(this.d, this.at + this.f.playTime); }
 
   // The bag: 150 item ids, then their 150 counts.
   get bag(): { id: number; count: number }[] {
     const out: { id: number; count: number }[] = [];
     for (let i = 0; i < BAG_SIZE; i++) {
-      const id = this.d[this.at + FILE.bagIds + i];
-      if (id) out.push({ id, count: this.d[this.at + FILE.bagCounts + i] });
+      const id = this.d[this.at + this.f.bagIds + i];
+      if (id) out.push({ id, count: this.d[this.at + this.f.bagCounts + i] });
     }
     return out;
   }
   count(id: number) { return this.bag.filter((x) => x.id === id).reduce((n, x) => n + x.count, 0); }
   setCount(id: number, count: number) {
-    if (id < 1 || id >= ITEMS.length || !ITEMS[id] || id === EMPTY_HAND) return;
+    if (id < 1 || id >= this.f.items.length || !this.f.items[id] || id === EMPTY_HAND) return;
     const n = clamp(count, 0, MAX_ITEM);
     let placed = false;
     for (let i = 0; i < BAG_SIZE; i++) {
-      if (this.d[this.at + FILE.bagIds + i] !== id) continue;
-      if (placed || !n) { this.d[this.at + FILE.bagIds + i] = 0; this.d[this.at + FILE.bagCounts + i] = 0; continue; }
-      this.d[this.at + FILE.bagCounts + i] = n;
+      if (this.d[this.at + this.f.bagIds + i] !== id) continue;
+      if (placed || !n) { this.d[this.at + this.f.bagIds + i] = 0; this.d[this.at + this.f.bagCounts + i] = 0; continue; }
+      this.d[this.at + this.f.bagCounts + i] = n;
       placed = true;
     }
     if (placed || !n) return;
     for (let i = 0; i < BAG_SIZE; i++) {
-      if (this.d[this.at + FILE.bagIds + i]) continue;
-      this.d[this.at + FILE.bagIds + i] = id;
-      this.d[this.at + FILE.bagCounts + i] = n;
+      if (this.d[this.at + this.f.bagIds + i]) continue;
+      this.d[this.at + this.f.bagIds + i] = id;
+      this.d[this.at + this.f.bagCounts + i] = n;
       return;
     }
   }
@@ -233,16 +264,18 @@ export const formatPlayTime = (s: number) => `${Math.floor(s / 3600)}:${String(M
 export class Ff2GbaSave implements EditableSave {
   readonly data: Uint8Array;
   readonly files: Ff2GbaFile[];
-  constructor(data: Uint8Array) {
+  readonly format: Ff2Format;
+  constructor(data: Uint8Array, format: Ff2Format = GBA_FORMAT) {
     this.data = data.slice();
-    this.files = Array.from({ length: FILE_COUNT }, (_, i) => new Ff2GbaFile(this.data, i));
-    if (!this.usedFiles.length) throw new Error('This Dawn of Souls save has no Final Fantasy II files.');
+    this.format = format;
+    this.files = Array.from({ length: format.fileCount }, (_, i) => new Ff2GbaFile(this.data, i, format));
+    if (!this.usedFiles.length) throw new Error(format === GBA_FORMAT ? 'This Dawn of Souls save has no Final Fantasy II files.' : 'This save has no Final Fantasy II files.');
   }
   get usedFiles() { return this.files.filter((f) => f.used); }
 
   serialize(): Uint8Array {
     const out = this.data.slice();
-    for (const f of this.usedFiles) writeChecksum(out, f.at, FF2.size);
+    for (const f of this.usedFiles) this.format.writeChecksum(out, f.at);
     return out;
   }
 
@@ -260,7 +293,7 @@ export class Ff2GbaSave implements EditableSave {
       if (lines.length) groups.push(lines.length > 12 ? { title, lines: lines.slice(0, 12), more: lines.length - 12 } : { title, lines });
     };
     const several = this.usedFiles.length > 1;
-    const itemName = (id: number) => ITEMS[id] || (id ? `Item ${id}` : 'None');
+    const itemName = (id: number) => this.format.items[id] || (id ? `Item ${id}` : 'None');
     for (const fa of this.usedFiles) {
       const fb = b.files[fa.number - 1];
       const prefix = several ? `File ${fa.number}: ` : '';
@@ -278,15 +311,15 @@ export class Ff2GbaSave implements EditableSave {
         GEAR_SLOTS.forEach((n, g) => diff(n, cb.isEmpty(g) ? 'None' : itemName(cb.gear(g)), ca.isEmpty(g) ? 'None' : itemName(ca.gear(g))));
         for (const s of ca.spells) {
           const was = cb.spells.find((x) => x.id === s.id);
-          if (!was) lines.push(`Learned ${SPELLS[s.id - 1]} (level ${s.level})`);
-          else if (was.level !== s.level) lines.push(`${SPELLS[s.id - 1]}: level ${was.level} → ${s.level}`);
+          if (!was) lines.push(`Learned ${this.format.spells[s.id - 1]} (level ${s.level})`);
+          else if (was.level !== s.level) lines.push(`${this.format.spells[s.id - 1]}: level ${was.level} → ${s.level}`);
         }
-        for (const s of cb.spells) if (!ca.knows(s.id)) lines.push(`Forgot ${SPELLS[s.id - 1]}`);
+        for (const s of cb.spells) if (!ca.knows(s.id)) lines.push(`Forgot ${this.format.spells[s.id - 1]}`);
         add(prefix + (ca.name || `Character ${i + 1}`), lines);
       });
       const items: string[] = [];
       if (fb.gil !== fa.gil) items.push(`Gil: ${fb.gil.toLocaleString('en-US')} → ${fa.gil.toLocaleString('en-US')}`);
-      ITEMS.forEach((name, id) => {
+      this.format.items.forEach((name, id) => {
         if (!name || id === EMPTY_HAND) return;
         const x = fb.count(id), y = fa.count(id);
         if (x !== y) items.push(`${name}: ${x} → ${y}`);

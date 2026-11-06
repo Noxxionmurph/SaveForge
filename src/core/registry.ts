@@ -8,6 +8,7 @@ import pokemonFrlg from '../games/pokemon-frlg.ts';
 import finalFantasyNes from '../games/final-fantasy-nes.ts';
 import finalFantasyGba from '../games/final-fantasy-gba.ts';
 import finalFantasy2Gba from '../games/final-fantasy-2-gba.ts';
+import finalFantasy2Nes from '../games/final-fantasy-2-nes.ts';
 import finalFantasyPsp from '../games/final-fantasy-psp.ts';
 import finalFantasyWsc from '../games/final-fantasy-wsc.ts';
 import type { Detection, EditableSave, GameModule } from './types.ts';
@@ -24,6 +25,7 @@ export const GAMES: GameModule[] = [
   finalFantasy2Gba,
   finalFantasyPsp,
   finalFantasyWsc,
+  finalFantasy2Nes,
   // megaManBattleNetwork... goes here.
 ];
 

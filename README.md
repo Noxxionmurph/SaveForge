@@ -2,7 +2,7 @@
 
 One site, many games. Drop a save on the landing page, the game is detected from the file's structure
 (size, checksums, layout; never a hash, since saves change on every write), and that game's editor is
-lazy-loaded. Currently supported: Pokémon Red / Blue / Yellow, Gold / Silver / Crystal and Ruby / Sapphire / FireRed / LeafGreen / Emerald (English), and Final Fantasy (NES, English; I and II from Dawn of Souls on GBA, US; PSP Anniversary Edition, US; WonderSwan Color, Japan).
+lazy-loaded. Currently supported: Pokémon Red / Blue / Yellow, Gold / Silver / Crystal and Ruby / Sapphire / FireRed / LeafGreen / Emerald (English), and Final Fantasy (NES, English; I and II from Dawn of Souls on GBA, US; II on Famicom, English patch; PSP Anniversary Edition, US; WonderSwan Color, Japan).
 Everything is a self-contained "game module", so adding Gen 4–5, more Final Fantasy versions, Mega Man Battle Network, etc. never touches the shell.
 
 ## Look and feel
@@ -315,6 +315,26 @@ tables straight out of its data banks into `tables.ts`.
   too; they're shown but not changed.
 - Portraits in the party window come from the game's own party menu (SaveHub-assets).
 
+## Final Fantasy II (Famicom)
+
+`src/core/ff2nes/`. Offsets come from everything8215's disassembly (https://github.com/everything8215/ff2, `ram-map.txt`)
+and were checked by loading edited saves in the game (Neo Demiforce's English patch, in the cynes emulator via
+`scripts/nesrun.py`). Item ids are the same as Dawn of Souls, so the names come from that version's table.
+
+- **Format** (`layout.ts`): 8 KB of battery RAM. The game plays from a working copy at 0x000-0x2FF and saves it to one
+  of four slots at 0x300, 0x600, 0x900 and 0xC00. A slot is offered on the load screen only if 0x2FE holds 0x5A and its
+  768 bytes add up to 0xFF (8-bit, no carry); 0x2FF is set to make that so.
+- **Party**: four records of 0x40 bytes from slot + 0x100 (Firion, Maria, Guy, and the fourth place, whose id is in the
+  low four bits of its first byte), and a second 0x40 bytes each from slot + 0x200 (weapon skills, spell levels, and at
+  +0x35 bit 7 set when the fourth place is empty). Name (six tiles, A-Z and a-z, 0xFF after a short name), HP / MP, the
+  six stats (+0x10; the copy with gear bonuses at +0x20 moves with them), gear (+0x19 head, body, arms, right hand,
+  left hand; 0 = empty), 16 spell places (+0x30, spell book item ids 0x98-0xBF) with their levels (stored as level - 1),
+  and the eight weapon skills (unarmed, shield, knife, sword, staff, spear, axe, bow, also stored as level - 1).
+  Attack, defense and the rest are worked out again at the start of every battle.
+- **Items**: gil (u24 at +0x1C, up to 9,999,999), and the bag: 32 places of one item each at +0x60. Key items are bits
+  at +0x1A/+0x1B (item k is bit k); they're shown but not changed.
+- Portraits are drawn from the game's own tiles (24x32) in its menu colours (SaveHub-assets).
+
 ## Final Fantasy (WonderSwan Color)
 
 `src/core/ff1wsc/`. Who can equip and learn what comes from the ROM (Japan, 2000); `scripts/gen-ff1wsc-data.mjs <rom>`
@@ -459,6 +479,12 @@ Every screen explains itself in plain words, so keep it that way when you add a 
   skill 16 and Excalibur, Fire at 16, Ultima learned in place of Toad, Maria's Ribbon, Josef's MP, gil, Elixirs and a
   Holy Tome all show in its menus). Its key terms, the fourth party member and the record of who has left aren't
   editable, and progress towards the next skill or spell level is left as it is.
+
+- Final Fantasy II (Famicom) was checked in the real game (Neo Demiforce's English patch 1.0 in cynes, 2026-11-06): a
+  save made there opens, and an edited copy (renamed Firion and Maria, 777 HP, new stats, weapon skills 2-9, Fire and
+  Cure 5 learned, Excalibur and a Bronze Helm, 9,999,999 gil, Potions, an Elixir and the Masamune in the bag) loads with
+  every edit showing in the menus. Only the English patch's letters are known, so Japanese names show as "?"; key
+  terms, key items and the record of who has left aren't editable.
 
 - Final Fantasy (WonderSwan Color) was checked in the real game (Japanese ROM in Mednafen's WonderSwan core,
   2026-11-06): a save made there opens, and an edited copy (a renamed character promoted to Knight at level 50 with

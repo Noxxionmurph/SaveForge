@@ -68,6 +68,10 @@ export type Ff1Platform = keyof typeof FF1_SPRITE_SIZE;
 export function ff2Portrait(who: string): HTMLImageElement {
   return icon(`${BASE}/ff2/gba/${who}.png`, 28, 28, 'job-sprite ff2');
 }
+/** A Final Fantasy II (Famicom) character's menu portrait (24x32, from the game's own tiles and menu colours). */
+export function ff2NesPortrait(who: string): HTMLImageElement {
+  return icon(`${BASE}/ff2/nes/${who}.png`, 24, 32, 'job-sprite ff2nes');
+}
 export function ff1ClassSprite(cls: number, platform: Exclude<Ff1Platform, 'ff2'>, cls2 = ''): HTMLImageElement {
   const [w, hgt] = FF1_SPRITE_SIZE[platform];
   return icon(`${BASE}/ff1/${platform}/${FF1_CLASS_FILES[cls] ?? 'warrior'}.png`, w, hgt, `job-sprite ${platform} ${cls2}`.trim());
