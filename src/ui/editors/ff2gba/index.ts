@@ -7,7 +7,7 @@ import {
 } from '../../../core/ff2gba/save.ts';
 import type { MountEditor } from '../../../core/types.ts';
 import { clear, field, h, numberInput, selectInput, textInput } from '../../dom.ts';
-import { ff2Portrait } from '../../sprites.ts';
+import { ff2Portrait, ff2PspPortrait } from '../../sprites.ts';
 import { tabBar, tabPanel } from '../../tabs.ts';
 
 type Tab = 'party' | 'items' | 'gear';
@@ -18,6 +18,8 @@ const TABS: { id: Tab; label: string }[] = [
 ];
 
 /** The editor for a version that uses this file layout (see Ff2Format), drawing party members with `portrait`. */
+const HEROES = ['firion', 'maria', 'guy', 'leon'];
+
 export const makeFf2Editor = (portrait: (who: string) => HTMLImageElement): MountEditor<Ff2GbaSave> => (container, s, host) => {
   const { items: ITEMS, spells: SPELLS, kind: KIND, gearChoices: GEAR_CHOICES, maxGil: MAX_GIL } = s.format;
   let tab: Tab = 'party';
@@ -80,7 +82,9 @@ export const makeFf2Editor = (portrait: (who: string) => HTMLImageElement): Moun
 
     const basics = h('section', { class: 'card' },
       h('h3', {}, c.name || `Character ${who + 1}`),
-      h('div', { class: 'grid' }, h('label', { class: 'field' }, h('span', { class: 'field-label' }, 'Name'), name, nameNote)),
+      s.format.guestNamesFixed && !HEROES.includes(c.portrait)
+        ? h('p', { class: 'field-hint' }, 'The game always calls guests by their own names, so only Firion, Maria, Guy and Leon can be renamed.')
+        : h('div', { class: 'grid' }, h('label', { class: 'field' }, h('span', { class: 'field-label' }, 'Name'), name, nameNote)),
       h('div', { class: 'grid pair' },
         field('HP', numberInput(c.hp, 0, MAX_HP, (v) => { c.hp = v; edited(); })),
         field('Max HP', numberInput(c.maxHp, 1, MAX_HP, (v) => { c.maxHp = v; edited(); })),
@@ -167,3 +171,4 @@ export const makeFf2Editor = (portrait: (who: string) => HTMLImageElement): Moun
 };
 
 export const mountFf2GbaEditor = makeFf2Editor(ff2Portrait);
+export const mountFf2PspEditor = makeFf2Editor(ff2PspPortrait);

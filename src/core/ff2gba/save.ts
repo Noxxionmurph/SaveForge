@@ -63,6 +63,9 @@ export interface Ff2Format {
   kind: typeof KIND;
   gearChoices: readonly (readonly number[])[];
   portraits: readonly string[];
+  /** The game shows guests under their own names whatever the save says (checked on the PSP), so only the four
+   * heroes can be renamed. */
+  guestNamesFixed?: boolean;
 }
 
 export const GBA_FORMAT: Ff2Format = {
@@ -109,7 +112,8 @@ export class Ff2GbaChar {
     this.f = f;
     this.o = fileAt + f.chars + index * f.charStride;
   }
-  get portrait() { return this.f.portraits[this.index]; }
+  /** Who the record holds (its id, not its place: the PSP's Soul of Rebirth files put Minwu and Scott first). */
+  get portrait() { return this.f.portraits[this.d[this.o + CH.id] & 0x0f] ?? this.f.portraits[this.index] ?? 'firion'; }
 
   get name() {
     let s = '';
