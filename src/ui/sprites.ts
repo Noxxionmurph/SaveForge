@@ -72,6 +72,10 @@ export function ff2Portrait(who: string): HTMLImageElement {
 export function ff2NesPortrait(who: string): HTMLImageElement {
   return icon(`${BASE}/ff2/nes/${who}.png`, 24, 32, 'job-sprite ff2nes');
 }
+/** A Final Fantasy II (PSP) character's menu portrait (52x60, from the disc). */
+export function ff2PspPortrait(who: string): HTMLImageElement {
+  return icon(`${BASE}/ff2/psp/${who}.png`, 52, 60, 'job-sprite ff2psp');
+}
 export function ff1ClassSprite(cls: number, platform: Exclude<Ff1Platform, 'ff2'>, cls2 = ''): HTMLImageElement {
   const [w, hgt] = FF1_SPRITE_SIZE[platform];
   return icon(`${BASE}/ff1/${platform}/${FF1_CLASS_FILES[cls] ?? 'warrior'}.png`, w, hgt, `job-sprite ${platform} ${cls2}`.trim());

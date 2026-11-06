@@ -1089,6 +1089,7 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
 .job-sprite.wsc { --art: var(--px2); width: calc(26 * var(--art)); height: calc(24 * var(--art)); }
 .job-sprite.ff2 { --art: var(--px2); width: calc(28 * var(--art)); height: calc(28 * var(--art)); }
 .job-sprite.ff2nes { --art: var(--px2); width: calc(24 * var(--art)); height: calc(32 * var(--art)); }
+.job-sprite.ff2psp { --art: var(--px1); width: calc(52 * var(--art)); height: calc(60 * var(--art)); }
 .job-sprite.psp { --art: var(--px1); width: calc(48 * var(--art)); height: calc(42 * var(--art)); }
 .mon-icon, .tile-icon {
   --art: var(--px1);
@@ -1166,11 +1167,11 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
 .ff2-spells { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px 16px; margin-bottom: 12px; }
 .ff-spell-row { display: flex; gap: 8px; align-items: flex-end; }
 .ff-spell-row > .field { flex: 1; min-width: 0; }
-/* On phones the PSP picture is too wide to sit beside the text in a half-width window, so it goes on top. */
+/* On phones the PSP pictures are too wide to sit beside the text in a half-width window, so they go on top. */
 @media (max-width: 719px) {
-  .ff-member:has(> .job-sprite.psp) { grid-template-columns: minmax(0, 1fr) auto; }
-  .ff-member:has(> .job-sprite.psp) > .ff-class, .ff-member:has(> .job-sprite.psp) > .ff-hp { grid-column: 1 / -1; }
-  .ff-member > .job-sprite.psp { grid-row: auto; grid-column: 1 / -1; justify-self: start; margin-bottom: 4px; }
+  .ff-member:has(> .job-sprite:is(.psp, .ff2psp)) { grid-template-columns: minmax(0, 1fr) auto; }
+  .ff-member:has(> .job-sprite:is(.psp, .ff2psp)) > :is(.ff-class, .ff-hp) { grid-column: 1 / -1; }
+  .ff-member > .job-sprite:is(.psp, .ff2psp) { grid-row: auto; grid-column: 1 / -1; justify-self: start; margin-bottom: 4px; }
 }
 .ff-gear-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; }
 .ff-gear-row + .ff-gear-row { margin-top: 8px; }

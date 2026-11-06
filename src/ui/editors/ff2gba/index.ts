@@ -7,7 +7,7 @@ import {
 } from '../../../core/ff2gba/save.ts';
 import type { MountEditor } from '../../../core/types.ts';
 import { clear, field, h, numberInput, selectInput, textInput } from '../../dom.ts';
-import { ff2Portrait } from '../../sprites.ts';
+import { ff2Portrait, ff2PspPortrait } from '../../sprites.ts';
 import { tabBar, tabPanel } from '../../tabs.ts';
 
 type Tab = 'party' | 'items' | 'gear';
@@ -167,3 +167,4 @@ export const makeFf2Editor = (portrait: (who: string) => HTMLImageElement): Moun
 };
 
 export const mountFf2GbaEditor = makeFf2Editor(ff2Portrait);
+export const mountFf2PspEditor = makeFf2Editor(ff2PspPortrait);

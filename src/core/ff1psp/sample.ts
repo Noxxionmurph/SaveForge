@@ -76,21 +76,22 @@ export function buildFf1PspPlain(): Uint8Array {
 
 // ---------- PARAM.SFO ----------
 
-/** A PARAM.SFO like the game writes, with the hashes left blank (updateSfoHashes fills them). */
-export function buildSfo(): Uint8Array {
+/** A PARAM.SFO like the game writes, with the hashes left blank (updateSfoHashes fills them). Final Fantasy II's
+ * sample (../ff2psp/sample.ts) passes its own folder, file and titles. */
+export function buildSfo(folder = FOLDER, file = 'SAVE.BIN', title = 'Final Fantasy I', detail = 'Final Fantasy I game data'): Uint8Array {
   const text = (s: string, max: number) => ({ fmt: 0x204, data: new TextEncoder().encode(`${s}\0`), max });
   const fileList = new Uint8Array(0xc60);
-  fileList.set(new TextEncoder().encode('SAVE.BIN'));
+  fileList.set(new TextEncoder().encode(file));
   const params = new Uint8Array(0x80);
   params[0] = 0x41;
   const entries: { key: string; fmt: number; data: Uint8Array; max: number }[] = [
     { key: 'CATEGORY', ...text('MS', 4) },
     { key: 'PARENTAL_LEVEL', fmt: 0x404, data: Uint8Array.of(4, 0, 0, 0), max: 4 },
-    { key: 'SAVEDATA_DETAIL', ...text('Final Fantasy I game data', 1024) },
-    { key: 'SAVEDATA_DIRECTORY', ...text(FOLDER, 64) },
+    { key: 'SAVEDATA_DETAIL', ...text(detail, 1024) },
+    { key: 'SAVEDATA_DIRECTORY', ...text(folder, 64) },
     { key: 'SAVEDATA_FILE_LIST', fmt: 0x4, data: fileList, max: fileList.length },
     { key: 'SAVEDATA_PARAMS', fmt: 0x4, data: params, max: params.length },
-    { key: 'SAVEDATA_TITLE', ...text('Final Fantasy I', 128) },
+    { key: 'SAVEDATA_TITLE', ...text(title, 128) },
     { key: 'TITLE', ...text('FINAL FANTASY ', 128) },
   ];
   const keyBytes = entries.map((e) => new TextEncoder().encode(`${e.key}\0`));

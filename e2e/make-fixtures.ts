@@ -6,7 +6,7 @@
 //   gold.sav       the Crystal sample's trainer as a Gold save (the landing page only offers the Crystal one)
 //   ruby.sav       a Ruby / Sapphire save, and emerald.sav the same trainer in Emerald (no Gen 3 sample on the landing page)
 //   firered.sav    a FireRed / LeafGreen save (Leaf in Pallet Town)
-//   ULUS10251DATA00.zip  a Final Fantasy (PSP) save folder; dawn-of-souls.sav and dawn-of-souls-2.sav Final Fantasy I and II (GBA) saves; ff2-famicom.sav Final Fantasy II (Famicom);
+//   ULUS10251DATA00.zip  a Final Fantasy (PSP) save folder; dawn-of-souls.sav and dawn-of-souls-2.sav Final Fantasy I and II (GBA) saves; ff2-famicom.sav Final Fantasy II (Famicom); ULUS1026300.zip Final Fantasy II (PSP);
 //   ff1-wonderswan.sav   a Final Fantasy (WonderSwan Color) save
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { buildSampleSave } from '../src/core/gen1/sample.ts';
@@ -18,6 +18,7 @@ import { buildFf1GbaSample } from '../src/core/ff1gba/sample.ts';
 import { buildFf2GbaSample } from '../src/core/ff2gba/sample.ts';
 import { buildFf1WscSample } from '../src/core/ff1wsc/sample.ts';
 import { buildFf2NesSample } from '../src/core/ff2nes/sample.ts';
+import { buildFf2PspSample } from '../src/core/ff2psp/sample.ts';
 
 const out = process.argv[2] ?? 'e2e/out';
 mkdirSync(out, { recursive: true });
@@ -41,4 +42,5 @@ writeFileSync(`${out}/dawn-of-souls.sav`, buildFf1GbaSample());
 writeFileSync(`${out}/dawn-of-souls-2.sav`, buildFf2GbaSample());
 writeFileSync(`${out}/ff1-wonderswan.sav`, buildFf1WscSample());
 writeFileSync(`${out}/ff2-famicom.sav`, buildFf2NesSample());
-console.log(`wrote sample.sav, rb.sav, rb-footer.sav, gold.sav, ruby.sav, emerald.sav, firered.sav, ULUS10251DATA00.zip, dawn-of-souls.sav, dawn-of-souls-2.sav ff1-wonderswan.sav and ff2-famicom.sav to ${out}`);
+writeFileSync(`${out}/ULUS1026300.zip`, buildFf2PspSample());
+console.log(`wrote sample.sav, rb.sav, rb-footer.sav, gold.sav, ruby.sav, emerald.sav, firered.sav, ULUS10251DATA00.zip, dawn-of-souls.sav, dawn-of-souls-2.sav ff1-wonderswan.sav, ff2-famicom.sav and ULUS1026300.zip to ${out}`);

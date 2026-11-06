@@ -2,7 +2,7 @@
 
 One site, many games. Drop a save on the landing page, the game is detected from the file's structure
 (size, checksums, layout; never a hash, since saves change on every write), and that game's editor is
-lazy-loaded. Currently supported: Pokémon Red / Blue / Yellow, Gold / Silver / Crystal and Ruby / Sapphire / FireRed / LeafGreen / Emerald (English), and Final Fantasy (NES, English; I and II from Dawn of Souls on GBA, US; II on Famicom, English patch; PSP Anniversary Edition, US; WonderSwan Color, Japan).
+lazy-loaded. Currently supported: Pokémon Red / Blue / Yellow, Gold / Silver / Crystal and Ruby / Sapphire / FireRed / LeafGreen / Emerald (English), and Final Fantasy (NES, English; I and II from Dawn of Souls on GBA, US; II on Famicom, English patch; I and II PSP Anniversary Edition, US; WonderSwan Color, Japan).
 Everything is a self-contained "game module", so adding Gen 4–5, more Final Fantasy versions, Mega Man Battle Network, etc. never touches the shell.
 
 ## Look and feel
@@ -354,6 +354,23 @@ which follow the same order item for item). Everything else was found by saving 
   gear isn't in it, spare weapons and armor are), and key items (a list of up to 32 ids from +0x73, in the order found).
 - Play time (+0x147: hours, minutes, seconds, frames) and steps (+0x143) are shown, not edited.
 
+## Final Fantasy II (PSP, Anniversary Edition)
+
+`src/core/ff2psp/`, on top of the Dawn of Souls model (`src/core/ff2gba/save.ts`, through `PSP_FORMAT`) and the PSP
+savedata code in `src/core/psp/`. US release (ULUS10263); the savedata key is Apollo Save Tool's. Item and spell names
+for what the PSP added come from the game's BOOT.BIN.
+
+- **Opening**: a zip of the save folder (`ULUS1026300` with PARAM.SFO and SAVEDATA.SAV), SAVEDATA.SAV alone (then
+  PARAM.SFO isn't updated, so only PPSSPP will load it), or the decrypted data.
+- **Format**: decrypted it is 0x20000 bytes: a 0x30-byte header, then 20 save files of 0xF40 bytes, each starting with
+  the text "ファイナルファンタジーⅡsave" (Shift-JIS) and a 16-bit checksum at +0x20 worked out as Dawn of Souls does it
+  (the bytes from +0x24 on, plus 0xF40). The Soul of Rebirth files after them aren't opened yet.
+- **Characters**: nine records of 0x7E bytes from file + 0x22, laid out like Dawn of Souls' (Leon is the ninth); the
+  fourth place is named at +0x4A2. Gil at +0x498 (up to 9,999,999), bag ids at +0x4A4 and counts at +0x53A.
+- **New items**: the Destroy and Revive tomes and spells, and the Soul of Rebirth weapons (Ragnarok, Artemis Bow,
+  Gigantaxe, Staff of Light, Dragon Claws, Gungnir, Dancing Dagger, Abel's Lance, Longinus).
+- Portraits come from the disc's own face pictures (52x60, SaveHub-assets).
+
 ## Final Fantasy (PSP, Anniversary Edition)
 
 `src/core/ff1psp/` and `src/core/psp/`. Tables (names, who can equip and learn what) come from the game's own data as
@@ -492,6 +509,10 @@ Every screen explains itself in plain words, so keep it that way when you add a 
   Shield and key items added and removed) loads with every edit showing in the menus. The sample file is also one the
   game loads. Only checked with saves made in the emulator, not a real cartridge's; the map, story flags and the four
   crystals aren't editable.
+
+- Final Fantasy II (PSP): a real save decrypts, opens and encrypts back to the same SAVEDATA.SAV. Not yet checked in the
+  real game. The copy of that save we have carries PARAM.SFO hashes that don't match its own contents, so whether a
+  real PSP accepts the redone ones is untested; Soul of Rebirth files aren't editable.
 
 - Final Fantasy (PSP): two real saves decrypt, open and encrypt back to the same bytes, and the editor's SFO hashes match
   the game's. Checked in the real game (US disc in PPSSPP's headless build, `scripts/psprun.sh`, 2026-11-05): an edited save
