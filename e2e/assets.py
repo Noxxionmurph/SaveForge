@@ -109,6 +109,7 @@ GAMES = [
     ('Final Fantasy (NES)', lambda page: page.click('.sample-row button:has-text("Final Fantasy")')),
     ('Final Fantasy (GBA)', lambda page: open_file(page, 'dawn-of-souls.sav')),
     ('Final Fantasy II (GBA)', lambda page: open_file(page, 'dawn-of-souls-2.sav')),
+    ('Final Fantasy (WonderSwan Color)', lambda page: open_file(page, 'ff1-wonderswan.sav')),
     ('Final Fantasy (PSP)', lambda page: open_file(page, 'ULUS10251DATA00.zip')),
 ]
 POKEMON_TABS = ('Trainer', 'Bag', 'Party', 'Boxes', 'Pokédex')
