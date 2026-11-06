@@ -6,6 +6,10 @@ Game Freak, Creatures Inc. or Square Enix. Pokémon and Final Fantasy, and every
 Final Fantasy (PSP) was checked in [PPSSPP](https://github.com/hrydgard/ppsspp) (`scripts/psprun.sh`), and Final Fantasy I (GBA)
 in [mGBA](https://mgba.io/) (`scripts/gbarun.c`). The GBA tables are read from the game's ROM by `scripts/gen-ff1gba-data.mjs` and `scripts/gen-ff2gba-data.mjs`.
 
+Final Fantasy (WonderSwan Color) was checked in Mednafen's WonderSwan core
+([beetle-wswan-libretro](https://github.com/libretro/beetle-wswan-libretro), driven by `scripts/wsrun.py`); its equip and
+magic tables are read from the game's ROM by `scripts/gen-ff1wsc-data.mjs`.
+
 Final Fantasy (NES) names and numbers are read from Disch's disassembly of the game
 (https://github.com/Entroper/FF1Disassembly) by `scripts/gen-ff1-data.mjs`.
 

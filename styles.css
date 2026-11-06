@@ -196,6 +196,38 @@
   box-shadow: inset 0 0 0 1px #c9d2ea, inset 0 0 0 3px var(--lcd);
 }
 
+/* WonderSwan Color (pearl white, blue buttons), for games that set theme: 'wsc' (?console=wsc previews it). The screens
+   are its Final Fantasy's menu windows: one flat blue with a white edge and a grey line inside it. */
+:root[data-console="wsc"] {
+  --caught: color-mix(in srgb, var(--cart) 30%, var(--surface)); --caught-ink: var(--text); --caught-dim: var(--muted); --caught-edge: var(--cart-shade);
+  --bg: #e4e6ec; --surface: #f3f4f7; --surface-2: #fafbfc; --line: #bfc3cd; --line-strong: #858b99;
+  --text: #16181d; --muted: #4a4f5b;
+  --button: #2f3f8f; --button-edge: #1b255a; --button-ink: #ffffff;
+  --lcd: #31309c; --lcd-ink: #ffffff; --lcd-dim: #c9c8f2; --lcd-edge: #14134a; --lcd-low: #222170;
+  --cart: #8e93a3; --cart-shade: #5d6271; --pin: #d4d7de; --slot-bar: #3d4250;
+  --focus: #0b5cad; --danger: #a4161a;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-console="wsc"]:not([data-theme="light"]) {
+    --bg: #0e0f13; --surface: #181a20; --surface-2: #1f2229; --line: #2e323b; --line-strong: #515765;
+    --text: #eceef3; --muted: #a8adba;
+    --button: #aab6f0; --button-edge: #7783c0; --button-ink: #0e0f13;
+    --lcd: #2c2b8e; --lcd-ink: #ffffff; --lcd-dim: #c2c1ee; --lcd-edge: #08082a; --lcd-low: #1b1a5c;
+    --cart: #5d6271; --cart-shade: #3d4250; --pin: #d4d7de; --slot-bar: #515765;
+    --focus: #8bb8ff; --danger: #ff9a9a;
+  }
+}
+:root[data-console="wsc"][data-theme="dark"] {
+  --bg: #0e0f13; --surface: #181a20; --surface-2: #1f2229; --line: #2e323b; --line-strong: #515765;
+  --text: #eceef3; --muted: #a8adba;
+  --button: #aab6f0; --button-edge: #7783c0; --button-ink: #0e0f13;
+  --lcd: #2c2b8e; --lcd-ink: #ffffff; --lcd-dim: #c2c1ee; --lcd-edge: #08082a; --lcd-low: #1b1a5c;
+  --cart: #5d6271; --cart-shade: #3d4250; --pin: #d4d7de; --slot-bar: #515765;
+  --focus: #8bb8ff; --danger: #ff9a9a;
+}
+/* The white edge and the grey line inside it. */
+:root[data-console="wsc"] .lcd { box-shadow: inset 0 0 0 2px #ffffff, inset 0 0 0 3px #8b899b, inset 0 0 0 5px var(--lcd); }
+
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body {
@@ -1054,6 +1086,7 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
 .mon-icon, .tile-icon, .item-icon, .badge-icon, .ribbon-icon, .pokeblock-icon, .pika-frame, .job-sprite { image-rendering: pixelated; }
 .job-sprite.nes { --art: var(--px2); width: calc(16 * var(--art)); height: calc(24 * var(--art)); }
 .job-sprite.gba { --art: var(--px2); width: calc(26 * var(--art)); height: calc(24 * var(--art)); }
+.job-sprite.wsc { --art: var(--px2); width: calc(26 * var(--art)); height: calc(24 * var(--art)); }
 .job-sprite.ff2 { --art: var(--px2); width: calc(28 * var(--art)); height: calc(28 * var(--art)); }
 .job-sprite.psp { --art: var(--px1); width: calc(48 * var(--art)); height: calc(42 * var(--art)); }
 .mon-icon, .tile-icon {

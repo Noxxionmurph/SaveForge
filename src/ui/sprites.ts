@@ -62,7 +62,7 @@ const FF1_CLASS_FILES = ['warrior', 'thief', 'monk', 'red-mage', 'white-mage', '
 
 /** A Final Fantasy class's picture: the NES standing sprite (16x24) or the PSP party picture (48x42). */
 /** Each version's class sprites (and Final Fantasy II's portraits, 'ff2') are drawn at their own size, in art pixels. */
-export const FF1_SPRITE_SIZE = { nes: [16, 24], gba: [26, 24], psp: [48, 42], ff2: [28, 28] } as const;
+export const FF1_SPRITE_SIZE = { nes: [16, 24], gba: [26, 24], psp: [48, 42], wsc: [26, 24], ff2: [28, 28] } as const;
 export type Ff1Platform = keyof typeof FF1_SPRITE_SIZE;
 /** A Final Fantasy II (Dawn of Souls) character's menu portrait. */
 export function ff2Portrait(who: string): HTMLImageElement {

@@ -2,7 +2,7 @@
 
 One site, many games. Drop a save on the landing page, the game is detected from the file's structure
 (size, checksums, layout; never a hash, since saves change on every write), and that game's editor is
-lazy-loaded. Currently supported: Pokémon Red / Blue / Yellow, Gold / Silver / Crystal and Ruby / Sapphire / FireRed / LeafGreen / Emerald (English), and Final Fantasy (NES, English; I and II from Dawn of Souls on GBA, US; PSP Anniversary Edition, US).
+lazy-loaded. Currently supported: Pokémon Red / Blue / Yellow, Gold / Silver / Crystal and Ruby / Sapphire / FireRed / LeafGreen / Emerald (English), and Final Fantasy (NES, English; I and II from Dawn of Souls on GBA, US; PSP Anniversary Edition, US; WonderSwan Color, Japan).
 Everything is a self-contained "game module", so adding Gen 4–5, more Final Fantasy versions, Mega Man Battle Network, etc. never touches the shell.
 
 ## Look and feel
@@ -315,6 +315,25 @@ tables straight out of its data banks into `tables.ts`.
   too; they're shown but not changed.
 - Portraits in the party window come from the game's own party menu (SaveHub-assets).
 
+## Final Fantasy (WonderSwan Color)
+
+`src/core/ff1wsc/`. Who can equip and learn what comes from the ROM (Japan, 2000); `scripts/gen-ff1wsc-data.mjs <rom>`
+writes it into `tables.ts` and checks the ROM's item names line up with the English list (the GBA remake's names,
+which follow the same order item for item). Everything else was found by saving in Mednafen's WonderSwan core
+(the libretro `beetle-wswan` build) and by writing values into a save and reading them back in the game's menus.
+
+- **Format** (`layout.ts`): 32 KB of SRAM. The text `FF1_SAVE_VER_008FF1DG-SRAM_ID/01` at 0x10, eight save files of
+  0x300 bytes from 0x30, and the quick save the menu's ちゅうだん makes at 0x1830. A u16 per file from 0x1BB2 holds the sum
+  of the file's 384 words; with a wrong one the game won't offer the file. A used file starts with "F1".
+- **Party** (four records of 0x58 bytes from file + 0x15D): class (0-5, promoted 8-13), status bits (the NES game's:
+  KO, stone, poison, blind, paralysis, sleep, silence, confusion), level, Exp, HP, the five stats, name (four of the
+  game's own characters: kana, A-Z, a-z, 0-9; 0xFB after a short name), MP current and max for each of the eight spell
+  levels, gear (weapon, body, shield, helmet, gloves, as item ids) and 24 spell places (three per level). The game
+  works out attack, defence and the like again from the gear.
+- **Items**: gil (+0x13F), the bag (86 cells of [item id, count] from +0x93, which the item screen lists in order; worn
+  gear isn't in it, spare weapons and armor are), and key items (a list of up to 32 ids from +0x73, in the order found).
+- Play time (+0x147: hours, minutes, seconds, frames) and steps (+0x143) are shown, not edited.
+
 ## Final Fantasy (PSP, Anniversary Edition)
 
 `src/core/ff1psp/` and `src/core/psp/`. Tables (names, who can equip and learn what) come from the game's own data as
@@ -440,6 +459,13 @@ Every screen explains itself in plain words, so keep it that way when you add a 
   skill 16 and Excalibur, Fire at 16, Ultima learned in place of Toad, Maria's Ribbon, Josef's MP, gil, Elixirs and a
   Holy Tome all show in its menus). Its key terms, the fourth party member and the record of who has left aren't
   editable, and progress towards the next skill or spell level is left as it is.
+
+- Final Fantasy (WonderSwan Color) was checked in the real game (Japanese ROM in Mednafen's WonderSwan core,
+  2026-11-06): a save made there opens, and an edited copy (a renamed character promoted to Knight at level 50 with
+  Excalibur, a Ribbon, 999 HP and 99 Strength, a poisoned Thief, a spell swapped and MP raised, gil, Potions, an Aegis
+  Shield and key items added and removed) loads with every edit showing in the menus. The sample file is also one the
+  game loads. Only checked with saves made in the emulator, not a real cartridge's; the map, story flags and the four
+  crystals aren't editable.
 
 - Final Fantasy (PSP): two real saves decrypt, open and encrypt back to the same bytes, and the editor's SFO hashes match
   the game's. Checked in the real game (US disc in PPSSPP's headless build, `scripts/psprun.sh`, 2026-11-05): an edited save
