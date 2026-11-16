@@ -72,6 +72,10 @@ export function ff2Portrait(who: string): HTMLImageElement {
 export function ff2NesPortrait(who: string): HTMLImageElement {
   return icon(`${BASE}/ff2/nes/${who}.png`, 24, 32, 'job-sprite ff2nes');
 }
+/** A Final Fantasy II (WonderSwan Color) character's menu portrait (28x28, from its party menu). */
+export function ff2WscPortrait(who: string): HTMLImageElement {
+  return icon(`${BASE}/ff2/wsc/${who}.png`, 28, 28, 'job-sprite ff2');
+}
 /** A Final Fantasy II (PSP) character's menu portrait (52x60, from the disc). */
 export function ff2PspPortrait(who: string): HTMLImageElement {
   return icon(`${BASE}/ff2/psp/${who}.png`, 52, 60, 'job-sprite ff2psp');
