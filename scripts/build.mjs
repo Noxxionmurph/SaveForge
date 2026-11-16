@@ -79,7 +79,8 @@ if (version) {
 }
 await writeFile(join(outDir, 'index.html'), page);
 await cp(join(root, 'styles.css'), join(outDir, 'styles.css'));
-await cp(join(root, 'og-image.png'), join(outDir, 'og-image.png')); // link preview; remade by scripts/make-og-image.py
+// link preview and icons; remade by scripts/make-brand-images.py
+for (const f of ['og-image.png', 'favicon.svg', 'apple-touch-icon.png']) await cp(join(root, f), join(outDir, f));
 await cp(join(root, 'fonts'), join(outDir, 'fonts'), { recursive: true });
 if (localArt) await cp(join(root, 'assets'), join(outDir, 'assets'), { recursive: true, filter: (src) => !/[\\/]\.git([\\/]|$)/.test(src) });
 const art = (await readFile(join(outDir, 'ui', 'art.js'), 'utf8')).match(ART_LINE)?.[0].match(/'([^']*)'/)?.[1];

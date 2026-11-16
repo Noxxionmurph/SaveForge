@@ -80,7 +80,7 @@ Use the shared pieces before writing new ones: `ui/tabs.ts`, `itemList.ts`, `mon
 - **Pokémon window**: Esc and × both discard, Save commits.
 - **Tiles**: a game-colour stripe, the name, the platform, and the icon at `--px2`.
 - **Landing page**: the h1 and lede stay series-neutral. Under the file slot sit the "Works with" chips (one per `family`, linking to its shelf) and the sample buttons (full game title and its colour stripe). The example change list comes from the first module with a `demo`.
-- **Link preview**: `og-image.png` (1200×630), drawn by `scripts/make-og-image.py` with no game artwork.
+- **Brand mark**: the cartridge on a magenta tile with a dithered glow and sparkles (24×24 art grid). It's the GitHub avatar, `favicon.svg`, `apple-touch-icon.png` and the left half of the link preview `og-image.png` (1200×630). All are drawn by `scripts/make-brand-images.py` with no game artwork; everything but the background stays inside the centre circle so round crops never clip it.
 
 ## Copy
 
