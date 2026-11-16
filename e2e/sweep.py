@@ -98,6 +98,11 @@ with sync_playwright() as p:
             for tab in page.locator('button.tab').all_inner_texts():
                 page.click(f'button.tab:text-is("{tab}")'); page.wait_for_timeout(200)
                 found[f'{width} {game} {tab}'] = page.evaluate(SCAN)
+                if tab == 'Bag':   # each pocket under the pocket tabs
+                    for i in range(page.locator('button.pocket-tab').count()):
+                        page.locator('button.pocket-tab').nth(i).click(); page.wait_for_timeout(100)
+                        found[f'{width} {game} Bag pocket {i + 1}'] = page.evaluate(SCAN)
+                    page.locator('button.pocket-tab').first.click()
             page.click('button.tab:has-text("Party")')
             for i in range(page.locator('.mon-main').count()):   # every party member: eggs, Unown and Pikachu differ
                 page.locator('.mon-main').nth(i).click(); page.wait_for_selector('dialog.mon-dialog[open]'); page.wait_for_timeout(150)

@@ -20,9 +20,11 @@ import { dexTab as sharedDexTab } from '../../dexTab.ts';
 import { choiceRow, stepRow } from '../../gameChoice.ts';
 import { itemList } from '../../itemList.ts';
 import { legendsCard } from '../../legendsCard.ts';
+import { hallOfFameCard } from '../../hallOfFameCard.ts';
 import { rescueRow } from '../../rescueRow.ts';
 import { badgeIcon, itemIcon, itemIconUrl, setIconSrc } from '../../sprites.ts';
 import { tabBar, tabPanel } from '../../tabs.ts';
+import { pocketTabs } from '../../pockets.ts';
 import { typeChips } from '../../typeChip.ts';
 import { showFrame } from '../../windowFrame.ts';
 import { monHpBar } from './hpBar.ts';
@@ -226,6 +228,7 @@ export const mountGen2Editor: MountEditor<Gen2Save> = (container, s, host) => {
         h('h3', {}, 'Badges'),
         badgeCard('Johto badges', JOHTO_BADGES, 'johto', () => s.johtoBadges, (v) => { s.johtoBadges = v; }),
         badgeCard('Kanto badges', KANTO_BADGES, 'kanto', () => s.kantoBadges, (v) => { s.kantoBadges = v; })),
+      hallOfFameCard(s.hallOfFame),
       legendsCard(s, markDirty),
       optionsCard(),
     );
@@ -319,7 +322,7 @@ export const mountGen2Editor: MountEditor<Gen2Save> = (container, s, host) => {
 
   /** TM/HM pocket: a count for each of the 57, as the game stores it. */
   function tmhmCard(): Node {
-    const wrap = h('section', { class: 'card' });
+    const wrap = h('section', { class: 'card tm-card' });
     const counter = h('span', { class: 'muted count' });
     const paint = () => { counter.textContent = `${s.tmhm.filter((n) => n > 0).length}/${TM_COUNT + HM_COUNT}`; };
     const rows = TMHM_MOVES.map((move, i) => {
@@ -355,14 +358,21 @@ export const mountGen2Editor: MountEditor<Gen2Save> = (container, s, host) => {
     return wrap;
   }
 
-  const bagTab = () => h('div', { class: 'stack' },
-    h('div', { class: 'two-col' },
-      bagCard('Items pocket', s.items, BAG_MAX.items, ITEM_OPTIONS, () => RARE_CANDY),
-      bagCard('Balls pocket', s.balls, BAG_MAX.balls, BALL_OPTIONS, () => ULTRA_BALL),
-      keyList(),
-      bagCard('PC item storage', s.pcItems, BAG_MAX.pcItems, PC_OPTIONS, () => RARE_CANDY),
-    ),
-    tmhmCard());
+  type Pocket = 'items' | 'balls' | 'key' | 'tmhm' | 'pc';
+  let pocket: Pocket = 'items';
+  const POCKETS: { id: Pocket; label: string }[] = [
+    { id: 'items', label: 'Items' }, { id: 'balls', label: 'Balls' }, { id: 'key', label: 'Key items' }, { id: 'tmhm', label: 'TMs & HMs' }, { id: 'pc', label: 'PC storage' },
+  ];
+  const pocketCard = (): Node => {
+    switch (pocket) {
+      case 'items': return bagCard('Items pocket', s.items, BAG_MAX.items, ITEM_OPTIONS, () => RARE_CANDY);
+      case 'balls': return bagCard('Balls pocket', s.balls, BAG_MAX.balls, BALL_OPTIONS, () => ULTRA_BALL);
+      case 'key': return keyList();
+      case 'tmhm': return tmhmCard();
+      case 'pc': return bagCard('PC item storage', s.pcItems, BAG_MAX.pcItems, PC_OPTIONS, () => RARE_CANDY);
+    }
+  };
+  const bagTab = () => pocketTabs(POCKETS, pocket, (id) => { pocket = id; render(); }, pocketCard());
 
   // ---------- Pokémon lists ----------
 

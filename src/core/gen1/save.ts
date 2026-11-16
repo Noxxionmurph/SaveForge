@@ -7,6 +7,8 @@ import { baseStatsFor, speciesName, TYPE_BYTE } from './data.ts';
 import { describeGen1Changes } from './diff.ts';
 import { decodeText, encodeText } from './text.ts';
 import { sendGen1Home } from './home.ts';
+import { readGen1HallOfFame } from './hof.ts';
+import type { HallOfFame } from '../hallOfFame.ts';
 import { GEN1_LEGENDS, bringBackGen1Legend, gen1LegendGone } from './legends.ts';
 
 export const SAVE_SIZE = 0x8000;
@@ -377,6 +379,8 @@ export class Gen1Save implements EditableSave {
   /** Per legend (see legends.ts), whether saving brings it back. */
   bringBack: boolean[] = GEN1_LEGENDS.map(() => false);
 
+  /** The Hall of Fame as the file has it (not editable). */
+  readonly hallOfFame: HallOfFame;
   private original: Uint8Array;
   private nameRaw: Uint8Array;
   private rivalRaw: Uint8Array;
@@ -386,6 +390,7 @@ export class Gen1Save implements EditableSave {
     this.original = data.slice();
     const d = this.original;
     this.checksumOk = Gen1Save.checksumValid(d);
+    this.hallOfFame = readGen1HallOfFame(d);
     this.nameRaw = d.slice(OFF.playerName, OFF.playerName + NAME_LEN);
     this.rivalRaw = d.slice(OFF.rivalName, OFF.rivalName + NAME_LEN);
     this.trainerName = decodeText(this.nameRaw);

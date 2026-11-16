@@ -326,7 +326,7 @@ test('game stats read back as edited, under the key in Emerald and plain in Ruby
     assert.deepEqual(shown, Array.from({ length: count }, (_, i) => i).filter((i) => ![1, 22, 31].includes(i)), game);
     const s = new Gen3Save(buildSampleSave(game));
     assert.equal(s.gameStats.length, count);
-    assert.ok(s.gameStats.every((v) => v === 0), game);
+    assert.ok(s.gameStats.every((v, i) => v === 0 || i === 10), game); // the sample has beaten the Elite Four (stat 10)
     s.gameStats[5] = 123456;
     s.gameStats[1] = packHofTime({ hours: 12, minutes: 34, seconds: 56 });
     s.gameStats[11] = 1 << 30; // more than the game counts to

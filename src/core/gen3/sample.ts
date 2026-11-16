@@ -4,12 +4,13 @@
 // Built the way the game writes a first save: the game picks the slot by save counter % 2 and rotates the sectors by
 // the counter, so the first save (counter 1) is the second slot with sector 0 one place in. The rest stays blank.
 
-import { MOVE_NAMES, UNOWN, findPid, maxPp, speciesName, type Gen3Game } from './data.ts';
+import { MOVE_NAMES, UNOWN, findPid, maxPp, speciesName, speciesOf, type Gen3Game } from './data.ts';
 import {
   BOX_COUNT, GEN3_LAYOUTS, Gen3Save, SAVE_SIZE, depositInBox, newMon, recalcPartyStats, sectorChecksum, type Gen3Mon,
 } from './save.ts';
 import { FLY_SPOTS } from './kanto.ts';
 import { encodeText } from './text.ts';
+import { writeGen3HallOfFame } from './hof.ts';
 
 const SECTOR_DATA = 3968;
 
@@ -173,7 +174,16 @@ export function buildSampleSave(game: Gen3Game = 'rs'): Uint8Array {
   ];
   for (let dex = 252; dex <= 300; dex++) s.setSeen(dex, true);
   for (const dex of [257, 282, 277, 263, 270, 304, 25, 184, 201, 360, 255, 256, 280, 281, 276]) s.setOwned(dex, true);
-  return s.serialize();
+  // Two Hall of Fame entries, oldest first (the game counts wins in game stat 10).
+  s.gameStats[10] = 2;
+  const out = s.serialize();
+  writeGen3HallOfFame(out, trainerId, [
+    [{ species: speciesOf(257), level: 50, name: 'BLAZE' }, { species: speciesOf(282), level: 47, name: 'GARDEVOIR', personality: 0x26660000 }, { species: speciesOf(277), level: 46, name: 'SWELLOW' },
+      { species: speciesOf(184), level: 44, name: 'AZUMARILL' }, { species: speciesOf(306), level: 43, name: 'AGGRON' }, { species: speciesOf(321), level: 42, name: 'WAILORD' }],
+    [{ species: speciesOf(257), level: 62, name: 'BLAZE' }, { species: speciesOf(282), level: 60, name: 'GARDEVOIR', personality: 0x26660000 }, { species: speciesOf(277), level: 58, name: 'SWELLOW' },
+      { species: speciesOf(184), level: 57, name: 'AZUMARILL' }],
+  ]);
+  return out;
 }
 
 /** FireRed and LeafGreen's sample: Leaf with four Kanto badges, a party and box from Kanto, a partly charged Vs. Seeker,
@@ -226,5 +236,11 @@ function buildKantoSample(): Uint8Array {
   k.fame[4] = { state: 1, facts: 0 }; // Lt. Surge, heard of
   for (let dex = 1; dex <= 60; dex++) s.setSeen(dex, true);
   for (const dex of [1, 2, 3, 25, 17, 175, 131, 19, 10, 54, 74, 129, 16, 13, 21]) s.setOwned(dex, true);
-  return s.serialize();
+  s.gameStats[10] = 1;
+  const out = s.serialize();
+  writeGen3HallOfFame(out, trainerId, [[
+    { species: speciesOf(3), level: 56, name: 'BUD' }, { species: speciesOf(25), level: 52, name: 'PIKACHU' }, { species: speciesOf(17), level: 50, name: 'PIDGEOTTO' },
+    { species: speciesOf(131), level: 49, name: 'LAPRAS' },
+  ]]);
+  return out;
 }

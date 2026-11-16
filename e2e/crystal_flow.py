@@ -75,6 +75,7 @@ with sync_playwright() as p:
 
     # --- bag: Crystal's own key items are offered, and the sample has the Blue Card
     page.click('button.tab:has-text("Bag")')
+    page.click('button.pocket-tab:text-is("Key items")')
     keys = page.locator('section:has(h3:has-text("Key Items pocket")) select')
     assert 'Blue Card' in [keys.nth(i).evaluate('s => s.selectedOptions[0].textContent') for i in range(keys.count())]
     keys.first.focus()                                                # the list fills on first use

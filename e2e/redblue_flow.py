@@ -34,12 +34,15 @@ with sync_playwright() as p:
     page.dispatch_event('input[max="999999"]', 'change')
     page.screenshot(path=f'{SP}/2-trainer.png')
     # Bag tab
-    page.click('text=Bag')
-    assert page.locator('.item-row').count() == 10 + 2   # bag 10 + PC 2
+    page.click('button.tab:has-text("Bag")')
+    assert page.locator('.item-row').count() == 10   # the Bag pocket shows first
+    page.click('button.pocket-tab:text-is("PC storage")')
+    assert page.locator('.item-row').count() == 2
+    page.click('button.pocket-tab:text-is("Bag")')
     page.click('text=+ Add item')
-    assert page.locator('.item-row').count() == 12          # nothing is added until an item is picked
+    assert page.locator('.item-row').count() == 10          # nothing is added until an item is picked
     page.fill('.pick-search', 'antidote'); page.keyboard.press('Enter')
-    page.wait_for_function("document.querySelectorAll('.item-row').length === 13")
+    page.wait_for_function("document.querySelectorAll('.item-row').length === 11")
     # Party tab -> open Pikachu editor
     page.click('button.tab:has-text("Party")')
     page.click('.mon-main')

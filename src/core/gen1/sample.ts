@@ -8,6 +8,7 @@ import {
   BOXES_PER_BANK, BOX_SIZE, GEN1_OFFSETS, Gen1Save, SAVE_SIZE, checksum8, newMon, recalcPartyStats, type Gen1Mon,
 } from './save.ts';
 import { encodeText } from './text.ts';
+import { writeGen1HallOfFame } from './hof.ts';
 
 /**
  * A brand-new, empty save that passes every checksum (what the game writes for a fresh file). With
@@ -102,6 +103,11 @@ const BOX_2: Spec[] = [
 export function buildSampleSave(): Uint8Array {
   const blank = blankGen1Save('ASH', 'GARY', true);
   placeInBedroom(blank);
+  // One Hall of Fame entry, as after beating the Champion: dex numbers, levels and the nicknames the party wore.
+  writeGen1HallOfFame(blank, [[
+    { dex: 25, level: 54, name: 'SPARKY' }, { dex: 6, level: 51, name: 'CHARIZARD' }, { dex: 9, level: 50, name: 'BLASTOISE' },
+    { dex: 3, level: 49, name: 'VENUSAUR' }, { dex: 143, level: 47, name: 'SNORLAX' }, { dex: 131, level: 46, name: 'LAPRAS' },
+  ]]);
   const save = new Gen1Save(blank);
   save.pikachuFriendship = 160;
   save.trainerId = TRAINER_ID;

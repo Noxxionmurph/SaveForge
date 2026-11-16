@@ -100,6 +100,7 @@ with sync_playwright() as p:
     assert stats.locator('label.field:has-text("Berry Crush games")').count() == 1   # Emerald only
     page.screenshot(path=f'{SP}/e-stats.png', full_page=True)
     page.click('button.tab:has-text("Bag")')                                         # the Pokéblock case
+    page.click('button.pocket-tab:text-is("Blocks & bases")')
     page.click('section.pokeblocks details.fold > summary')
     page.click('section.pokeblocks button:has-text("Add Pokéblock")')
     assert page.inner_text('section.pokeblocks h3 .count') == '3/40'                  # the sample has a red and a yellow one
@@ -186,11 +187,15 @@ with sync_playwright() as p:
 
     # --- bag: five pockets, TMs, berries
     page.click('button.tab:has-text("Bag")')
-    for pocket in ['Items pocket', 'Poké Balls pocket', 'Key Items pocket', 'Berries pocket', 'PC item storage', 'TMs & HMs pocket']:
-        assert page.locator(f'h3:has-text("{pocket}")').count() >= 1, pocket
+    for tab, pocket in [('Items', 'Items pocket'), ('Poké Balls', 'Poké Balls pocket'), ('Key items', 'Key Items pocket'), ('Berries', 'Berries pocket'), ('PC storage', 'PC item storage'), ('TMs & HMs', 'TMs & HMs pocket')]:
+        page.click(f'button.pocket-tab:text-is("{tab}")')
+        assert page.locator(f'h3:has-text("{pocket}")').count() == 1, pocket
     assert page.locator('.tm-row').count() == 58
+    page.click('button.pocket-tab:text-is("Blocks & bases")')
     assert page.locator('section.secret-base').count() == 1                           # Ruby and Sapphire have secret bases too
+    page.click('button.pocket-tab:text-is("TMs & HMs")')
     page.fill('input[aria-label="TM26 count"]', '3'); page.press('input[aria-label="TM26 count"]', 'Tab')
+    page.click('button.pocket-tab:text-is("Berries")')
     berries = page.locator('section.card:has(h3:has-text("Berries pocket"))')
     berries.locator('.item-row input').first.fill('500'); berries.locator('.item-row input').first.press('Tab')
     page.screenshot(path=f'{SP}/r2-bag.png', full_page=True)
