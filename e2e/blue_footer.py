@@ -34,7 +34,7 @@ with sync_playwright() as p:
     assert 'Lv 28' in dlg.inner_text()
     lvl = dlg.locator('label.field:has-text("Level") input'); lvl.fill('10'); lvl.dispatch_event('change')
     assert 'Lv 10' in dlg.inner_text()
-    dlg.locator('button:has-text("Done")').click(); page.wait_for_selector('dialog.mon-dialog', state='detached')
+    dlg.locator('button:has-text("Apply changes")').click(); page.wait_for_selector('dialog.mon-dialog', state='detached')
 
     # trainer tab: money
     page.click('button.tab:has-text("Trainer")')

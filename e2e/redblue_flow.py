@@ -37,7 +37,9 @@ with sync_playwright() as p:
     page.click('text=Bag')
     assert page.locator('.item-row').count() == 10 + 2   # bag 10 + PC 2
     page.click('text=+ Add item')
-    assert page.locator('.item-row').count() == 13
+    assert page.locator('.item-row').count() == 12          # nothing is added until an item is picked
+    page.fill('.pick-search', 'antidote'); page.keyboard.press('Enter')
+    page.wait_for_function("document.querySelectorAll('.item-row').length === 13")
     # Party tab -> open Pikachu editor
     page.click('button.tab:has-text("Party")')
     page.click('.mon-main')
@@ -63,6 +65,7 @@ with sync_playwright() as p:
     with page.expect_download() as dl:
         page.click('dialog.review-dialog button.primary')
     dl.value.save_as(f'{SP}/edited.sav')
+    page.click('dialog.saved-dialog button.primary')
     # --- unknown file -> chooser; then force-open; then bad size -> error
     page.click('text=Close')
     page.wait_for_selector('.slot')

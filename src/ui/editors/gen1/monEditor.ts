@@ -7,6 +7,7 @@ import {
 import {
   applySpeciesTypes, calcStats, defaultNickname, hpDv, recalcPartyStats, type Gen1Mon,
 } from '../../../core/gen1/save.ts';
+import { pickerButton } from '../../picker.ts';
 import { field, h, numberInput, selectInput } from '../../dom.ts';
 import { monDialog } from '../../monDialog.ts';
 import { maxPp, moveInfo } from '../../../core/gen1/moves.ts';
@@ -72,8 +73,8 @@ export function openMonEditor({ mon, party, onDone, onDiscard }: MonEditorOption
         return h('div', { class: 'move-row' },
           h('div', { class: 'move-pick' },
             info ? typeIcon(info.type, 'move-type') : h('span', { class: 'move-type blank', 'aria-hidden': 'true' }),
-            selectInput(MOVE_OPTIONS, id, (v) => {
-              mon.moves[i] = Number(v);
+            pickerButton(`Move ${i + 1}`, MOVE_OPTIONS, id, (v) => {
+              mon.moves[i] = v;
               mon.pp[i] = maxPp(mon.moves[i], mon.ppUps[i]); // a newly picked move starts with full PP
               redraw();
             }, { 'aria-label': `Move ${i + 1}` })),
@@ -182,10 +183,6 @@ export function openMonEditor({ mon, party, onDone, onDiscard }: MonEditorOption
         h('button', { onclick: () => { mon.exp = expAt(mon.level); refresh(); } }, 'Match exp to level'),
         h('button', { onclick: () => { mon.pp = mon.moves.map((m, i) => maxPp(m, mon.ppUps[i])) as typeof mon.pp; refresh(); } }, 'Restore PP'),
         party ? h('button', { onclick: () => { recalcPartyStats(mon, true); refresh(); } }, 'Heal and recalculate stats') : null,
-      ),
-      h('div', { class: 'dialog-foot' },
-        h('span', { class: 'muted' }, 'Done keeps your changes and the ✕ at the top throws them away. The file is only written when you tap Save on the main page.'),
-        h('button', { class: 'primary', onclick: win.close }, 'Done'),
       ),
     ];
   }

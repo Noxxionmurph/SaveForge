@@ -1,5 +1,5 @@
 // The Pokémon window's frame, for every generation: the dialog, the ✕ that stays at its top right, and what closing does.
-// Edits are applied to the Pokémon as they're made. Done keeps them. The ✕ (and Escape) throws them away: it puts the
+// Edits are applied to the Pokémon as they're made. Apply changes keeps them. Cancel, the ✕ and Escape throw them away: it puts the
 // Pokémon back the way it was when the window opened, after asking if anything was changed.
 
 import { askConfirm, clear, h } from './dom.ts';
@@ -19,7 +19,7 @@ export interface MonDialogSpec<M> {
 export interface MonDialog {
   /** Draw the contents again, keeping the scroll position. */
   refresh(): void;
-  /** Close and keep the edits (Done). */
+  /** Close and keep the edits (Apply changes). */
   close(): void;
   /** Show the window. */
   open(): void;
@@ -54,6 +54,11 @@ export function monDialog<M extends object>({ mon, label, render, onDone, onDisc
       onclick: () => { void discardAndClose(); },
     }));
 
+  // Stays at the bottom while the form scrolls, so keeping or throwing away the edits never means scrolling to the end.
+  const footer = h('div', { class: 'dialog-foot sticky-foot' },
+    h('button', { type: 'button', onclick: () => { void discardAndClose(); } }, 'Cancel'),
+    h('button', { type: 'button', class: 'primary', onclick: () => dialog.close() }, 'Apply changes'));
+
   let refreshing = false;
   const refresh = () => {
     if (refreshing) return;
@@ -61,7 +66,7 @@ export function monDialog<M extends object>({ mon, label, render, onDone, onDisc
     try {
       const y = body.scrollTop;
       clear(body);
-      body.append(closeBar, ...render().filter((n): n is Node => n !== null));
+      body.append(closeBar, ...render().filter((n): n is Node => n !== null), footer);
       body.scrollTop = y;
     } finally { refreshing = false; }
   };

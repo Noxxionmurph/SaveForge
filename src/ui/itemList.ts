@@ -3,6 +3,7 @@
 
 import type { BagItem } from '../core/bytes.ts';
 import { clear, h, lazySelect, numberInput, refocusAfterRemove } from './dom.ts';
+import { pickOption } from './picker.ts';
 import { itemIcon, itemIconUrl, setIconSrc } from './sprites.ts';
 
 export interface ItemListSpec {
@@ -16,9 +17,9 @@ export interface ItemListSpec {
   options: { value: number; label: string }[];
   nameOf(id: number): string;
   spritePath(id: number): string;
-  /** The item a new row starts as. */
-  fresh(): number;
-  /** Start a new row as an item the pocket doesn't hold yet, when `fresh()` is already there. */
+  /** Unused now that the player picks the item; callers still pass it. */
+  fresh?(): number;
+  /** Items the pocket can only hold once: the add picker leaves out the ones already there. */
   unique?: boolean;
   markDirty(): void;
 }
@@ -46,11 +47,14 @@ export function itemList(spec: ItemListSpec): HTMLElement {
       }),
       h('button', {
         disabled: items.length >= slots,
-        onclick: () => {
+        onclick: async () => {
+          // The player picks the item first; a row only appears once they have.
           const has = (id: number) => items.some((it) => it.id === id);
-          const id = !spec.unique || !has(spec.fresh()) ? spec.fresh() : options.find((o) => !has(o.value))?.value ?? spec.fresh();
+          const id = await pickOption(`Add to ${title}`, spec.unique ? options.filter((o) => !has(o.value)) : options);
+          if (id === null || items.length >= slots) return;
           items.push({ id, count: 1 });
           spec.markDirty(); draw();
+          wrap.querySelectorAll<HTMLElement>('.item-row')[items.length - 1]?.scrollIntoView({ block: 'nearest' });
         },
       }, items.length >= slots ? `Full (${slots} of ${slots})` : '+ Add item'),
     );

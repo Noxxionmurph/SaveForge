@@ -116,6 +116,7 @@ with sync_playwright() as p:
     with page.expect_download() as dl:
         page.click('dialog.review-dialog button.primary')
     dl.value.save_as(f'{SP}/g-edited.sav')
+    page.click('dialog.saved-dialog button.primary')
     data = open(f'{SP}/g-edited.sav', 'rb').read()
     assert len(data) == 32768 and checksums_ok(data)
     assert data[0x23e4] == 0xff                     # all Johto badges

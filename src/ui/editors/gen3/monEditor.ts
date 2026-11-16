@@ -13,6 +13,7 @@ import {
   setRibbon,
 } from '../../../core/gen3/ribbons.ts';
 import { defaultNickname, recalcPartyStats, type Gen3Mon } from '../../../core/gen3/save.ts';
+import { pickerButton } from '../../picker.ts';
 import { field, h, lazySelect, numberInput, selectInput } from '../../dom.ts';
 import { monDialog } from '../../monDialog.ts';
 import { gen3RibbonIcon, itemIcon, itemIconUrl, setIconSrc, shinyIcon, typeIcon } from '../../sprites.ts';
@@ -151,8 +152,8 @@ export function openMonEditor({ mon, party, game, onDone, onDiscard }: MonEditor
         return h('div', { class: 'move-row' },
           h('div', { class: 'move-pick' },
             info ? typeIcon(info.type, 'move-type') : h('span', { class: 'move-type blank', 'aria-hidden': 'true' }),
-            selectInput(keep(MOVE_OPTIONS, id, `Move ${id}`), id, (v) => {
-              mon.moves[i] = Number(v);
+            pickerButton(`Move ${i + 1}`, keep(MOVE_OPTIONS, id, `Move ${id}`), id, (v) => {
+              mon.moves[i] = v;
               mon.pp[i] = maxPp(mon.moves[i], mon.ppUps[i]);
               redraw();
             }, { 'aria-label': `Move ${i + 1}` })),
@@ -323,10 +324,6 @@ export function openMonEditor({ mon, party, game, onDone, onDiscard }: MonEditor
         mon.isEgg ? null : h('button', { onclick: () => { mon.friendship = 255; refresh(); } }, 'Max friendship'),
         h('button', { onclick: () => { mon.pp = mon.moves.map((m, i) => maxPp(m, mon.ppUps[i])) as Gen3Mon['pp']; refresh(); } }, 'Restore PP'),
         party && !mon.isEgg ? h('button', { onclick: () => { mon.status = 0; recalcPartyStats(mon, true); refresh(); } }, 'Heal and recalculate stats') : null,
-      ),
-      h('div', { class: 'dialog-foot' },
-        h('span', { class: 'muted' }, 'Done keeps your changes; the ✕ at the top throws them away.'),
-        h('button', { class: 'primary', onclick: win.close }, 'Done'),
       ),
     ];
   }

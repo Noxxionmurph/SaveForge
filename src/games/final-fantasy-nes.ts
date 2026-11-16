@@ -9,6 +9,7 @@ export default defineGame<Ff1NesSave>({
   icons: { 'Final Fantasy': 'sprites/ff1/psp/warrior.png' }, // the PSP warrior, on the tile all three ports share
   // Every Final Fantasy version shares one row and this one "you can edit" line.
   shelf: 'final-fantasy',
+  sampleGame: 'Final Fantasy I · NES',
   platform: 'NES · English',
   editable: 'Your party’s names, stats, gear and spells, plus classes and levels in I and weapon skills in II; gil, items and key items.',
   fileHint: 'Final Fantasy (NES) saves are 8,192 bytes (8 KB).',
