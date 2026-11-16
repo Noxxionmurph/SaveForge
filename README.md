@@ -2,7 +2,7 @@
 
 One site, many games. Drop a save on the landing page, the game is detected from the file's structure
 (size, checksums, layout; never a hash, since saves change on every write), and that game's editor is
-lazy-loaded. Currently supported: Pokémon Red / Blue / Yellow, Gold / Silver / Crystal and Ruby / Sapphire / FireRed / LeafGreen / Emerald (English), and Final Fantasy (NES, English; I and II from Dawn of Souls on GBA, US; II on Famicom, English patch; I and II PSP Anniversary Edition, US; I on WonderSwan Color, Japan; II on WonderSwan Color, English patch).
+lazy-loaded. Currently supported: Pokémon Red / Blue / Yellow, Gold / Silver / Crystal and Ruby / Sapphire / FireRed / LeafGreen / Emerald (English), and Final Fantasy (NES, English; I and II from Dawn of Souls on GBA, US; II on Famicom, English patch; I and II PSP Anniversary Edition, US; I on WonderSwan Color, Japan; II on WonderSwan Color, English patch; III on Famicom, English patch).
 Everything is a self-contained "game module", so adding Gen 4–5, more Final Fantasy versions, Mega Man Battle Network, etc. never touches the shell.
 
 ## Look and feel
@@ -338,6 +338,28 @@ and were checked by loading edited saves in the game (Neo Demiforce's English pa
 - **Items**: gil (u24 at +0x1C, up to 9,999,999), and the bag: 32 places of one item each at +0x60. Key items are bits
   at +0x1A/+0x1B (item k is bit k); they're shown but not changed.
 - Portraits are drawn from the game's own tiles (24x32) in its menu colours (SaveForge-assets).
+
+## Final Fantasy III (Famicom)
+
+`src/core/ff3nes/`. Offsets come from everything8215's disassembly (https://github.com/everything8215/ff3,
+`field-ram.txt` and `ff3j.asm`); names from its string table of the English fan translation (`ff3u-text.txt`, through
+`scripts/gen-ff3nes-data.mjs`).
+
+- **Format** (`layout.ts`): 8 KB of battery RAM. The game plays from a working copy at 0x000-0x3FF and saves it to one
+  of three slots at 0x400, 0x800 and 0xC00. A slot is offered on the load screen only if +0x19 holds 0x5A and its 1,024
+  bytes add up to 0xFF (8-bit, no carry); +0x1A is set to make that so.
+- **Party**: four records of 0x40 bytes from slot + 0x100: job (0-21), level (stored as level - 1), status bits, exp
+  (u24), name (+6, six tiles), HP / max HP (+0xC), the current job's level and progress (+0x10), the five stats (+0x12;
+  the copy with gear bonuses at +0x17 moves with them), and [current, max] MP for spell levels 1-8 (+0x30). A second
+  0x40 bytes each from slot + 0x200: head, body, arms, right hand (+ arrow count), left hand (+ arrow count), one byte per
+  spell level with a bit for each of its seven spells (+7; the menus show three at most), the row (+0xF bit 0), and
+  every job's [level, progress] (+0x10 + 2 x job). The game copies the current job's pair between +0x10 and the list
+  when the job changes, and works attack, defense and gear bonuses out again when it next checks gear.
+- **Items**: capacity (+0x1B), gil (u24 at +0x1C, up to 9,999,999), the crystals' jobs (+0x21 bits 0-4), and the bag:
+  32 item ids at +0xC0 with counts at +0xE0. The Fat Chocobo keeps a count for every item id at +0x300. Key items are
+  in the bag; they're shown but not changed.
+- The job itself isn't changed here: a new job resets the stats and MP from that job's level-by-level tables, which
+  the game does in its Job menu.
 
 ## Final Fantasy II (WonderSwan Color)
 

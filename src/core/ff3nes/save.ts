@@ -1,0 +1,310 @@
+// Final Fantasy III (Famicom) save model: the three save slots of the cartridge (see layout.ts). Every field reads and
+// writes the slot's bytes directly; serialize() redoes the check byte of each slot that loaded. Offsets are from
+// everything8215's RAM map (github.com/everything8215/ff3, field-ram.txt), relative to $6000:
+//
+//   $600B guest, $601B capacity points, $601C gil (3 bytes), $6021 bits 0-4 the crystals' jobs, $60C0 bag ids (32),
+//   $60E0 bag counts, $6100 + $40n character part 1, $6200 + $40n part 2, $6300 the Fat Chocobo's count of each item id.
+//
+// Levels and job levels are kept as level - 1 (the menus add one). The record holds the current job's level at $6110 and
+// every job's at $6210 + 2 * job; the game copies between them when the job changes.
+
+import { clamp } from '../bytes.ts';
+import type { ChangeGroup, EditableSave, SummaryLine } from '../types.ts';
+import { JOB_COUNT, SLOT_COUNT, slotBase, slotOk, writeChecksum } from './layout.ts';
+import { ITEMS, ITEM_KINDS } from './tables.ts';
+import { NAME_LENGTH, decodeName, encodeName } from './text.ts';
+
+export { ITEMS, ITEM_KINDS };
+export const MAX_LEVEL = 99;
+export const MAX_EXP = 9_999_999;
+export const MAX_HP = 9_999;
+export const MAX_MP = 99;
+export const MAX_STAT = 99;
+export const MAX_GIL = 9_999_999;
+export const MAX_CP = 255;
+export const MAX_COUNT = 99;
+export const BAG_SIZE = 32;
+export const SPELLS_PER_LEVEL = 3;
+
+export const JOBS = [
+  'Onion Kid', 'Fighter', 'Monk', 'White Wizard', 'Black Wizard', 'Red Wizard', 'Hunter', 'Knight', 'Thief', 'Scholar',
+  'Geomancer', 'Dragoon', 'Viking', 'Karateka', 'Magic Knight', 'Conjurer', 'Bard', 'Warlock', 'Shaman', 'Summoner',
+  'Sage', 'Ninja',
+] as const;
+/** The jobs each crystal hands out (event switches $08-$0C, bits 0-4 of $6021). The Onion Kid is always there. */
+export const CRYSTALS: readonly { name: string; jobs: readonly number[] }[] = [
+  { name: 'Wind', jobs: [1, 2, 3, 4, 5] },
+  { name: 'Fire', jobs: [6, 7, 8, 9] },
+  { name: 'Water', jobs: [10, 11, 12, 13, 14, 15] },
+  { name: 'Earth', jobs: [16, 17, 18, 19] },
+  { name: 'Eureka', jobs: [20, 21] },
+];
+export const GUESTS = ['', 'Sara', 'Cid', 'Desch', 'Shadow', 'Aria', 'Allus', 'Dorga', 'Unei'] as const;
+
+export const STAT_KEYS = ['str', 'agi', 'vit', 'int', 'spi'] as const;
+export type StatKey = typeof STAT_KEYS[number];
+export const STAT_LABELS: Record<StatKey, string> = { str: 'Strength', agi: 'Agility', vit: 'Vitality', int: 'Intelligence', spi: 'Spirit' };
+
+/** Status bits ($6102), top bit first. Bit 0 is bookkeeping for the equipment code, not an ailment. */
+export const AILMENTS: readonly [number, string][] = [
+  [0x80, 'KO'], [0x40, 'Stone'], [0x20, 'Toad'], [0x10, 'Silence'], [0x08, 'Mini'], [0x04, 'Blind'], [0x02, 'Poison'],
+];
+const AILMENT_BITS = 0xfe;
+
+export const GEAR_SLOTS = ['Right hand', 'Left hand', 'Head', 'Body', 'Arms'] as const;
+/** Part-2 offsets of each gear slot, in GEAR_SLOTS order. Arrows count down from the byte after each hand. */
+const GEAR_AT = [0x03, 0x05, 0x00, 0x01, 0x02];
+
+const range = (a: number, b: number) => Array.from({ length: b - a + 1 }, (_, i) => a + i);
+export const KIND = {
+  weapon: range(0x01, 0x4e),
+  arrow: range(0x4f, 0x56),
+  shield: range(0x58, 0x61),
+  head: range(0x62, 0x71),
+  body: range(0x72, 0x8a),
+  arms: range(0x8b, 0x97),
+  key: range(0x98, 0xa4),
+  item: range(0xa6, 0xc7),
+  spell: range(0xc8, 0xff),
+} as const;
+const HAND = [...KIND.weapon, ...KIND.arrow, ...KIND.shield];
+export const GEAR_CHOICES: readonly (readonly number[])[] = [HAND, HAND, KIND.head, KIND.body, KIND.arms];
+export const isArrow = (id: number) => id >= 0x4f && id <= 0x56;
+
+/** Spell item ids 0xC8-0xFF run from level 8 down to level 1, seven to a level: three black, three white, a summon. */
+export const spellLevel = (id: number) => 8 - Math.floor((id - 0xc8) / 7);
+const spellBit = (id: number) => 1 << ((id - 0xc8) % 7);
+/** The spells of `level` (1-8), in the order the game lists them. */
+export const spellsOfLevel = (level: number) => range(0xc8 + (8 - level) * 7, 0xc8 + (8 - level) * 7 + 6);
+export const SCHOOLS: Record<string, string> = { black: 'Black', white: 'White', summon: 'Summon' };
+
+const u16 = (d: Uint8Array, o: number) => d[o] | (d[o + 1] << 8);
+const setU16 = (d: Uint8Array, o: number, v: number) => { d[o] = v & 0xff; d[o + 1] = (v >> 8) & 0xff; };
+const u24 = (d: Uint8Array, o: number) => d[o] | (d[o + 1] << 8) | (d[o + 2] << 16);
+const setU24 = (d: Uint8Array, o: number, v: number) => { d[o] = v & 0xff; d[o + 1] = (v >> 8) & 0xff; d[o + 2] = (v >> 16) & 0xff; };
+
+export class Ff3Char {
+  private readonly d: Uint8Array;
+  /** Part 1 ($6100 + $40n) and part 2 ($6200 + $40n). */
+  private readonly o: number;
+  private readonly o2: number;
+  readonly index: number;
+  constructor(d: Uint8Array, slotAt: number, index: number) {
+    this.d = d;
+    this.index = index;
+    this.o = slotAt + 0x100 + index * 0x40;
+    this.o2 = slotAt + 0x200 + index * 0x40;
+  }
+
+  get job() { return this.d[this.o] % JOB_COUNT; }
+  get jobName() { return JOBS[this.job]; }
+
+  get name() { return decodeName(this.d.subarray(this.o + 6, this.o + 6 + NAME_LENGTH)); }
+  set name(text: string) { if (text !== this.name) this.d.set(encodeName(text), this.o + 6); }
+
+  get level() { return this.d[this.o + 1] + 1; }
+  set level(v: number) { this.d[this.o + 1] = clamp(v, 1, MAX_LEVEL) - 1; }
+  get exp() { return u24(this.d, this.o + 3); }
+  set exp(v: number) { setU24(this.d, this.o + 3, clamp(v, 0, MAX_EXP)); }
+
+  get hp() { return u16(this.d, this.o + 0x0c); }
+  set hp(v: number) { setU16(this.d, this.o + 0x0c, clamp(v, 0, this.maxHp)); }
+  get maxHp() { return u16(this.d, this.o + 0x0e); }
+  set maxHp(v: number) { setU16(this.d, this.o + 0x0e, clamp(v, 1, MAX_HP)); if (this.hp > this.maxHp) this.hp = this.maxHp; }
+
+  /** Job level 1-99 of job `j`. The current job's lives in the record itself, the others in the per-job list. */
+  jobLevel(j: number) { return (j === this.job ? this.d[this.o + 0x10] : this.d[this.o2 + 0x10 + j * 2]) + 1; }
+  setJobLevel(j: number, v: number) {
+    const lv = clamp(v, 1, MAX_LEVEL) - 1;
+    if (j === this.job) this.d[this.o + 0x10] = lv;
+    this.d[this.o2 + 0x10 + j * 2] = lv;
+  }
+
+  /** A stat without gear. The record also keeps each stat with gear bonuses (+$05); that copy moves by the same amount. */
+  stat(k: StatKey) { return this.d[this.o + 0x12 + STAT_KEYS.indexOf(k)]; }
+  setStat(k: StatKey, v: number) {
+    const i = STAT_KEYS.indexOf(k);
+    const before = this.stat(k), after = clamp(v, 1, MAX_STAT);
+    this.d[this.o + 0x12 + i] = after;
+    const worn = this.o + 0x17 + i;
+    this.d[worn] = clamp(this.d[worn] + after - before, 1, MAX_STAT);
+  }
+
+  /** Spell charges of `level` (1-8): [current, max] at $6130 + 2 * (level - 1). */
+  mp(level: number) { return this.d[this.o + 0x30 + (level - 1) * 2]; }
+  maxMp(level: number) { return this.d[this.o + 0x31 + (level - 1) * 2]; }
+  setMp(level: number, v: number) { this.d[this.o + 0x30 + (level - 1) * 2] = clamp(v, 0, this.maxMp(level)); }
+  setMaxMp(level: number, v: number) {
+    this.d[this.o + 0x31 + (level - 1) * 2] = clamp(v, 0, MAX_MP);
+    if (this.mp(level) > this.maxMp(level)) this.setMp(level, this.maxMp(level));
+  }
+
+  get status() { return this.d[this.o + 2]; }
+  has(bit: number) { return !!(this.status & bit); }
+  get ailing() { return !!(this.status & AILMENT_BITS); }
+  setAilment(bit: number, on: boolean) {
+    this.d[this.o + 2] = on ? this.status | bit : this.status & ~bit;
+    if (bit === 0x80) this.hp = on ? 0 : Math.max(this.hp, 1);
+  }
+
+  get backRow() { return !!(this.d[this.o2 + 0x0f] & 1); }
+  set backRow(v: boolean) { this.d[this.o2 + 0x0f] = v ? this.d[this.o2 + 0x0f] | 1 : this.d[this.o2 + 0x0f] & ~1; }
+
+  gear(slot: number) { return this.d[this.o2 + GEAR_AT[slot]]; }
+  /** Arrows in a hand (0 right, 1 left). */
+  arrows(hand: number) { return this.d[this.o2 + GEAR_AT[hand] + 1]; }
+  setArrows(hand: number, v: number) { if (isArrow(this.gear(hand))) this.d[this.o2 + GEAR_AT[hand] + 1] = clamp(v, 1, MAX_COUNT); }
+  /** Equip `id` (0 = nothing). A hand holding arrows gets a full quiver; anything else clears the count. */
+  setGear(slot: number, id: number) {
+    if (id !== 0 && !GEAR_CHOICES[slot].includes(id)) return;
+    this.d[this.o2 + GEAR_AT[slot]] = id;
+    if (slot < 2) this.d[this.o2 + GEAR_AT[slot] + 1] = isArrow(id) ? MAX_COUNT : 0;
+  }
+
+  /** Known spells, a bit per spell in one byte per level ($6207 + level - 1). The menus show three per level. */
+  knows(id: number) { return !!(this.d[this.o2 + 6 + spellLevel(id)] & spellBit(id)); }
+  get spells(): number[] { return KIND.spell.filter((id) => this.knows(id)).sort((a, b) => spellLevel(a) - spellLevel(b) || a - b); }
+  spellsAt(level: number) { return spellsOfLevel(level).filter((id) => this.knows(id)); }
+  /** False when that level already holds three spells. */
+  learn(id: number): boolean {
+    if (!KIND.spell.includes(id)) return false;
+    if (this.knows(id)) return true;
+    if (this.spellsAt(spellLevel(id)).length >= SPELLS_PER_LEVEL) return false;
+    this.d[this.o2 + 6 + spellLevel(id)] |= spellBit(id);
+    return true;
+  }
+  forget(id: number) { if (KIND.spell.includes(id)) this.d[this.o2 + 6 + spellLevel(id)] &= ~spellBit(id); }
+
+  /** Full HP and spell charges, ailments gone. */
+  restore() {
+    this.d[this.o + 2] &= ~AILMENT_BITS;
+    this.hp = this.maxHp;
+    for (let lv = 1; lv <= 8; lv++) this.setMp(lv, this.maxMp(lv));
+  }
+}
+
+export class Ff3Slot {
+  private readonly d: Uint8Array;
+  readonly at: number;
+  readonly number: number;
+  readonly used: boolean;
+  readonly party: Ff3Char[];
+  constructor(d: Uint8Array, index: number) {
+    this.d = d;
+    this.number = index + 1;
+    this.at = slotBase(index);
+    this.used = slotOk(d, index);
+    this.party = Array.from({ length: 4 }, (_, i) => new Ff3Char(d, this.at, i));
+  }
+  get gil() { return u24(this.d, this.at + 0x1c); }
+  set gil(v: number) { setU24(this.d, this.at + 0x1c, clamp(v, 0, MAX_GIL)); }
+  get cp() { return this.d[this.at + 0x1b]; }
+  set cp(v: number) { this.d[this.at + 0x1b] = clamp(v, 0, MAX_CP); }
+  /** Who's travelling with the party (0 = nobody). */
+  get guest() { return GUESTS[this.d[this.at + 0x0b]] ?? ''; }
+
+  /** Has crystal `n` (0 Wind ... 4 Eureka) handed out its jobs? */
+  crystal(n: number) { return !!(this.d[this.at + 0x21] & (1 << n)); }
+  setCrystal(n: number, on: boolean) { this.d[this.at + 0x21] = on ? this.d[this.at + 0x21] | (1 << n) : this.d[this.at + 0x21] & ~(1 << n); }
+  /** The jobs the job menu offers. */
+  get jobsOpen(): number[] { return [0, ...CRYSTALS.flatMap((c, n) => (this.crystal(n) ? c.jobs : []))]; }
+
+  /** The bag: 32 places of [item id, count]. */
+  id(i: number) { return this.d[this.at + 0xc0 + i]; }
+  qty(i: number) { return this.id(i) ? this.d[this.at + 0xe0 + i] : 0; }
+  get bag(): { id: number; qty: number }[] { return Array.from({ length: BAG_SIZE }, (_, i) => ({ id: this.id(i), qty: this.qty(i) })); }
+  count(id: number) { return this.bag.filter((x) => x.id === id).reduce((n, x) => n + x.qty, 0); }
+  get free() { return this.bag.filter((x) => !x.id).length; }
+  /** Can the editor put `id` in the bag? Key items move the story on, so no. */
+  static bagItem(id: number) { return !!ITEMS[id] && !KIND.key.includes(id); }
+  setAt(i: number, id: number, qty: number) {
+    if (id && !Ff3Slot.bagItem(id)) return;
+    this.d[this.at + 0xc0 + i] = id;
+    this.d[this.at + 0xe0 + i] = id ? clamp(qty, 1, MAX_COUNT) : 0;
+  }
+  /** Add `qty` of `id` the way the game does: onto its stack, else into the first empty place. False when there's no room. */
+  add(id: number, qty = 1): boolean {
+    if (!Ff3Slot.bagItem(id)) return false;
+    let i = this.bag.findIndex((x) => x.id === id);
+    if (i < 0) i = this.bag.findIndex((x) => !x.id);
+    if (i < 0) return false;
+    this.setAt(i, id, this.qty(i) + qty);
+    return true;
+  }
+
+  /** What the Fat Chocobo is keeping: a count for every item id. */
+  stored(id: number) { return this.d[this.at + 0x300 + id]; }
+  setStored(id: number, v: number) { if (!v || Ff3Slot.bagItem(id)) this.d[this.at + 0x300 + id] = clamp(v, 0, MAX_COUNT); }
+  get storedIds(): number[] { return Array.from({ length: 256 }, (_, id) => id).filter((id) => id && this.stored(id)); }
+}
+
+export class Ff3NesSave implements EditableSave {
+  readonly data: Uint8Array;
+  readonly slots: Ff3Slot[];
+  constructor(data: Uint8Array) {
+    this.data = data.slice();
+    this.slots = Array.from({ length: SLOT_COUNT }, (_, i) => new Ff3Slot(this.data, i));
+    if (!this.usedSlots.length) throw new Error('None of this Final Fantasy III save’s slots pass the game’s save check.');
+  }
+  get usedSlots() { return this.slots.filter((s) => s.used); }
+
+  serialize(): Uint8Array {
+    const out = this.data.slice();
+    for (const s of this.usedSlots) writeChecksum(out, s.at);
+    return out;
+  }
+
+  summary(): SummaryLine[] {
+    return this.usedSlots.map((s) => ({
+      label: `SLOT ${s.number}`,
+      value: `${s.party[0].name || '—'} · L${s.party[0].level} · ${s.gil.toLocaleString('en-US')} gil`,
+    }));
+  }
+
+  describeChanges(before: EditableSave): ChangeGroup[] {
+    const b = before as Ff3NesSave;
+    const groups: ChangeGroup[] = [];
+    const add = (title: string, lines: string[]) => {
+      if (lines.length) groups.push(lines.length > 12 ? { title, lines: lines.slice(0, 12), more: lines.length - 12 } : { title, lines });
+    };
+    const several = this.usedSlots.length > 1;
+    const itemName = (id: number) => ITEMS[id] || (id ? `Item ${id}` : 'None');
+    const num = (v: string | number) => (typeof v === 'number' ? v.toLocaleString('en-US') : v);
+    for (const sa of this.usedSlots) {
+      const sb = b.slots[sa.number - 1];
+      const prefix = several ? `Slot ${sa.number}: ` : '';
+      sa.party.forEach((ca, i) => {
+        const cb = sb.party[i];
+        const lines: string[] = [];
+        const diff = (label: string, x: string | number, y: string | number) => { if (x !== y) lines.push(`${label}: ${num(x)} → ${num(y)}`); };
+        diff('Name', cb.name, ca.name);
+        diff('Job', cb.jobName, ca.jobName);
+        diff('Level', cb.level, ca.level);
+        diff('Exp', cb.exp, ca.exp);
+        diff('HP', `${cb.hp}/${cb.maxHp}`, `${ca.hp}/${ca.maxHp}`);
+        for (const k of STAT_KEYS) diff(STAT_LABELS[k], cb.stat(k), ca.stat(k));
+        for (let lv = 1; lv <= 8; lv++) diff(`Level ${lv} MP`, `${cb.mp(lv)}/${cb.maxMp(lv)}`, `${ca.mp(lv)}/${ca.maxMp(lv)}`);
+        JOBS.forEach((n, j) => diff(`${n} job level`, cb.jobLevel(j), ca.jobLevel(j)));
+        AILMENTS.forEach(([bit, n]) => { if (cb.has(bit) !== ca.has(bit)) lines.push(ca.has(bit) ? `Now ${n}` : `Cured ${n}`); });
+        GEAR_SLOTS.forEach((n, g) => diff(n, itemName(cb.gear(g)), itemName(ca.gear(g))));
+        for (const id of ca.spells) if (!cb.knows(id)) lines.push(`Learned ${ITEMS[id]}`);
+        for (const id of cb.spells) if (!ca.knows(id)) lines.push(`Forgot ${ITEMS[id]}`);
+        add(prefix + (ca.name || `Character ${i + 1}`), lines);
+      });
+      const items: string[] = [];
+      if (sb.gil !== sa.gil) items.push(`Gil: ${num(sb.gil)} → ${num(sa.gil)}`);
+      if (sb.cp !== sa.cp) items.push(`Capacity: ${sb.cp} → ${sa.cp}`);
+      const ids = new Set([...sa.bag, ...sb.bag].map((x) => x.id).filter(Boolean));
+      for (const id of ids) {
+        const x = sb.count(id), y = sa.count(id);
+        if (x !== y) items.push(`${itemName(id)}: ${x} → ${y}`);
+      }
+      for (let id = 1; id < 256; id++) {
+        if (sb.stored(id) !== sa.stored(id)) items.push(`Fat Chocobo, ${itemName(id)}: ${sb.stored(id)} → ${sa.stored(id)}`);
+      }
+      CRYSTALS.forEach((c, n) => { if (sb.crystal(n) !== sa.crystal(n)) items.push(`${c.name} crystal jobs: ${sa.crystal(n) ? 'open' : 'closed'}`); });
+      add(`${prefix}Items and jobs`, items);
+    }
+    return groups;
+  }
+}

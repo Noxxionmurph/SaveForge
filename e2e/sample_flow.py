@@ -27,7 +27,7 @@ with sync_playwright() as p:
     rows = page.locator('section.supported ul.tiles')
     assert [rows.nth(i).locator('.tile-name').all_inner_texts() for i in range(rows.count())] == [
         ['Pokémon Red', 'Pokémon Blue', 'Pokémon Yellow'], ['Pokémon Gold', 'Pokémon Silver', 'Pokémon Crystal'],
-        ['Pokémon Ruby', 'Pokémon Sapphire', 'Pokémon FireRed', 'Pokémon LeafGreen', 'Pokémon Emerald'], ['Final Fantasy', 'Final Fantasy II']]
+        ['Pokémon Ruby', 'Pokémon Sapphire', 'Pokémon FireRed', 'Pokémon LeafGreen', 'Pokémon Emerald'], ['Final Fantasy', 'Final Fantasy II', 'Final Fantasy III']]
     assert page.inner_text('.tile:has-text("NES") .tile-platform') == 'NES · GBA · PSP · WonderSwan Color'
     edits = page.locator('.family-edits').all_inner_texts()
     assert len(edits) == 4 and edits[3].startswith('In Final Fantasy you can edit: ') and edits[1].startswith('In Gold, Silver and Crystal you can edit: Everything from Red, Blue and Yellow'), edits
