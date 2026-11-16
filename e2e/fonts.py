@@ -3,7 +3,7 @@ from urllib.parse import urlparse
 from playwright.sync_api import sync_playwright
 from lib import BASE, ART_DIR
 SP = sys.argv[1]
-ART = 'https://noxxionmurph.github.io/SaveHub-assets/'
+ART = 'https://noxxionmurph.github.io/SaveForge-assets/'
 ROOT = ART_DIR
 errors, hosts, fonts = [], set(), []
 

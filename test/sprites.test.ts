@@ -12,7 +12,7 @@ import { itemSpritePath as gen3SpritePath } from '../src/ui/editors/gen3/itemSpr
 // skipped when it isn't there, so the code still builds and tests without any artwork.
 const sprites = new URL('../assets/sprites/', import.meta.url);
 const has = (rel: string) => existsSync(new URL(rel, sprites));
-const art = { skip: existsSync(sprites) ? false : 'artwork not checked out (git clone https://github.com/Noxxionmurph/SaveHub-assets assets)' };
+const art = { skip: existsSync(sprites) ? false : 'artwork not checked out (git clone https://github.com/Noxxionmurph/SaveForge-assets assets)' };
 
 const UNOWN_FORMS = [...'bcdefghijklmnopqrstuvwxyz', 'exclamation', 'question'];
 

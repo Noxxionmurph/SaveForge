@@ -2,7 +2,7 @@ import sys, pathlib
 from playwright.sync_api import sync_playwright
 from lib import BASE, ART_DIR
 SP = sys.argv[1]
-ART = 'https://noxxionmurph.github.io/SaveHub-assets/'
+ART = 'https://noxxionmurph.github.io/SaveForge-assets/'
 ROOT = ART_DIR
 errors = []
 
@@ -32,8 +32,8 @@ def run(browser, mode):
     tiles = page.evaluate("[...document.querySelectorAll('img.tile-icon')].map(i => [i.hidden, i.complete, i.naturalWidth])")
     foot = page.locator('footer.site-foot')
     assert 'Not affiliated' in foot.inner_text() and 'non-commercial' in foot.inner_text(), foot.inner_text()
-    assert foot.locator('a:text-is("Contact")').get_attribute('href').endswith('/SaveHub/issues')
-    assert foot.locator('a:text-is("Credits")').get_attribute('href').endswith('/SaveHub/blob/main/CREDITS.md')
+    assert foot.locator('a:text-is("Contact")').get_attribute('href').endswith('/SaveForge/issues')
+    assert foot.locator('a:text-is("Credits")').get_attribute('href').endswith('/SaveForge/blob/main/CREDITS.md')
     assert foot.locator('a:text-is("Source on GitHub")').count() == 1
     page.screenshot(path=f'{SP}/art-{mode}-1-landing.png', full_page=True)
     if mode == 'ok':

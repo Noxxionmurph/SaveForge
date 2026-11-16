@@ -28,7 +28,7 @@ jobs:
       - uses: actions/checkout@v4
         continue-on-error: true
         with:
-          repository: Noxxionmurph/SaveHub-assets
+          repository: Noxxionmurph/SaveForge-assets
           path: assets
       - run: npm test
       - run: npm run build
@@ -53,9 +53,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: The site is up
-        run: curl -fsS --retry 6 --retry-delay 10 --retry-all-errors -o /dev/null https://noxxionmurph.github.io/SaveHub/
+        run: curl -fsS --retry 6 --retry-delay 10 --retry-all-errors -o /dev/null https://noxxionmurph.github.io/SaveForge/
       - name: The artwork site serves the pictures
         run: |
-          curl -fsS --retry 6 --retry-delay 10 --retry-all-errors -D headers.txt -o /dev/null https://noxxionmurph.github.io/SaveHub-assets/sprites/pikachu.png
+          curl -fsS --retry 6 --retry-delay 10 --retry-all-errors -D headers.txt -o /dev/null https://noxxionmurph.github.io/SaveForge-assets/sprites/pikachu.png
           cat headers.txt
           grep -qi '^content-type: image/png' headers.txt

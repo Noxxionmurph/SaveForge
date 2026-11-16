@@ -6,7 +6,7 @@ Pokémon window's close button, HP bars and the save window, sharp pixel art at 
 
 ```
 pip install playwright && playwright install chromium     # once
-git clone https://github.com/Noxxionmurph/SaveHub-assets assets   # once: the checks need the artwork
+git clone https://github.com/Noxxionmurph/SaveForge-assets assets   # once: the checks need the artwork
 python3 e2e/run.py                # everything (about a minute and a half)
 python3 e2e/run.py names bag      # only these
 ```

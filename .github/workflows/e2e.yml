@@ -22,7 +22,7 @@ jobs:
       # this job fails; the deploy workflow does not depend on it.
       - uses: actions/checkout@v4
         with:
-          repository: Noxxionmurph/SaveHub-assets
+          repository: Noxxionmurph/SaveForge-assets
           path: assets
       - uses: actions/setup-node@v4
         with:

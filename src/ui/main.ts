@@ -22,7 +22,7 @@ let saveExt: string | undefined;
 let dirty = false;
 let saveButton: HTMLElement | null = null;
 const APP_NAME = 'SaveForge';
-const REPO = 'https://github.com/Noxxionmurph/SaveHub';
+const REPO = 'https://github.com/Noxxionmurph/SaveForge';
 
 /** Tracks unsaved edits, and shows them as a dot on the Save button. */
 function setDirty(on: boolean): void {

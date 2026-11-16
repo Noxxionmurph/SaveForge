@@ -154,7 +154,7 @@ test('the picture sheet has one row per reaction, in the order the cut script wr
 // The sheet itself is artwork, kept in the separate artwork repository (checked out as ./assets/).
 const sheetUrl = new URL('../assets/sprites/pikachu.png', import.meta.url);
 test('the picture sheet file is two 40px frames wide with a row for every reaction', {
-  skip: existsSync(sheetUrl) ? false : 'artwork not checked out (git clone https://github.com/Noxxionmurph/SaveHub-assets assets)',
+  skip: existsSync(sheetUrl) ? false : 'artwork not checked out (git clone https://github.com/Noxxionmurph/SaveForge-assets assets)',
 }, () => {
   const png = readFileSync(sheetUrl);
   assert.equal(png.readUInt32BE(16), 80, 'two 40px frames across');
