@@ -82,11 +82,12 @@ with sync_playwright() as p:
 
     # --- bag: 999 of an item, Kanto key items, no Pokéblocks, decorations or secret base
     page.click('button.tab:has-text("Bag")')
-    assert page.locator('section.pokeblocks').count() == 0
-    assert page.locator('section.decorations').count() == 0
-    assert page.locator('section.secret-base').count() == 0
+    assert page.locator('button.pocket-tab:text-is("Blocks & bases")').count() == 0   # Hoenn only
+    assert page.locator('section.pokeblocks, section.decorations, section.secret-base').count() == 0
+    page.click('button.pocket-tab:text-is("Key items")')
     keys = page.locator('section.card:has(h3:has-text("Key Items pocket"))')
     assert 'VS Seeker' in keys.inner_text() and 'Tri-Pass' not in keys.inner_text()
+    page.click('button.pocket-tab:text-is("Items")')
     items = page.locator('section.card:has(h3:has-text("Items pocket"))').first
     items.locator('.item-row input').first.fill('999')
     items.locator('.item-row input').first.press('Tab')

@@ -131,7 +131,11 @@ name (`.sav`, `.srm`, `.sa1`, ...). Game Boy saves with an emulator's clock foot
   sliders. Whether the game follows your Pikachu depends on its original trainer matching your name and Trainer ID,
   so the editor tags the starter in the party, warns in the review list if an edit would orphan it, and has a
   "Make Pikachu my starter" button. Red and Blue can't be told apart, so those saves ask which one yours is.
-- Bag and PC item storage (only items the game can actually put there)
+- Bag and PC item storage (only items the game can actually put there), one pocket at a time under pocket tabs (every game's Bag tab works this way)
+- Hall of Fame (read-only, on the Trainer tab; Gen 1 to 3): each win's team with levels and nicknames, newest first. Gen 1 reads
+  `sHallOfFame` (50 teams, `wNumHoFTeams` counts every win), Gen 2 `sHallOfFame` (30 teams, newest first), Gen 3 the two
+  fixed flash sectors 28-29 (50 teams, game stat 10 counts every win). Read from the disassemblies and built into the samples; not yet
+  checked against a Hall of Fame saved by a real game.
 - Party and all 12 boxes. The party has up/down arrows beside each card; boxes are a 4 x 5 grid like the PC, with your
   party in a row above it. **Drag a Pokémon onto another to swap them** (inside a box, between boxes and the party),
   or onto an empty spot to move it to the end; hold a dragged Pokémon over the ‹ › buttons to turn to the next box.
@@ -498,7 +502,7 @@ Every screen explains itself in plain words, so keep it that way when you add a 
   stat calculations, what an edit silently changes (Trainer ID makes Pokémon traded, shiny and gender come from DVs),
   egg cycles, Crystal's caught data. Only state game rules you've checked against the disassembly.
 - Say why a control is unavailable ("Party full (6 of 6)", "Full (20 of 20)"), not just grey it out.
-- Errors say what happened and what to do next. Warnings in the review list start with "Warning:" and name the fix.
+- Errors say what happened and what to do next. Warnings in the review list start with "Warning:" and name the fix; the review dialog pulls them out into their own box above the changes and doesn't count them as changes.
 - Sentence case, active voice, plain verbs ("Tap", "Pick", "Drop"). A game can describe itself to the shell with
   `editable` (what the editor can change) and `fileHint` (what a valid file looks like) on its module.
 

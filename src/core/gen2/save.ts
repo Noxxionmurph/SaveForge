@@ -17,6 +17,8 @@ import {
   DEX_COUNT, EGG_SPECIES, HM_COUNT, TM_COUNT, baseStatsFor, hpDv, maxPp, speciesName, type Dvs,
 } from './data.ts';
 import { START_TIME, gameTimeAt, readRtcFooter, startFor, type GameTime, type RtcFooter } from './clock.ts';
+import { readGen2HallOfFame } from './hof.ts';
+import type { HallOfFame } from '../hallOfFame.ts';
 import { bringBackGen2Legend, gen2LegendGone, legendsFor, type Gen2Legend } from './legends.ts';
 import { describeGen2Changes } from './diff.ts';
 import {
@@ -333,6 +335,8 @@ export class Gen2Save implements EditableSave {
   /** Which carer had each Day-Care Pokémon when the file was opened (0 the man, 1 the woman). */
   private dayCareCarer = new Map<Gen2Mon, 0 | 1>();
   private original: Uint8Array;
+  /** The Hall of Fame as the file has it (not editable). */
+  readonly hallOfFame: HallOfFame;
   private raw: { name: Uint8Array; rival: Uint8Array; mom: Uint8Array; boxNames: Uint8Array[] };
 
   /** Opens the file with the layout given, or else the one whose checksum is right (Gold and Silver if neither is). */
@@ -351,6 +355,7 @@ export class Gen2Save implements EditableSave {
       d[L.checksum + 1] = d[L.backupChecksum + 1];
       d[L.checkValue2] = CHECK_VALUE_2;
     }
+    this.hallOfFame = readGen2HallOfFame(d, this.game);
     this.playerGender = L.playerGender === undefined ? null : d[L.playerGender] & 1 ? 'girl' : 'boy';
     this.raw = {
       name: d.slice(L.playerName, L.playerName + NAME_LEN),

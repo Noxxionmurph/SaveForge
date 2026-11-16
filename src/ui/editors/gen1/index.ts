@@ -11,6 +11,7 @@ import { clear, field, h, numberInput, selectInput, toast } from '../../dom.ts';
 import { enableDrag } from '../../drag.ts';
 import { itemList } from '../../itemList.ts';
 import { legendsCard } from '../../legendsCard.ts';
+import { hallOfFameCard } from '../../hallOfFameCard.ts';
 import { rescueRow } from '../../rescueRow.ts';
 import { badgeIcon, pokemonIcon } from '../../sprites.ts';
 import { itemSpritePath } from './itemSprites.ts';
@@ -22,6 +23,7 @@ import { openMonMenu } from './monMenu.ts';
 import { nameField } from './nameField.ts';
 import { pikachuCard } from './pikachuCard.ts';
 import { tabBar, tabPanel } from '../../tabs.ts';
+import { pocketTabs } from '../../pockets.ts';
 import { typeChips } from '../../typeChip.ts';
 
 type Tab = 'trainer' | 'bag' | 'party' | 'boxes' | 'dex';
@@ -181,6 +183,7 @@ export const mountGen1Editor: MountEditor<Gen1Save> = (container, s, host) => {
           h('button', { onclick: () => { s.badges = 0xff; markDirty(); render(); } }, 'All badges'),
           h('button', { onclick: () => { s.badges = 0; markDirty(); render(); } }, 'Clear badges'),
         )),
+      hallOfFameCard(s.hallOfFame),
       legendsCard(s, markDirty),
       optionsCard(),
     );
@@ -219,10 +222,11 @@ export const mountGen1Editor: MountEditor<Gen1Save> = (container, s, host) => {
     title, items, slots, maxCount: 99, options: ITEM_OPTIONS, nameOf: itemLabel, spritePath: itemSpritePath, fresh: () => 0x28, markDirty,
   });
 
-  const bagTab = () => h('div', {},
-    h('div', { class: 'two-col' },
-      bagCard('Bag', s.bag, 20),
-      bagCard('PC item storage', s.pcItems, 50)));
+  type Pocket = 'bag' | 'pc';
+  let pocket: Pocket = 'bag';
+  const POCKETS: { id: Pocket; label: string }[] = [{ id: 'bag', label: 'Bag' }, { id: 'pc', label: 'PC storage' }];
+  const bagTab = () => pocketTabs(POCKETS, pocket, (id) => { pocket = id; render(); },
+    pocket === 'pc' ? bagCard('PC item storage', s.pcItems, 50) : bagCard('Bag', s.bag, 20));
 
   // ---------- Pokémon lists ----------
 

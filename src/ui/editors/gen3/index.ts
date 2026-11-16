@@ -25,12 +25,14 @@ import { enableDrag } from '../../drag.ts';
 import { dexTab as sharedDexTab } from '../../dexTab.ts';
 import { choiceRow, stepRow } from '../../gameChoice.ts';
 import { legendsCard } from '../../legendsCard.ts';
+import { hallOfFameCard } from '../../hallOfFameCard.ts';
 import { rescueRow } from '../../rescueRow.ts';
 import { itemList } from '../../itemList.ts';
 import {
   badgeIcon, frontierSymbolIcon, itemIcon, pokeblockIcon, pokeblockIconUrl, pokemonIcon,
 } from '../../sprites.ts';
 import { tabBar, tabPanel } from '../../tabs.ts';
+import { pocketTabs } from '../../pockets.ts';
 import { typeChips } from '../../typeChip.ts';
 import { showFrame } from '../../windowFrame.ts';
 import { secretBaseCard } from './baseCard.ts';
@@ -231,6 +233,7 @@ export const mountGen3Editor: MountEditor<Gen3Save> = (container, s, host) => {
       flyCard(),
       fameCard(),
       islandCard(),
+      hallOfFameCard(s.hallOfFame, (title, ...body) => h('section', { class: 'card hof' }, fold('hof', title, ...body))),
       legendsCard(s, markDirty, (title, ...body) => h('section', { class: 'card legends' }, fold('legends', title, ...body))),
       roamerCard(),
       rematchCard(),
@@ -510,7 +513,7 @@ export const mountGen3Editor: MountEditor<Gen3Save> = (container, s, host) => {
 
   /** TM/HM pocket: a count for each of the 58. */
   function tmhmCard(): Node {
-    const wrap = h('section', { class: 'card' });
+    const wrap = h('section', { class: 'card tm-card' });
     const counts = s.tmCounts();
     const counter = h('span', { class: 'muted count' });
     const paint = () => { counter.textContent = `${counts.filter((n) => n > 0).length}/${TM_COUNT + HM_COUNT}`; };
@@ -545,18 +548,25 @@ export const mountGen3Editor: MountEditor<Gen3Save> = (container, s, host) => {
     return wrap;
   }
 
-  const bagTab = () => h('div', { class: 'stack' },
-    h('div', { class: 'two-col' },
-      bagCard('Items pocket', s.pockets.item, SIZES.item, OPTIONS.item, () => RARE_CANDY),
-      bagCard('Poké Balls pocket', s.pockets.ball, SIZES.ball, OPTIONS.ball, () => ULTRA_BALL),
-      bagCard('Key Items pocket', s.pockets.key, SIZES.key, OPTIONS.key, () => (s.game === 'frlg' ? BICYCLE : MACH_BIKE)),
-      bagCard('Berries pocket', s.pockets.berry, SIZES.berry, OPTIONS.berry, () => ORAN_BERRY),
-      bagCard('PC item storage', s.pcItems, SIZES.pc, OPTIONS.pc, () => RARE_CANDY),
-    ),
-    tmhmCard(),
-    s.hoenn ? pokeblockCard() : null,
-    s.hoenn ? decorationCard() : null,
-    s.hoenn ? secretBaseCard(s, markDirty, fold, (redraw) => { redrawBase = redraw; }) : null);
+  type BagPocket = 'items' | 'balls' | 'key' | 'berries' | 'tmhm' | 'pc' | 'extras';
+  let pocket: BagPocket = 'items';
+  const POCKETS: { id: BagPocket; label: string }[] = [
+    { id: 'items', label: 'Items' }, { id: 'balls', label: 'Poké Balls' }, { id: 'key', label: 'Key items' }, { id: 'berries', label: 'Berries' },
+    { id: 'tmhm', label: 'TMs & HMs' }, { id: 'pc', label: 'PC storage' },
+    ...(s.hoenn ? [{ id: 'extras' as const, label: 'Blocks & bases' }] : []),
+  ];
+  const pocketCard = (): Node => {
+    switch (pocket) {
+      case 'items': return bagCard('Items pocket', s.pockets.item, SIZES.item, OPTIONS.item, () => RARE_CANDY);
+      case 'balls': return bagCard('Poké Balls pocket', s.pockets.ball, SIZES.ball, OPTIONS.ball, () => ULTRA_BALL);
+      case 'key': return bagCard('Key Items pocket', s.pockets.key, SIZES.key, OPTIONS.key, () => (s.game === 'frlg' ? BICYCLE : MACH_BIKE));
+      case 'berries': return bagCard('Berries pocket', s.pockets.berry, SIZES.berry, OPTIONS.berry, () => ORAN_BERRY);
+      case 'tmhm': return tmhmCard();
+      case 'pc': return bagCard('PC item storage', s.pcItems, SIZES.pc, OPTIONS.pc, () => RARE_CANDY);
+      case 'extras': return h('div', { class: 'stack' }, pokeblockCard(), decorationCard(), secretBaseCard(s, markDirty, fold, (redraw) => { redrawBase = redraw; }));
+    }
+  };
+  const bagTab = () => pocketTabs(POCKETS, pocket, (id) => { pocket = id; render(); }, pocketCard());
   /** The secret base offers what the PC has spare, so it redraws when the PC's decorations change. */
   let redrawBase = () => {};
   const decorEdited = () => { markDirty(); redrawBase(); };

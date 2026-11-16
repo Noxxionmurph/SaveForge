@@ -38,6 +38,8 @@ import { GAME_STAT_MAX, HOF_TIME_STAT, gameStatCount } from './stats.ts';
 import { decodeText, encodeText } from './text.ts';
 import { EVENT_ISLANDS } from './events.ts';
 import { FLY_SPOTS, KANTO, SEVII_RAINBOW_PASS, VAR_SEVII_STORY, clearQuestLog, questLogScenes, readFame, writeFame, type FamePerson } from './kanto.ts';
+import { readGen3HallOfFame } from './hof.ts';
+import type { HallOfFame } from '../hallOfFame.ts';
 import { GEN3_LEGENDS, type Gen3Legend } from './legends.ts';
 
 
@@ -442,6 +444,8 @@ export class Gen3Save implements EditableSave {
   private sb1: Uint8Array;
   private storage: Uint8Array;
   private key: number;
+  /** The Hall of Fame as the file has it (not editable). */
+  readonly hallOfFame: HallOfFame;
   private raw: { name: Uint8Array; boxNames: Uint8Array[] };
   /** A copy of each block below as it was opened. serialize() rewrites a block only if it differs from this. */
   private loaded: Pick<Gen3Save, Tracked>;
@@ -493,6 +497,7 @@ export class Gen3Save implements EditableSave {
       streaks: readStreaks(sb2),
     } : null;
     this.gameStats = Array.from({ length: gameStatCount(this.game) }, (_, i) => (u32(sb1, L.gameStats + i * 4) ^ this.key) >>> 0);
+    this.hallOfFame = readGen3HallOfFame(data, this.gameStats[10] ?? 0);
     this.hoenn = L.secretBase !== null;
     const frlg = this.game === 'frlg';
     this.kanto = frlg ? {

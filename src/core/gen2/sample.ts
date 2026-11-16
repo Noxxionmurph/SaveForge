@@ -4,6 +4,7 @@
 // pocket of the bag and a partly filled Pokédex, so every tab of the editor has something to show. The Crystal one
 // plays as the girl and records where each Pokémon was caught, as Crystal does.
 
+import { writeGen2HallOfFame } from './hof.ts';
 import { MOVE_NAMES, UNOWN, baseStatsFor, expForLevel, growthOf, maxPp } from './data.ts';
 import { LANDMARK_GIFT, encodeCaught, type CaughtTime } from './caught.ts';
 import {
@@ -136,7 +137,14 @@ const BOX_2: Spec[] = [
 export function buildSampleSave(game: Gen2Game = 'crystal'): Uint8Array {
   const crystal = game === 'crystal';
   const trainer = crystal ? 'KRIS' : 'GOLD';
-  const save = new Gen2Save(blankGen2Save(game, trainer, 'SILVER', true, crystal), game);
+  const blank = blankGen2Save(game, trainer, 'SILVER', true, crystal);
+  // Two Hall of Fame entries, oldest first: the first win and a rematch with a stronger team.
+  writeGen2HallOfFame(blank, game, [
+    [{ dex: 157, level: 42, name: 'TYPHLOSION' }, { dex: 169, level: 41, name: 'CROBAT' }, { dex: 196, level: 40, name: 'ESPEON' }, { dex: 181, level: 40, name: 'AMPHAROS' }],
+    [{ dex: 157, level: 61, name: 'TYPHLOSION' }, { dex: 169, level: 58, name: 'CROBAT' }, { dex: 196, level: 57, name: 'ESPEON' },
+      { dex: 181, level: 56, name: 'AMPHAROS' }, { dex: 130, level: 55, name: 'REDDY', shiny: true }, { dex: 248, level: 53, name: 'TYRANITAR' }],
+  ]);
+  const save = new Gen2Save(blank, game);
   save.trainerId = TRAINER_ID;
   save.money = 24680;
   save.momsMoney = 3500;
