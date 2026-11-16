@@ -47,7 +47,7 @@ with sync_playwright() as p:
     page.click('dialog.review-dialog button.primary')
     page.wait_for_function('window.__saved !== null')
     saved = page.evaluate('window.__saved')
-    page.wait_for_selector('#toast')
+    page.wait_for_selector('dialog.saved-dialog')
     page.screenshot(path=f'{SP}/h2-toast.png')
     b.close()
 z = zipfile.ZipFile(io.BytesIO(bytes(saved['data'])))

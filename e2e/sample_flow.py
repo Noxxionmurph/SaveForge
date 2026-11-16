@@ -17,7 +17,7 @@ with sync_playwright() as p:
 
     # --- sample save from the landing page
     buttons = page.locator('.sample-row button')
-    assert [buttons.nth(i).inner_text() for i in range(buttons.count())] == ['Pokémon Yellow', 'Pokémon Crystal', 'Pokémon Emerald', 'Final Fantasy']
+    assert [buttons.nth(i).inner_text() for i in range(buttons.count())] == ['Pokémon Yellow', 'Pokémon Crystal', 'Pokémon Emerald', 'Final Fantasy I · NES']
     # the first screen names each series and links to its shelf
     chips = page.locator('.works-with .series-chip')
     assert chips.all_inner_texts() == ['Pokémon Red to Emerald', 'Final Fantasy'], chips.all_inner_texts()
@@ -139,7 +139,8 @@ with sync_playwright() as p:
     assert len(data) == 32768 and checksum_ok(data)
     assert data[0x2601] == 0x81, hex(data[0x2601])
     assert page.locator('.save-btn.dirty').count() == 0
-    assert 'Saved sample-yellow-edited.sav' in page.inner_text('#toast')
+    assert 'sample-yellow-edited.sav' in page.inner_text('dialog.saved-dialog')
+    page.click('dialog.saved-dialog button.primary')
 
     # --- last party member cannot leave
     page.click('button.tab:has-text("Party")')

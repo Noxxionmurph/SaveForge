@@ -9,6 +9,7 @@ import {
 } from '../../../core/gen2/data.ts';
 import { CAUGHT_LEVEL_MAX, LOCATION_CHOICES, decodeCaught, encodeCaught, locationName, type CaughtData } from '../../../core/gen2/caught.ts';
 import { calcStats, defaultNickname, recalcPartyStats, type Gen2Game, type Gen2Mon } from '../../../core/gen2/save.ts';
+import { pickerButton } from '../../picker.ts';
 import { field, h, lazySelect, numberInput, selectInput } from '../../dom.ts';
 import { monDialog } from '../../monDialog.ts';
 import { itemIcon, itemIconUrl, setIconSrc, shinyIcon, typeIcon } from '../../sprites.ts';
@@ -107,8 +108,8 @@ export function openMonEditor({ mon, party, game = 'gs', onDone, onDiscard }: Mo
         return h('div', { class: 'move-row' },
           h('div', { class: 'move-pick' },
             iconType ? typeIcon(iconType, 'move-type') : h('span', { class: 'move-type blank', 'aria-hidden': 'true' }),
-            selectInput(MOVE_OPTIONS, id, (v) => {
-              mon.moves[i] = Number(v);
+            pickerButton(`Move ${i + 1}`, MOVE_OPTIONS, id, (v) => {
+              mon.moves[i] = v;
               mon.pp[i] = maxPp(mon.moves[i], mon.ppUps[i]);
               redraw();
             }, { 'aria-label': `Move ${i + 1}` })),
@@ -292,10 +293,6 @@ export function openMonEditor({ mon, party, game = 'gs', onDone, onDiscard }: Mo
         party && !mon.isEgg ? h('button', { onclick: () => { mon.status = 0; recalcPartyStats(mon, true); refresh(); } }, 'Heal and recalculate stats') : null,
       ),
       h('p', { class: 'muted section-note' }, 'Max DVs gives the best stats; on a species that can be either gender it also makes it male, and it is never shiny.'),
-      h('div', { class: 'dialog-foot' },
-        h('span', { class: 'muted' }, 'Done keeps your changes and the ✕ at the top throws them away. The file is only written when you tap Save on the main page.'),
-        h('button', { class: 'primary', onclick: win.close }, 'Done'),
-      ),
     ];
   }
 

@@ -20,6 +20,7 @@ let wrapSave = (save: Uint8Array): Uint8Array => save;
 /** The extension the edited file gets when it can't keep the opened one (a .gsv comes back as a plain .sav). */
 let saveExt: string | undefined;
 let dirty = false;
+let isSampleOpen = false;
 let saveButton: HTMLElement | null = null;
 const APP_NAME = 'SaveForge';
 const REPO = 'https://github.com/Noxxionmurph/SaveForge';
@@ -128,7 +129,7 @@ async function download(bytes: Uint8Array): Promise<void> {
     try {
       await hosted.save({ filename: `${name}.zip`, data: makeZip(name, bytes) });
       setDirty(false);
-      toast(`Saved ${name}.zip. Unzip it to get your edited save. The file you opened is unchanged.`);
+      void showSaved(`${name}.zip`, name);
     } catch (e) {
       const code = (e as { code?: string })?.code;
       if (code !== 'declined') toast(`Couldn't save the file (${code ?? 'unknown error'}).`);
@@ -141,7 +142,25 @@ async function download(bytes: Uint8Array): Promise<void> {
   a.click();
   setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
   setDirty(false);
-  toast(`Saved ${name}. Look in your downloads. The file you opened is unchanged.`);
+  void showSaved(name);
+}
+
+/** Stays on screen after a download, so finishing the job (renaming the file, putting it back in the emulator) isn't left to the landing page. */
+function showSaved(file: string, inner?: string): Promise<void> {
+  return new Promise((resolve) => {
+    const dlg = h('dialog', { class: 'confirm-dialog saved-dialog', 'aria-labelledby': 'saved-title' },
+      h('h2', { id: 'saved-title' }, 'Your edited save is ready'),
+      h('p', { class: 'saved-file lcd' }, file),
+      h('ol', { class: 'saved-steps' },
+        h('li', {}, inner ? 'Find the .zip in your downloads and unzip it.' : 'Find it in your downloads.'),
+        isSampleOpen ? null : h('li', {}, `Rename it to ${fileName} so it replaces your original, or import it under its own name if your emulator lets you.`),
+        h('li', {}, 'Load it in your emulator, or copy it back to your cartridge dumper.')),
+      h('p', { class: 'muted' }, 'The file you opened is unchanged.'),
+      h('div', { class: 'button-row end' }, h('button', { class: 'primary', onclick: () => dlg.close() }, 'Got it')));
+    dlg.addEventListener('close', () => { dlg.remove(); resolve(); });
+    document.body.append(dlg);
+    dlg.showModal();
+  });
 }
 
 const sameBytes = (x: Uint8Array, y: Uint8Array) => x.length === y.length && x.every((v, i) => v === y[i]);
@@ -190,6 +209,7 @@ const externalLink = (href: string, label: string) =>
 // ---------- editor ----------
 
 async function openGame(game: GameModule, data: Uint8Array, isSample = false): Promise<void> {
+  isSampleOpen = isSample;
   let save: EditableSave;
   try {
     save = await game.load(data);
@@ -299,7 +319,7 @@ function sampleRow(): HTMLElement | null {
     h('div', { class: 'sample-buttons' }, withSample.map((g) => {
       const name = g.sampleGame ?? g.games.join(' / ');
       const button = h('button', { class: 'sample-btn', onclick: () => void openSample(g) }, name);
-      const color = g.colors?.[name];
+      const color = g.colors?.[name] ?? g.colors?.[g.games[0]];
       if (color) button.style.setProperty('--label', color);
       return button;
     })));
@@ -326,8 +346,9 @@ function renderWelcome(): void {
     h('div', { class: 'slot-art', 'aria-hidden': 'true' }, cartridge(92, 'slot-cart'), h('div', { class: 'slot-bar' })),
     h('div', { class: 'slot-text' },
       h('strong', {}, 'Open a save file'),
-      h('span', { class: 'muted' }, 'Drop a save file here (.sav, .srm or .sps), or tap to choose one. SaveForge detects the game for you.'),
+      h('span', { class: 'muted' }, 'Drop a save file here, or tap to choose one. SaveForge detects the game for you.'),
       h('span', { class: 'slot-cta' }, 'Choose file'),
+      h('span', { class: 'slot-note' }, 'Use the in-game battery save (.sav, .srm, .sps), not an emulator save state.'),
     ),
   );
   slot.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pickFile(); } });
@@ -383,7 +404,7 @@ function renderWelcome(): void {
                   : h('span', { class: 'muted tile-platform' }, g.platform.split(' · ').flatMap((part, i) =>
                     [i ? h('span', { class: 'tile-sep' }, ' · ') : null, h('span', { class: 'tile-part' }, part)])),
                 picture ? tilePicture(picture) : null);
-              const color = g.colors?.[name];
+              const color = g.colors?.[name] ?? g.colors?.[g.games[0]];
               if (color) tile.style.setProperty('--label', color);
               return tile;
             })),

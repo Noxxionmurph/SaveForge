@@ -1192,3 +1192,30 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
   font: 600 1rem var(--font-display); color: var(--lcd-ink); background: var(--lcd); border-color: var(--lcd-edge);
 }
 .ff-toggle[aria-pressed="false"] { font-family: var(--font-display); border-style: dashed; }
+
+
+/* ---- UX review pass ---- */
+/* Cancel / Apply changes stay at the bottom of the Pokémon window while the form scrolls. */
+.dialog-foot.sticky-foot {
+  position: sticky; bottom: -12px; z-index: 2; margin: 20px -16px -12px; padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+  justify-content: flex-end; background: var(--surface); border-top: 2px solid var(--line-strong, var(--line));
+}
+.mon-dialog .dialog-foot button { min-height: 44px; }
+/* The searchable move and item picker. */
+.pick-btn { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-width: 0; text-align: left; font-weight: 400; }
+.pick-btn > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.move-pick .pick-btn { flex: 1; }
+dialog.pick-dialog { width: min(440px, 100vw - 16px); max-height: calc(100dvh - 24px); background: var(--surface); }
+.pick-search { width: 100%; margin: 6px 0 10px; }
+.pick-list { list-style: none; margin: 0 0 10px; padding: 0; display: grid; gap: 2px; max-height: min(52dvh, 380px); overflow-y: auto; }
+.pick-opt { width: 100%; min-height: 44px; text-align: left; justify-content: flex-start; border-radius: 4px; background: transparent; box-shadow: none; }
+.pick-opt.on { background: var(--surface-2); font-weight: 600; }
+.pick-empty { padding: 8px 4px; }
+/* Bag rows: 44px targets, with the remove button set apart from the quantity box. */
+.item-row input, .item-row select, .item-row button.icon { min-height: 44px; }
+.item-row button.icon { min-width: 44px; margin-left: 4px; }
+.slot-note { font-size: 0.875rem; color: var(--muted, inherit); }
+/* After a download. */
+.saved-dialog { width: min(420px, 100vw - 24px); }
+.saved-file { padding: 8px 12px; overflow-wrap: anywhere; font-size: 1.0625rem; }
+.saved-steps { padding-left: 1.25em; display: grid; gap: 6px; margin: 12px 0; }
