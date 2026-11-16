@@ -23,7 +23,7 @@ const localArt = process.argv.includes('--local-art');
 const LOCAL_ART_BASE = './assets/';
 const ART_LINE = /export const ART_BASE = '[^']*';/;
 if (localArt && !existsSync(join(root, 'assets', 'sprites'))) {
-  console.error('--local-art needs the artwork repository checked out as ./assets/. Run:\n  git clone https://github.com/Noxxionmurph/SaveHub-assets assets');
+  console.error('--local-art needs the artwork repository checked out as ./assets/. Run:\n  git clone https://github.com/Noxxionmurph/SaveForge-assets assets');
   process.exit(1);
 }
 

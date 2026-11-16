@@ -3,6 +3,7 @@
     "allow": [
       "mcp__github__merge_pull_request",
       "Bash(gh api -X PUT repos/Noxxionmurph/SaveHub/pulls/*/merge *)",
+      "Bash(gh api -X PUT repos/Noxxionmurph/SaveForge/pulls/*/merge *)",
       "Bash(gh pr merge *)"
     ]
   }

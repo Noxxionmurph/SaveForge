@@ -5,7 +5,7 @@
     python3 e2e/run.py names bag    # just these
 
 Needs Node 22.18+, Python 3 with Playwright (pip install playwright; playwright install chromium), and the artwork
-checked out as ./assets (git clone https://github.com/Noxxionmurph/SaveHub-assets assets). Screenshots and the saves the
+checked out as ./assets (git clone https://github.com/Noxxionmurph/SaveForge-assets assets). Screenshots and the saves the
 checks write land in e2e/out/. Set E2E_YELLOW_SAV=/path/to/yellow.sav to also run the real-save checks (your own save
 stays on your machine; nothing here stores or prints its contents).
 """
@@ -68,7 +68,7 @@ def main():
     if unknown:
         sys.exit(f"No such check: {', '.join(unknown)}. Choose from: {', '.join(LOCAL + HOSTED)}")
     if not (REPO / 'assets' / 'sprites').is_dir():
-        sys.exit('The artwork is not checked out. Run: git clone https://github.com/Noxxionmurph/SaveHub-assets assets')
+        sys.exit('The artwork is not checked out. Run: git clone https://github.com/Noxxionmurph/SaveForge-assets assets')
     shutil.rmtree(OUT, ignore_errors=True)
     OUT.mkdir(parents=True)
     node('e2e/make-fixtures.ts', str(OUT))

@@ -2,7 +2,7 @@ node_modules/
 dist/
 artifact/
 __pycache__/
-# The artwork lives in its own repository (SaveHub-assets); this is where a checkout of it goes.
+# The artwork lives in its own repository (SaveForge-assets); this is where a checkout of it goes.
 assets/
 # Screenshots and saves the browser checks write (e2e/run.py).
 e2e/out/

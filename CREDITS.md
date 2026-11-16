@@ -23,7 +23,7 @@ save key is the one listed in the Apollo Save Tool's database, and the save layo
 code database. [FireyFly's notes](https://github.com/FireyFly/reversing) on the PSP release's resource files helped read its name-screen font.
 
 The pictures are not part of this code repository. They live in a separate repository,
-[SaveHub-assets](https://github.com/Noxxionmurph/SaveHub-assets), and the site loads them from there, so the editor works
+[SaveForge-assets](https://github.com/Noxxionmurph/SaveForge-assets), and the site loads them from there, so the editor works
 the same (without the pictures) if they are ever removed. This is who made them.
 
 ## Pokémon, item and type icons

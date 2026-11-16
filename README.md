@@ -37,15 +37,15 @@ of the page is the one exception: it still links Google Fonts.) A game can set `
 
 The pictures (Pokémon box icons for dex #1-251 plus Unown's letters and an egg, item icons, type icons, Kanto and Johto
 gym badges and Pikachu's reactions) are **not in
-this repository**. They live in [SaveHub-assets](https://github.com/Noxxionmurph/SaveHub-assets), which is served as its
-own site (`https://noxxionmurph.github.io/SaveHub-assets/`); the editor loads them from there. The images are
+this repository**. They live in [SaveForge-assets](https://github.com/Noxxionmurph/SaveForge-assets), which is served as its
+own site (`https://noxxionmurph.github.io/SaveForge-assets/`); the editor loads them from there. The images are
 © Nintendo / Creatures Inc. / GAME FREAK Inc. and come from PokéSprite, The Spriters Resource and Serebii (see
 [CREDITS.md](CREDITS.md)). Keeping them apart means a request to remove artwork only ever touches that repository, and
 the editor carries on without pictures (a picture that can't load hides itself, and the Pikachu preview box is dropped).
 
 - **One place decides where they come from**: `ART_BASE` in `src/ui/art.ts`. Nothing else names a path to the artwork
   (`npm test` checks), so moving or removing it is a one-line change.
-- **Working on the code**: `git clone https://github.com/Noxxionmurph/SaveHub-assets assets` inside this folder (it is
+- **Working on the code**: `git clone https://github.com/Noxxionmurph/SaveForge-assets assets` inside this folder (it is
   git-ignored), then `npm run dev`. `npm run build:local` does the same build without serving. A plain `npm run build`
   makes the site as it is deployed: no pictures inside it, loaded from the artwork site. Without the checkout the
   tests that read the picture files skip themselves.
@@ -55,7 +55,7 @@ the editor carries on without pictures (a picture that can't load hides itself, 
   `--local-art` builds don't carry a version.
 - **Changing the artwork**: edit it in the `assets` checkout and push that repository; the editor picks it up with no
   rebuild. To refresh from a PokéSprite checkout: `node scripts/import-sprites.mjs <path>`.
-- **If the artwork has to come down**: delete the files (or the repository) in SaveHub-assets. The editor keeps working.
+- **If the artwork has to come down**: delete the files (or the repository) in SaveForge-assets. The editor keeps working.
   To point at another place, change `ART_BASE`.
 - **Every picture looks like part of one set.** Pixel art (Pokémon, items, badges, Pikachu) is drawn at a whole number
   of screen pixels per art pixel, with hard edges, whatever the screen scaling (100%, 125%, a 2.625 phone...); a
@@ -313,7 +313,7 @@ tables straight out of its data banks into `tables.ts`.
   level 1-16), and gear in both hands, head, body and arms (an empty hand is the "Hands" item, 0x30).
 - **Items**: gil (+0x4A8), and the bag: 150 item ids at +0x4B4 and their counts at +0x54A. Key items are in the bag
   too; they're shown but not changed.
-- Portraits in the party window come from the game's own party menu (SaveHub-assets).
+- Portraits in the party window come from the game's own party menu (SaveForge-assets).
 
 ## Final Fantasy II (Famicom)
 
@@ -333,7 +333,7 @@ and were checked by loading edited saves in the game (Neo Demiforce's English pa
   Attack, defense and the rest are worked out again at the start of every battle.
 - **Items**: gil (u24 at +0x1C, up to 9,999,999), and the bag: 32 places of one item each at +0x60. Key items are bits
   at +0x1A/+0x1B (item k is bit k); they're shown but not changed.
-- Portraits are drawn from the game's own tiles (24x32) in its menu colours (SaveHub-assets).
+- Portraits are drawn from the game's own tiles (24x32) in its menu colours (SaveForge-assets).
 
 ## Final Fantasy II (WonderSwan Color)
 
@@ -386,7 +386,7 @@ for what the PSP added come from the game's BOOT.BIN.
   fourth place is named at +0x4A2. Gil at +0x498 (up to 9,999,999), bag ids at +0x4A4 and counts at +0x53A.
 - **New items**: the Destroy and Revive tomes and spells, and the Soul of Rebirth weapons (Ragnarok, Artemis Bow,
   Gigantaxe, Staff of Light, Dragon Claws, Gungnir, Dancing Dagger, Abel's Lance, Longinus).
-- Portraits come from the disc's own face pictures (52x60, SaveHub-assets).
+- Portraits come from the disc's own face pictures (52x60, SaveForge-assets).
 
 ## Final Fantasy (PSP, Anniversary Edition)
 

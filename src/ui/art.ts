@@ -1,6 +1,6 @@
 // Where the artwork (Pokémon, item and type icons, gym badges, Pikachu's reactions) is loaded from.
 //
-// The artwork is not part of this repository. It lives in its own repository (SaveHub-assets) and is served from its
+// The artwork is not part of this repository. It lives in its own repository (SaveForge-assets) and is served from its
 // own site, so the editor and the artwork can be changed, replaced or removed independently of each other.
 // Nothing in the editor depends on the artwork being reachable: a picture that fails to load hides itself (see icon()
 // in sprites.ts), the Pikachu preview box goes away (see initArt below), and every control and label keeps working.
@@ -9,7 +9,7 @@
 // (a checkout of the artwork repository: local development, tests, and the Claude-hosted copy of the site).
 // Keep the committed value an absolute https:// URL ending in a slash; test/art.test.ts checks that.
 
-export const ART_BASE = 'https://noxxionmurph.github.io/SaveHub-assets/';
+export const ART_BASE = 'https://noxxionmurph.github.io/SaveForge-assets/';
 
 /** Full URL (or page-relative path, for a local build) of one artwork file, e.g. "sprites/pokemon/25.png". */
 export const artUrl = (path: string): string => `${ART_BASE}${path}`;
