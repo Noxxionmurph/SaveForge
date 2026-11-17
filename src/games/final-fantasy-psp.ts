@@ -6,7 +6,7 @@ export default defineGame<Ff1PspSave>({
   id: 'final-fantasy-psp',
   family: 'Final Fantasy',
   games: ['Final Fantasy Anniversary Edition'],
-  icons: { 'Final Fantasy Anniversary Edition': 'sprites/ff1/psp/warrior.png' },
+  icons: { 'Final Fantasy Anniversary Edition': 'sprites/ff1/pr/warrior.png' },
   shelf: 'final-fantasy',
   tile: 'Final Fantasy', // listed on the NES tile
   platform: 'PSP · US',

@@ -6,7 +6,7 @@ export default defineGame<Ff3PspSave>({
   id: 'final-fantasy-3-psp',
   family: 'Final Fantasy',
   games: ['Final Fantasy III (PSP)'],
-  icons: { 'Final Fantasy III (PSP)': 'sprites/ff3/nes/onion-kid.png' },
+  icons: { 'Final Fantasy III (PSP)': 'sprites/ff3/pr/onion-knight.png' },
   shelf: 'final-fantasy',
   tile: 'Final Fantasy III', // listed on the Famicom tile
   platform: 'PSP · US',

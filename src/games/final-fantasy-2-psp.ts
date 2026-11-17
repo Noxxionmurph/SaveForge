@@ -6,7 +6,7 @@ export default defineGame<Ff2PspSave>({
   id: 'final-fantasy-2-psp',
   family: 'Final Fantasy',
   games: ['Final Fantasy II Anniversary Edition'],
-  icons: { 'Final Fantasy II Anniversary Edition': 'sprites/ff2/gba/battle/firion.png' },
+  icons: { 'Final Fantasy II Anniversary Edition': 'sprites/ff2/pr/firion.png' },
   shelf: 'final-fantasy',
   tile: 'Final Fantasy II', // listed on the Dawn of Souls tile
   platform: 'PSP · US',

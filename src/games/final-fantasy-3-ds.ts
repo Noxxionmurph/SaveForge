@@ -6,7 +6,7 @@ export default defineGame<Ff3DsSave>({
   id: 'final-fantasy-3-ds',
   family: 'Final Fantasy',
   games: ['Final Fantasy III (Nintendo DS)'],
-  icons: { 'Final Fantasy III (Nintendo DS)': 'sprites/ff3/nes/onion-kid.png' },
+  icons: { 'Final Fantasy III (Nintendo DS)': 'sprites/ff3/pr/onion-knight.png' },
   shelf: 'final-fantasy',
   tile: 'Final Fantasy III', // listed on the Famicom tile
   platform: 'Nintendo DS',

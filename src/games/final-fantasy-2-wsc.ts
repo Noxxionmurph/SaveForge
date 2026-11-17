@@ -6,7 +6,7 @@ export default defineGame<Ff2WscSave>({
   id: 'final-fantasy-2-wsc',
   family: 'Final Fantasy',
   games: ['Final Fantasy II (WonderSwan Color)'],
-  icons: { 'Final Fantasy II (WonderSwan Color)': 'sprites/ff2/gba/battle/firion.png' },
+  icons: { 'Final Fantasy II (WonderSwan Color)': 'sprites/ff2/pr/firion.png' },
   shelf: 'final-fantasy',
   tile: 'Final Fantasy II', // listed on the Dawn of Souls tile
   platform: 'WonderSwan Color · English patch',

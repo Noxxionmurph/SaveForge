@@ -6,7 +6,7 @@ export default defineGame<Ff2NesSave>({
   id: 'final-fantasy-2-nes',
   family: 'Final Fantasy',
   games: ['Final Fantasy II (Famicom)'],
-  icons: { 'Final Fantasy II (Famicom)': 'sprites/ff2/gba/battle/firion.png' },
+  icons: { 'Final Fantasy II (Famicom)': 'sprites/ff2/pr/firion.png' },
   shelf: 'final-fantasy',
   tile: 'Final Fantasy II', // listed on the Dawn of Souls tile
   platform: 'Famicom · English patch',
