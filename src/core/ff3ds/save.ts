@@ -1,25 +1,31 @@
-// Final Fantasy III (Nintendo DS) save model: the three save slots and the Quicksave (see layout.ts). Character fields
-// read and write the slot's bytes directly; the bag and the Fat Chocobo are lists, written back by serialize(), which
-// also redoes each slot's check value. Offsets were worked out from a real save and checked in the game:
+// Final Fantasy III save model, for the Nintendo DS (the three save slots and the Quicksave, see layout.ts) and the PSP
+// (one game a save, see ../ff3psp/save.ts), which keeps the same records in other places. Character fields read and
+// write the bytes directly; the bag and the Fat Chocobo are lists, written back by serialize(), which on the DS also
+// redoes each slot's check value. Offsets were worked out from real saves and checked in the game. On the DS:
 //
 //   +0x70 + 0x2EC n  character n (0-3): +0x01 name (13 bytes), +0x0E which of the four heroes, +0x0F level, +0x10 exp,
-//                    +0x18 HP, +0x1C max HP, +0x20 [current, max] MP of spell levels 1-8, +0x38 strength, vitality,
-//                    agility, intellect and mind, +0x3D the same with gear, +0x43 ailments, +0x86 gear (right hand,
-//                    left hand, head, body, arms: u16 item, a count, a byte left alone), +0x9C spells (u32, three
-//                    places per spell level), +0xFC job, +0x100 the job before it, +0x104 + 0x14 j job j's record
-//                    (its level, then progress; from +8 its battle commands), +0x2D2 the battle commands in use,
-//                    +0x2E8 battles left before the character is used to a new job.
+//                    +0x18 HP, +0x1C max HP, +0x20 [current, max] MP of spell levels 1-8, +0x30 the current MP again
+//                    (the game keeps both the same), +0x38 strength, vitality, agility, intellect and mind, +0x3D the
+//                    same with gear, +0x43 ailments, +0x86 gear (right hand, left hand, head, body, arms: u16 item, a
+//                    count, a byte left alone), +0x9C spells (u32, three places per spell level), +0xFC job, +0x100 the
+//                    job before it, +0x104 + 0x14 j job j's record (its level, then progress; from +8 its battle
+//                    commands), +0x2D2 the battle commands in use, +0x2E8 battles left before the character is used to
+//                    a new job.
 //   +0xC28           items, (u16 item, u16 count) each: the bag (384), key items (64) and the Fat Chocobo (384).
 //   +0x1928          gil; +0x192C play time in seconds; +0x2578 the Job menu is open; +0x28D9 + j job j is in it.
 //
+// The PSP's character records are 0x2F8 bytes from 0xCB0 with a 25-byte name, so everything from +0x0E on sits 0x0C bytes
+// later; an empty spell place holds -999 there and an empty hand FFFF. Ff3Layout says where each version keeps what.
+//
 // Stats and max MP follow from the job and level alone (tables.ts); the game works them out again on the Status screen
-// and when a battle starts, and attack, defense and the rest (+0x44-0x85) catch up with the gear in the next battle.
+// and when a battle starts, and attack, defense and the rest (+0x44-0x85) catch up with the gear in the next battle (on
+// the PSP, as soon as its Equipment or Status screen opens).
 
 import { type BagItem, clamp, le } from '../bytes.ts';
 import type { ChangeGroup, EditableSave, SummaryLine } from '../types.ts';
 import { QUICKSAVE, SLOT_COUNT, slotBase, slotOk, writeChecksum } from './layout.ts';
 import { ARMOR, COMMANDS, EXP_TABLE, ITEMS, JOBS, JOB_GRADES, KEY_ITEMS, MP_TABLES, SPELLS, STAT_CURVES, WEAPONS } from './tables.ts';
-import { NAME_BYTES, decodeName, encodeName } from './text.ts';
+import { DS_NAMES, type NameCodec } from './text.ts';
 
 export { JOBS };
 export const JOB_COUNT = JOBS.length;
@@ -44,7 +50,45 @@ const AILMENT_BITS = 0x7f;
 /** An empty gear place, and an empty item place. */
 const NO_GEAR = 0xff9d;
 const NO_ITEM = 0xffff;
+/** What an empty spell place holds on the PSP (-999); the DS leaves 0. */
+const NO_SPELL_PSP = 0xfffffc19;
 const ELIXIR = 5011;
+
+/** Where a version of the game keeps things. Slot-wide offsets count from the start of the slot (the PSP's save is one). */
+export interface Ff3Layout {
+  readonly slotCount: number;
+  slotAt(n: number): number;
+  slotOk(d: Uint8Array, n: number): boolean;
+  slotLabel(n: number): string;
+  /** Redo slot n's check value, if the version has one. */
+  writeChecksum(d: Uint8Array, n: number): void;
+  /** Character records: the first at `party`, `stride` bytes apart; past the name, fields sit `shift` bytes later than on the DS. */
+  readonly party: number;
+  readonly stride: number;
+  readonly shift: number;
+  readonly names: NameCodec;
+  readonly items: number;
+  readonly gil: number;
+  /** Play time in seconds. */
+  readonly seconds: number;
+  /** The Job menu is open; job j is in it at `jobs` + j. */
+  readonly jobMenu: number;
+  readonly jobs: number;
+  /** What the game writes for an empty spell place, and for an empty hand. */
+  readonly noSpell: number;
+  readonly noHand: number;
+}
+
+export const DS_LAYOUT: Ff3Layout = {
+  slotCount: SLOT_COUNT,
+  slotAt: slotBase,
+  slotOk,
+  slotLabel: (n) => (n === QUICKSAVE ? 'Quicksave' : `Slot ${n + 1}`),
+  writeChecksum,
+  party: 0x70, stride: 0x2ec, shift: 0, names: DS_NAMES,
+  items: 0xc28, gil: 0x1928, seconds: 0x192c, jobMenu: 0x2578, jobs: 0x28d9,
+  noSpell: 0, noHand: NO_GEAR,
+};
 
 type Kind = 'item' | 'weapon' | 'armor' | 'spell' | 'key';
 interface Info { readonly name: string; readonly kind: Kind; readonly type: number; readonly jobs: number; readonly bonus: readonly number[]; readonly level: number }
@@ -115,21 +159,28 @@ export const STAT_LABELS: Record<StatKey, string> = { str: 'Strength', vit: 'Vit
 
 export class Ff3DsChar {
   private readonly d: Uint8Array;
+  /** Where the record starts, and where its fields from +0x0E on count from (the same on the DS). */
+  private readonly r: number;
   private readonly o: number;
+  private readonly L: Ff3Layout;
   readonly index: number;
-  constructor(d: Uint8Array, slotAt: number, index: number) {
+  constructor(d: Uint8Array, slotAt: number, index: number, layout: Ff3Layout = DS_LAYOUT) {
     this.d = d;
     this.index = index;
-    this.o = slotAt + 0x70 + index * 0x2ec;
+    this.L = layout;
+    this.r = slotAt + layout.party + index * layout.stride;
+    this.o = this.r + layout.shift;
   }
+  /** How names are kept: how many letters, and what the file will hold. */
+  get names(): NameCodec { return this.L.names; }
 
   /** Which of the four heroes this is (0 Luneth, 1 Arc, 2 Refia, 3 Ingus, whatever their names now). */
   get hero() { return this.d[this.o + 0x0e] & 3; }
   get job() { const j = le.u32(this.d, this.o + 0xfc); return j < JOB_COUNT ? j : 0; }
   get jobName() { return JOBS[this.job]; }
 
-  get name() { return decodeName(this.d.subarray(this.o + 1, this.o + 1 + NAME_BYTES)); }
-  set name(text: string) { if (text !== this.name) this.d.set(encodeName(text), this.o + 1); }
+  get name() { return this.L.names.decode(this.d.subarray(this.r + 1, this.r + 1 + this.L.names.bytes)); }
+  set name(text: string) { if (text !== this.name) this.d.set(this.L.names.encode(text), this.r + 1); }
 
   /** Level 1-99, kept in step with exp: exp moves to the new level's start if it's out of range, and stats and max MP
    * become what the job has at that level. */
@@ -214,17 +265,21 @@ export class Ff3DsChar {
     return moved;
   }
 
-  /** Spell charges of `level` (1-8): [current, max] at +0x20 + 2 * (level - 1). */
+  /** Spell charges of `level` (1-8): [current, max] at +0x20 + 2 * (level - 1), and the current ones again from +0x30. */
   mp(level: number) { return this.d[this.o + 0x20 + (level - 1) * 2]; }
   maxMp(level: number) { return this.d[this.o + 0x21 + (level - 1) * 2]; }
-  setMp(level: number, v: number) { this.d[this.o + 0x20 + (level - 1) * 2] = clamp(v, 0, this.maxMp(level)); }
+  setMp(level: number, v: number) {
+    const mp = clamp(v, 0, this.maxMp(level));
+    this.d[this.o + 0x20 + (level - 1) * 2] = mp;
+    this.d[this.o + 0x30 + (level - 1)] = mp;
+  }
   setMaxMp(level: number, v: number) {
     this.d[this.o + 0x21 + (level - 1) * 2] = clamp(v, 0, MAX_MP);
     if (this.mp(level) > this.maxMp(level)) this.setMp(level, this.maxMp(level));
   }
 
   /** What gear place `slot` holds (0 = nothing). */
-  gear(slot: number) { const id = le.u16(this.d, this.o + 0x86 + slot * 4); return id === NO_GEAR ? 0 : id; }
+  gear(slot: number) { const id = le.u16(this.d, this.o + 0x86 + slot * 4); return id === NO_GEAR || id === NO_ITEM ? 0 : id; }
   /** How many of it: the arrows left, else 1. Taking it off puts that many in the bag. */
   gearCount(slot: number) { return this.gear(slot) ? this.d[this.o + 0x88 + slot * 4] : 0; }
   setArrows(hand: number, v: number) { if (hand < 2 && isArrow(this.gear(hand))) this.d[this.o + 0x88 + hand * 4] = clamp(v, 1, MAX_COUNT); }
@@ -243,14 +298,14 @@ export class Ff3DsChar {
     return true;
   }
   private clearGear(slot: number) {
-    le.setU16(this.d, this.o + 0x86 + slot * 4, NO_GEAR);
+    le.setU16(this.d, this.o + 0x86 + slot * 4, slot < 2 ? this.L.noHand : NO_GEAR);
     this.d[this.o + 0x88 + slot * 4] = 0;
     this.refreshWorn();
   }
 
   /** The spells known at `level` (1-8): up to three. */
   spellsAt(level: number): number[] {
-    return [0, 1, 2].map((k) => le.u32(this.d, this.o + 0x9c + ((level - 1) * 3 + k) * 4)).filter((id) => id);
+    return [0, 1, 2].map((k) => le.u32(this.d, this.o + 0x9c + ((level - 1) * 3 + k) * 4)).filter((id) => id && id !== NO_SPELL_PSP);
   }
   get spells(): number[] { return Array.from({ length: 8 }, (_, i) => this.spellsAt(i + 1)).flat(); }
   knows(id: number) { const lv = spellLevel(id); return lv > 0 && this.spellsAt(lv).includes(id); }
@@ -266,7 +321,7 @@ export class Ff3DsChar {
   }
   forget(id: number) { const lv = spellLevel(id); if (lv) this.writeSpells(lv, this.spellsAt(lv).filter((x) => x !== id)); }
   private writeSpells(level: number, ids: number[]) {
-    for (let k = 0; k < SPELLS_PER_LEVEL; k++) le.setU32(this.d, this.o + 0x9c + ((level - 1) * 3 + k) * 4, ids[k] ?? 0);
+    for (let k = 0; k < SPELLS_PER_LEVEL; k++) le.setU32(this.d, this.o + 0x9c + ((level - 1) * 3 + k) * 4, ids[k] ?? this.L.noSpell);
   }
 
   /** Full HP and spell charges, ailments gone. */
@@ -279,6 +334,7 @@ export class Ff3DsChar {
 
 export class Ff3DsSlot {
   private readonly d: Uint8Array;
+  private readonly L: Ff3Layout;
   readonly index: number;
   readonly at: number;
   readonly used: boolean;
@@ -288,40 +344,41 @@ export class Ff3DsSlot {
   readonly chocobo: BagItem[];
   readonly keyItems: readonly number[];
   private readonly was: string;
-  constructor(d: Uint8Array, index: number) {
+  constructor(d: Uint8Array, index: number, layout: Ff3Layout = DS_LAYOUT) {
     this.d = d;
+    this.L = layout;
     this.index = index;
-    this.at = slotBase(index);
-    this.used = slotOk(d, index);
-    this.party = Array.from({ length: 4 }, (_, i) => new Ff3DsChar(d, this.at, i));
+    this.at = layout.slotAt(index);
+    this.used = layout.slotOk(d, index);
+    this.party = Array.from({ length: 4 }, (_, i) => new Ff3DsChar(d, this.at, i, layout));
     this.bag = this.used ? this.readList(0, BAG_SIZE) : [];
     this.keyItems = this.used ? this.readList(BAG_SIZE, KEY_SIZE).map((x) => x.id) : [];
     this.chocobo = this.used ? this.readList(BAG_SIZE + KEY_SIZE, CHOCOBO_SIZE) : [];
     this.was = JSON.stringify([this.bag, this.chocobo]);
   }
-  get isQuicksave() { return this.index === QUICKSAVE; }
-  /** "Slot 1"-"Slot 3" as the Load screen numbers them, or "Quicksave" (what Continue on the title screen loads). */
-  get label() { return this.isQuicksave ? 'Quicksave' : `Slot ${this.index + 1}`; }
+  get isQuicksave() { return this.L === DS_LAYOUT && this.index === QUICKSAVE; }
+  /** "Slot 1"-"Slot 3" as the DS's Load screen numbers them, or "Quicksave" (what Continue on the title screen loads). */
+  get label() { return this.L.slotLabel(this.index); }
 
-  get gil() { return le.u32(this.d, this.at + 0x1928); }
-  set gil(v: number) { le.setU32(this.d, this.at + 0x1928, clamp(v, 0, MAX_GIL)); }
+  get gil() { return le.u32(this.d, this.at + this.L.gil); }
+  set gil(v: number) { le.setU32(this.d, this.at + this.L.gil, clamp(v, 0, MAX_GIL)); }
   /** Play time in seconds. */
-  get seconds() { return le.u32(this.d, this.at + 0x192c); }
+  get seconds() { return le.u32(this.d, this.at + this.L.seconds); }
 
   /** Is job `j` in the Job menu? The Freelancer always is. */
-  jobOpen(j: number) { return j === 0 || !!this.d[this.at + 0x28d9 + j]; }
+  jobOpen(j: number) { return j === 0 || !!this.d[this.at + this.L.jobs + j]; }
   /** Opening a job also opens the Job menu itself, which the story keeps shut until the first crystal. */
   setJobOpen(j: number, on: boolean) {
     if (j <= 0 || j >= JOB_COUNT) return;
-    this.d[this.at + 0x28d9 + j] = on ? 1 : 0;
-    if (on) this.d[this.at + 0x2578] = 1;
+    this.d[this.at + this.L.jobs + j] = on ? 1 : 0;
+    if (on) this.d[this.at + this.L.jobMenu] = 1;
   }
   get jobsOpen(): number[] { return JOBS.map((_, j) => j).filter((j) => this.jobOpen(j)); }
 
   private readList(from: number, n: number): BagItem[] {
     const out: BagItem[] = [];
     for (let i = 0; i < n; i++) {
-      const o = this.at + 0xc28 + (from + i) * 4;
+      const o = this.at + this.L.items + (from + i) * 4;
       const id = le.u16(this.d, o), count = le.u16(this.d, o + 2);
       // A place the game emptied reads FFFF; it also leaves the odd place with a count of 0, which it doesn't show.
       if (id !== NO_ITEM && count) out.push({ id, count: Math.min(count, MAX_COUNT) });
@@ -331,7 +388,7 @@ export class Ff3DsSlot {
   private writeList(out: Uint8Array, from: number, n: number, items: BagItem[]) {
     const list = items.filter((x) => x.id && x.id !== NO_ITEM && x.count > 0).slice(0, n);
     for (let i = 0; i < n; i++) {
-      const o = this.at + 0xc28 + (from + i) * 4;
+      const o = this.at + this.L.items + (from + i) * 4;
       le.setU16(out, o, list[i] ? list[i].id : NO_ITEM);
       le.setU16(out, o + 2, list[i] ? clamp(list[i].count, 1, MAX_COUNT) : 0);
     }
@@ -366,9 +423,11 @@ export class Ff3DsSlot {
 export class Ff3DsSave implements EditableSave {
   readonly data: Uint8Array;
   readonly slots: Ff3DsSlot[];
-  constructor(data: Uint8Array) {
+  private readonly layout: Ff3Layout;
+  constructor(data: Uint8Array, layout: Ff3Layout = DS_LAYOUT) {
     this.data = data.slice();
-    this.slots = Array.from({ length: SLOT_COUNT }, (_, i) => new Ff3DsSlot(this.data, i));
+    this.layout = layout;
+    this.slots = Array.from({ length: layout.slotCount }, (_, i) => new Ff3DsSlot(this.data, i, layout));
     if (!this.usedSlots.length) throw new Error('None of this Final Fantasy III save’s slots pass the game’s save check.');
   }
   get usedSlots() { return this.slots.filter((s) => s.used); }
@@ -377,7 +436,7 @@ export class Ff3DsSave implements EditableSave {
     const out = this.data.slice();
     for (const s of this.usedSlots) {
       s.writeLists(out);
-      writeChecksum(out, s.index);
+      this.layout.writeChecksum(out, s.index);
     }
     return out;
   }

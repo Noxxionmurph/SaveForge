@@ -2,7 +2,7 @@
 
 One site, many games. Drop a save on the landing page, the game is detected from the file's structure
 (size, checksums, layout; never a hash, since saves change on every write), and that game's editor is
-lazy-loaded. Currently supported: Pokémon Red / Blue / Yellow, Gold / Silver / Crystal and Ruby / Sapphire / FireRed / LeafGreen / Emerald (English), and Final Fantasy (NES, English; I and II from Dawn of Souls on GBA, US; II on Famicom, English patch; I and II PSP Anniversary Edition, US; I on WonderSwan Color, Japan; II on WonderSwan Color, English patch; III on Famicom, English patch, and Nintendo DS, US).
+lazy-loaded. Currently supported: Pokémon Red / Blue / Yellow, Gold / Silver / Crystal and Ruby / Sapphire / FireRed / LeafGreen / Emerald (English), and Final Fantasy (NES, English; I and II from Dawn of Souls on GBA, US; II on Famicom, English patch; I and II PSP Anniversary Edition, US; I on WonderSwan Color, Japan; II on WonderSwan Color, English patch; III on Famicom, English patch, Nintendo DS, US, and PSP, US).
 Everything is a self-contained "game module", so adding Gen 4–5, more Final Fantasy versions, Mega Man Battle Network, etc. never touches the shell.
 
 ## Look and feel
@@ -395,6 +395,26 @@ what, the stat, MP and experience tables and each job's battle commands are read
   getting used to it are skipped. Hands pair as in the Equip menu (a bow wants arrows, a harp goes alone).
 - **Names**: up to six letters, numbers or ! ' ( ) - = ; + : , . / ?, no spaces.
 
+## Final Fantasy III (PSP)
+
+`src/core/ff3psp/`, on top of the DS model (`src/core/ff3ds/save.ts`, through `PSP_LAYOUT`) and the PSP savedata code in
+`src/core/psp/`. US PlayStation Store release (NPUH10125); the savedata key is Apollo Save Tool's. The game's item, job
+and stat tables are the DS's byte for byte, so the DS's `tables.ts` serves both. Worked out from three real saves and
+checked in PPSSPP (`scripts/psprun.sh`).
+
+- **Opening**: a zip of the save folder (`NPUH10125DATA00` and so on, with PARAM.SFO and PLAYDATA.BIN), PLAYDATA.BIN
+  alone (then PARAM.SFO isn't updated, so only PPSSPP will load it), or the decrypted data. The folder `NPUH10125`
+  without a number holds the game's settings, not a save.
+- **Format**: one game a save, 0x3B78 bytes decrypted, laid out like a DS slot with the records moved: its length at
+  0x20 and "EUREKA data" at 0x28, and no check value of its own (the savedata hash covers the file).
+- **Party**: four records of 0x2F8 bytes from 0xCB0: the name at +1 (25 bytes of UTF-8), then the DS's fields 0x0C
+  bytes further on. Empty hands are 0xFFFF and an empty spell place is -999 (the DS uses 0xFF9D and 0).
+- **Items**: the DS's (item, count) lists from 0x1890: the bag (384), key items (64) and the Fat Chocobo (384). Gil at
+  0x25B8, play time in seconds at 0x25BC, the Job menu at 0xD4 and the jobs it offers from 0x435.
+- **Names**: up to eight characters. The game takes them from the PSP's own keyboard; the editor writes the DS's set
+  (letters, numbers and ! ' ( ) - = ; + : , . / ?, no spaces), which the game's font is sure to have, and shows any
+  other name as saved.
+
 ## Final Fantasy II (WonderSwan Color)
 
 `src/core/ff2wsc/`, on top of the Famicom model (`src/core/ff2nes/save.ts`, through `WSC_FORMAT`). Item ids are the
@@ -596,6 +616,17 @@ Every screen explains itself in plain words, so keep it that way when you add a 
   cure item. Only checked with one real save, and only the US version is recognised. The map, story, key items and
   Mognet letters aren't editable, attack and defense catch up with new gear after the next battle, and job levels can
   be set but their progress towards the next one is left as it is.
+
+- Final Fantasy III (PSP) was checked in the real game (the US release in PPSSPP's headless build, `scripts/psprun.sh`,
+  2026-11-17): three real saves decrypt, open and save back byte for byte, and the editor's PARAM.SFO hash for
+  PLAYDATA.BIN is the game's. An edited copy (a character renamed with all eight letters and given Onion gear, a spell
+  forgotten, another made a Knight with 1,234 HP, one poisoned with new MP and one knocked out, gil, a Potion count,
+  Ninja and Sage taken out of the Job menu) loads with every edit showing on the main menu and in the Item, Job,
+  Equipment, Magic and Status screens, which work attack and defense out again straight away; a save the game then
+  wrote opens in the editor with them intact.
+  PPSSPP doesn't check PARAM.SFO, so a real PSP's check of the redone SFO hashes is untested, and only the US release
+  is recognised. The map, story and key items aren't editable, and job levels can be set but their progress towards
+  the next one is left as it is.
 
 - Final Fantasy II (WonderSwan Color) was checked in the real game (English patch T-Eng 0.10 in Mednafen's WonderSwan
   core, 2026-11-06): a save made there opens, and edited copies (renamed Firion and Maria, 999 and 777 HP, 99 Strength,

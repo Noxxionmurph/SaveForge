@@ -18,7 +18,7 @@ with sync_playwright() as p:
     page.on('console', lambda m: errors.append(f'console.{m.type}: {m.text}') if m.type == 'error' and 'ERR_TUNNEL' not in m.text else None)
     page.goto(BASE)
     ports = page.inner_text('li.tile:has(.tile-name:text-is("Final Fantasy III")) .tile-platform')
-    assert ports == 'Famicom · Nintendo DS', ports
+    assert ports == 'Famicom · Nintendo DS · PSP', ports
     with page.expect_file_chooser() as fc:
         page.click('.slot')
     fc.value.set_files(f'{SP}/ff3-ds.dsv')
@@ -40,6 +40,8 @@ with sync_playwright() as p:
     page.select_option('label.field:has-text("Right hand") select', label='Bow')
     note = page.inner_text('.card:has(h3:text-is("Equipped")) p[role="status"]')
     assert note == 'Left hand emptied: Leather Shield doesn’t go with Bow.', note
+    hint = page.inner_text('.card:has(h3:text-is("Equipped")) p.field-hint:last-child')
+    assert 'catch up after the next battle' in hint, hint
     page.click('.ff-member >> nth=2')
     page.click('button.ff-toggle:has-text("Sight")')
     assert page.locator('button.ff-toggle:has-text("Fire")').count() == 0, 'a White Mage is offered black magic'

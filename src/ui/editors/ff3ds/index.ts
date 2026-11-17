@@ -1,11 +1,11 @@
-// Final Fantasy III (Nintendo DS) editor UI. Loaded lazily by the shell via the game module.
+// Final Fantasy III (Nintendo DS and PSP) editor UI. Loaded lazily by the shell via the game modules.
 
 import {
   AILMENTS, BAG_SIZE, CHOCOBO_SIZE, GEAR_SLOTS, JOBS, KO, MAX_COUNT, MAX_EXP, MAX_GIL, MAX_HP, MAX_LEVEL, STAT_KEYS, STAT_LABELS,
   STORABLE, SPELLS_PER_LEVEL, canEquip, isArrow, isSpell, itemName, spellLevel, spellSchool, spellsOfLevel,
   type Ff3DsChar, type Ff3DsSave, type Ff3DsSlot,
 } from '../../../core/ff3ds/save.ts';
-import { NAME_LENGTH, asSaved } from '../../../core/ff3ds/text.ts';
+import type { Ff3PspSave } from '../../../core/ff3psp/save.ts';
 import type { MountEditor } from '../../../core/types.ts';
 import { clear, field, h, numberInput, selectInput, textInput } from '../../dom.ts';
 import { itemList } from '../../itemList.ts';
@@ -23,8 +23,10 @@ const label = (id: number) => (isSpell(id) ? `${itemName(id)} (${spellSchool(id)
 const STORE_OPTIONS = STORABLE.map((id) => ({ value: id, label: label(id) }));
 const STAT_SHORT = { str: 'Str', vit: 'Vit', agi: 'Agi', int: 'Int', mnd: 'Mnd' } as const;
 const listed = (names: string[]) => (names.length < 3 ? names.join(' and ') : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`);
+const COUNT_WORDS: Record<number, string> = { 6: 'six', 8: 'eight' };
 
-export const mountFf3DsEditor: MountEditor<Ff3DsSave> = (container, s, host) => {
+/** The editor, with the line under the gear that differs between versions. */
+const ff3Editor = (gearHint: string): MountEditor<Ff3DsSave> => (container, s, host) => {
   let tab: Tab = 'party';
   let slot: Ff3DsSlot = s.usedSlots[0];
   let who = 0;
@@ -95,9 +97,10 @@ export const mountFf3DsEditor: MountEditor<Ff3DsSave> = (container, s, host) => 
     const shown = notice;
     notice = null;
     const nameNote = h('span', { class: 'field-hint' });
-    const name = textInput(c.name, NAME_LENGTH, (v) => {
+    const { length: nameLength, asSaved } = c.names;
+    const name = textInput(c.name, nameLength, (v) => {
       c.name = v;
-      nameNote.textContent = asSaved(v) !== v.trimEnd() ? `Saved as “${asSaved(v)}”: six letters at most, no spaces.` : '';
+      nameNote.textContent = asSaved(v) !== v.trimEnd() ? `Saved as “${asSaved(v)}”: ${COUNT_WORDS[nameLength] ?? nameLength} letters at most, no spaces.` : '';
       edited();
     }, { 'aria-label': 'Name' });
     const locked = JOBS.some((_, j) => !slot.jobOpen(j));
@@ -171,7 +174,7 @@ export const mountFf3DsEditor: MountEditor<Ff3DsSave> = (container, s, host) => 
       h('h3', {}, 'Equipped'),
       h('div', { class: 'grid' }, rows),
       gearNotice ? h('p', { class: 'field-hint', role: 'status' }, gearNotice) : null,
-      h('p', { class: 'field-hint' }, 'Attack and defense in the game’s menus catch up after the next battle. Worn gear isn’t in the bag, so what you take off here is gone.'));
+      h('p', { class: 'field-hint' }, gearHint));
   }
 
   function magicCard(c: Ff3DsChar, redraw: () => void): Node | null {
@@ -226,3 +229,11 @@ export const mountFf3DsEditor: MountEditor<Ff3DsSave> = (container, s, host) => 
 
   render();
 };
+
+const WORN_GEAR = 'Worn gear isn’t in the bag, so what you take off here is gone.';
+
+export const mountFf3DsEditor = ff3Editor(`Attack and defense in the game’s menus catch up after the next battle. ${WORN_GEAR}`);
+
+/** The PSP version keeps the same records (see ../../../core/ff3psp/save.ts), so it gets the same editor. Its Equipment
+ *  and Status screens work attack and defense out again straight away, so there's nothing to wait for. */
+export const mountFf3PspEditor: MountEditor<Ff3PspSave> = ff3Editor(WORN_GEAR);
