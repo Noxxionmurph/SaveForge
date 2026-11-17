@@ -1146,9 +1146,13 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
 @supports (width: round(10px, 3px)) {
   :root { --px1: max(var(--dpx), round(1px, var(--dpx))); --px2: max(var(--dpx), round(2px, var(--dpx))); }
 }
-.mon-icon, .tile-icon, .item-icon, .badge-icon, .ribbon-icon, .pokeblock-icon, .pika-frame, .job-sprite { image-rendering: pixelated; }
+.mon-icon, .tile-icon, .item-icon, .badge-icon, .ribbon-icon, .pokeblock-icon, .pika-frame, .job-sprite, .status-badge { image-rendering: pixelated; }
 .job-sprite.pr { --art: var(--px2); width: calc(18 * var(--art)); height: calc(24 * var(--art)); }
 .job-sprite.prj { --art: var(--px2); width: calc(19 * var(--art)); height: calc(25 * var(--art)); }
+/* A Final Fantasy status icon (10x10 art) after a party member's name, on a small dark chip so its white pixels read on
+   every console's window. The chip's edge is a shadow rather than padding, so the picture's own box stays whole pixels. */
+.status-badge { display: inline-block; --art: var(--px2); width: calc(10 * var(--art)); height: calc(10 * var(--art)); margin-left: 6px; vertical-align: middle;
+  background: rgb(0 0 0 / .55); box-shadow: 0 0 0 var(--px1) rgb(0 0 0 / .55); border-radius: 2px; }
 .mon-icon, .tile-icon {
   --art: var(--px1);
   width: calc(68 * var(--art)); height: calc(56 * var(--art)); max-width: none;

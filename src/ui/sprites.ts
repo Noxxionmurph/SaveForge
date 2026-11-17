@@ -95,6 +95,22 @@ export function ff3DsJobSprite(job: number, hero: number, cls2 = ''): HTMLImageE
   return prSprite('ff3', FF3_DS_JOB_FILES[job] || onionKnight(hero), cls2);
 }
 
+/** Status icons (10x10, Pixel Remaster) for a party member's ailments, by the name the editor shows ("KO", "Poison"). The
+ * ones without an icon are left out. Each icon is named after its status (alt and hover text, as the type icons are),
+ * since Final Fantasy III's party window writes out only KO. */
+const STATUS_FILES: Record<string, string> = { ko: 'ko', dead: 'ko', stone: 'stone', poison: 'poison', blind: 'blind', toad: 'toad',
+  silence: 'silence', mini: 'mini' };
+export function statusBadges(...names: (string | undefined)[]): HTMLImageElement[] {
+  return names.flatMap((n) => {
+    const file = STATUS_FILES[(n ?? '').toLowerCase()];
+    if (!n || !file) return [];
+    const img = icon(`${BASE}/ff-status/${file}.png`, 10, 10, 'status-badge');
+    img.alt = n;
+    img.title = n;
+    return [img];
+  });
+}
+
 /** Item icon (32x32) from a "<category>/<name>" path. */
 export function itemIcon(path: string, cls = ''): HTMLImageElement {
   return icon(itemIconUrl(path), 32, 32, `item-icon ${cls}`.trim());

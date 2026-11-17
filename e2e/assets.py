@@ -23,6 +23,7 @@ KINDS = {
     'ribbon': ('img.ribbon-icon', True, 'list'),
     'Pokéblock': ('img.pokeblock-icon', True, 'big'),
     'Final Fantasy class': ('img.job-sprite', True, None),
+    'status icon': ('img.status-badge', True, None),
     'type icon': ('img.type-icon', False, 24),
     'shiny mark': ('img.shiny-icon', False, 16),
     '♂/♀': ('svg.gender-icon', False, '0.75em'),
@@ -145,6 +146,18 @@ with sync_playwright() as p:
                 for i in range(page.locator('button.tab').count()):
                     page.locator('button.tab').nth(i).click(); page.wait_for_timeout(150)
                     scan(f'{game} tab {i + 1}')
+                # poison the first member, for the status icon beside the name (I: a Status or Ailment list; III: buttons)
+                page.locator('button.tab').first.click(); page.wait_for_timeout(150)
+                pick = page.locator('label.field:has-text("Status") select, label.field:has-text("Ailment") select')
+                poison = page.locator('h4:text-is("Status") + .ff-toggles button.ff-toggle:text-is("Poison")')
+                if pick.count():
+                    pick.first.select_option(label='Poison')
+                elif poison.count():
+                    poison.first.click()
+                else:
+                    continue
+                page.wait_for_timeout(150)
+                scan(f'{game} with a status')
                 continue
             for tab in POKEMON_TABS:
                 page.click(f'button.tab:has-text("{tab}")'); page.wait_for_timeout(150)
