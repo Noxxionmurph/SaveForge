@@ -13,7 +13,7 @@ export default defineGame<Ff1GbaSave>({
   platform: 'Game Boy Advance · US',
   fileHint: 'Dawn of Souls saves are 32,768 bytes (32 KB); 64 KB copies and .sps files open too.',
   colors: { 'Final Fantasy I': '#3b3f9e' },
-  icons: { 'Final Fantasy I': 'sprites/ff1/gba/warrior.png' },
+  icons: { 'Final Fantasy I': 'sprites/ff1/pr/warrior.png' },
   theme: 'gba',
   detect: (data) => {
     const found = detectDawnOfSouls(data, 1);

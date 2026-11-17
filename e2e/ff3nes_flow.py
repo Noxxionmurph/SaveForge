@@ -17,7 +17,7 @@ with sync_playwright() as p:
     page.on('console', lambda m: errors.append(f'console.{m.type}: {m.text}') if m.type == 'error' and 'ERR_TUNNEL' not in m.text else None)
     page.goto(BASE)
     tile = page.eval_on_selector('li.tile:has(.tile-name:text-is("Final Fantasy III")) img', 'i => [i.getAttribute("src"), i.className]')
-    assert tile[0].endswith('sprites/ff3/nes/onion-kid.png') and 'job-sprite nes' in tile[1], tile
+    assert tile[0].endswith('sprites/ff3/pr/onion-knight.png') and 'job-sprite pr' in tile[1], tile
     with page.expect_file_chooser() as fc:
         page.click('.slot')
     fc.value.set_files(f'{SP}/ff3-famicom.sav')

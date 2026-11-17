@@ -6,7 +6,7 @@ export default defineGame<Ff1WscSave>({
   id: 'final-fantasy-wsc',
   family: 'Final Fantasy',
   games: ['Final Fantasy (WonderSwan Color)'],
-  icons: { 'Final Fantasy (WonderSwan Color)': 'sprites/ff1/wsc/warrior.png' },
+  icons: { 'Final Fantasy (WonderSwan Color)': 'sprites/ff1/pr/warrior.png' },
   shelf: 'final-fantasy',
   tile: 'Final Fantasy', // listed on the NES tile
   platform: 'WonderSwan Color · Japan',
