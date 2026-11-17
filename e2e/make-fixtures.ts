@@ -8,6 +8,7 @@
 //   firered.sav    a FireRed / LeafGreen save (Leaf in Pallet Town)
 //   ULUS10251DATA00.zip  a Final Fantasy (PSP) save folder; dawn-of-souls.sav and dawn-of-souls-2.sav Final Fantasy I and II (GBA) saves; ff2-famicom.sav Final Fantasy II (Famicom); ULUS1026300.zip Final Fantasy II (PSP); ff2-wonderswan.sav Final Fantasy II (WonderSwan Color);
 //   ff1-wonderswan.sav   a Final Fantasy (WonderSwan Color) save
+//   ff3-ds.sav     a Final Fantasy III (Nintendo DS) save, and ff3-ds.dsv the same in DeSmuME's wrapper
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { buildSampleSave } from '../src/core/gen1/sample.ts';
 import { GEN1_OFFSETS as O, checksum8 } from '../src/core/gen1/save.ts';
@@ -19,6 +20,7 @@ import { buildFf2GbaSample } from '../src/core/ff2gba/sample.ts';
 import { buildFf1WscSample } from '../src/core/ff1wsc/sample.ts';
 import { buildFf2NesSample } from '../src/core/ff2nes/sample.ts';
 import { buildFf3NesSample } from '../src/core/ff3nes/sample.ts';
+import { buildFf3DsSample } from '../src/core/ff3ds/sample.ts';
 import { buildFf2PspSample } from '../src/core/ff2psp/sample.ts';
 import { buildFf2WscSample } from '../src/core/ff2wsc/sample.ts';
 
@@ -47,4 +49,13 @@ writeFileSync(`${out}/ff2-famicom.sav`, buildFf2NesSample());
 writeFileSync(`${out}/ff3-famicom.sav`, buildFf3NesSample());
 writeFileSync(`${out}/ULUS1026300.zip`, buildFf2PspSample());
 writeFileSync(`${out}/ff2-wonderswan.sav`, buildFf2WscSample());
-console.log(`wrote sample.sav, rb.sav, rb-footer.sav, gold.sav, ruby.sav, emerald.sav, firered.sav, ULUS10251DATA00.zip, dawn-of-souls.sav, dawn-of-souls-2.sav ff1-wonderswan.sav, ff2-famicom.sav, ff3-famicom.sav, ULUS1026300.zip and ff2-wonderswan.sav to ${out}`);
+const ff3ds = buildFf3DsSample();
+writeFileSync(`${out}/ff3-ds.sav`, ff3ds);
+// DeSmuME's footer: its marker text, six u32 (size, padded size, save chip type, address size, memory size, version), its end text.
+const snip = '|<--Snip above here to create a raw sav by excluding this DeSmuME savedata footer:';
+const dsv = Buffer.alloc(snip.length + 24 + 16);
+dsv.write(snip, 'latin1');
+[ff3ds.length, ff3ds.length, 3, 2, ff3ds.length, 0].forEach((v, i) => dsv.writeUInt32LE(v, snip.length + i * 4));
+dsv.write('|-DESMUME SAVE-|', snip.length + 24, 'latin1');
+writeFileSync(`${out}/ff3-ds.dsv`, Buffer.concat([ff3ds, dsv]));
+console.log(`wrote sample.sav, rb.sav, rb-footer.sav, gold.sav, ruby.sav, emerald.sav, firered.sav, ULUS10251DATA00.zip, dawn-of-souls.sav, dawn-of-souls-2.sav ff1-wonderswan.sav, ff2-famicom.sav, ff3-famicom.sav, ULUS1026300.zip, ff2-wonderswan.sav, ff3-ds.sav and ff3-ds.dsv to ${out}`);

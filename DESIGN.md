@@ -24,15 +24,17 @@ The values below are the tokens in `styles.css`. Pages use the token names, neve
 | `--muted` | Secondary text (≥5.5:1 on `--bg`) | `#4b5260` / `#a2a9b5` | `#2e5557` / `#9cc0bc` | `#4a4478` / `#aaa4d8` |
 | `--button` | The one primary action per screen (Choose file, Save) | `#9b1b4d` / `#e0447f` | `#24515a` / `#5fd8c9` | `#4b3d9a` / `#9a8bff` |
 | `--lcd`, `--lcd-ink`, `--lcd-dim`, `--lcd-edge` | In-game screens: trainer card, options, change list (also the landing page's example) | pea green `#aebf6e` | pale grey-green `#e4e9e4` | blue-white `#e8eefa` with scanline rule |
-
-NES (`data-console="nes"`): `--bg` `#d3d3d1` / `#151515`, `--button` NES red `#b8161c` / `#ff5c61`, and `--lcd` is the deep blue NES role-playing window, `#1a2894` / `#0e1866` with white ink and a white inner edge, since a TV showed these games, not an LCD.
-
-PSP (`data-console="psp"`): `--bg` `#d9dbe0` / `#0d0e11`, `--button` piano black `#23262e` / silver `#d7dae2`, and `--lcd` is the PSP remake's menu window, `#1f3a9e` / `#1a3290` fading down to `--lcd-low`, with a thin silver edge.
 | `--cart`, `--cart-shade`, `--pin`, `--slot-bar` | The cartridge mark and the file slot | grey cart | teal cart | indigo cart |
 | `--focus` | Focus ring | `#1a56db` / `#7fb0ff` | `#0b5cad` / `#8bd0ff` | `#0b5cad` / `#a9c4ff` |
 | `--danger` | Remove, errors | `#a4161a` / `#ff9a9a` | same | same |
 | `--male`, `--female`, `--shiny` | Gender marks and the shiny star | blue, red, gold | same | same |
 | `--caught*` | "Caught" cells in the Pokédex | LCD green on GB, a cart-tinted surface on GBC and GBA | | |
+
+NES (`data-console="nes"`): `--bg` `#d3d3d1` / `#151515`, `--button` NES red `#b8161c` / `#ff5c61`, and `--lcd` is the deep blue NES role-playing window, `#1a2894` / `#0e1866` with white ink and a white inner edge, since a TV showed these games, not an LCD.
+
+PSP (`data-console="psp"`): `--bg` `#d9dbe0` / `#0d0e11`, `--button` piano black `#23262e` / silver `#d7dae2`, and `--lcd` is the PSP remake's menu window, `#1f3a9e` / `#1a3290` fading down to `--lcd-low`, with a thin silver edge.
+
+Nintendo DS (`data-console="nds"`): `--bg` `#d5d9e0` / `#0f1116`, `--button` slate `#3b4560` / `#b4bfdc`, and `--lcd` is Final Fantasy III's menu window, slate blue `#3a4673` / `#34406a` that lightens towards the top, with a silver edge that is bright along the top and left and grey along the bottom and right.
 
 Rules:
 - There's one filled `--button` per screen. Everything else uses the plain bordered button. Filters must look different from bulk-action buttons.

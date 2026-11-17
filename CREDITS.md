@@ -17,6 +17,9 @@ Final Fantasy III (Famicom) save offsets come from everything8215's disassembly 
 Its names, job tables and who can equip what are read from the game's ROM by `scripts/gen-ff3nes-data.mjs`, and edits
 were checked in cynes.
 
+Final Fantasy III (Nintendo DS) tables are read from the game's own files by `scripts/gen-ff3ds-data.mjs`, and edits were
+checked in [DeSmuME](https://desmume.org/) through [py-desmume](https://github.com/SkyTemple/py-desmume) (`scripts/dsrun.py`).
+
 Final Fantasy (NES) names and numbers are read from Disch's disassembly of the game
 (https://github.com/Entroper/FF1Disassembly) by `scripts/gen-ff1-data.mjs`.
 

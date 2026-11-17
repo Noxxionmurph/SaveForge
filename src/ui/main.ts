@@ -94,7 +94,7 @@ function tilePicture(path: string): HTMLImageElement {
   return pictureIcon(path, w, hgt, `tile-icon job-sprite ${job}`);
 }
 
-const CONSOLES = ['gb', 'gbc', 'gba', 'nes', 'psp', 'wsc'] as const;
+const CONSOLES = ['gb', 'gbc', 'gba', 'nes', 'psp', 'wsc', 'nds'] as const;
 const forcedConsole = CONSOLES.find((c) => c === new URLSearchParams(location.search).get('console'));
 function applyConsole(game?: GameModule): void {
   // An editor whose game has a FRAME setting puts its frame back when it mounts (see windowFrame.ts).
