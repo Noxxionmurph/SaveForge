@@ -1147,15 +1147,8 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
   :root { --px1: max(var(--dpx), round(1px, var(--dpx))); --px2: max(var(--dpx), round(2px, var(--dpx))); }
 }
 .mon-icon, .tile-icon, .item-icon, .badge-icon, .ribbon-icon, .pokeblock-icon, .pika-frame, .job-sprite { image-rendering: pixelated; }
-.job-sprite.nes { --art: var(--px2); width: calc(16 * var(--art)); height: calc(24 * var(--art)); }
 .job-sprite.pr { --art: var(--px2); width: calc(18 * var(--art)); height: calc(24 * var(--art)); }
 .job-sprite.prj { --art: var(--px2); width: calc(19 * var(--art)); height: calc(25 * var(--art)); }
-.job-sprite.gba { --art: var(--px2); width: calc(26 * var(--art)); height: calc(24 * var(--art)); }
-.job-sprite.wsc { --art: var(--px2); width: calc(26 * var(--art)); height: calc(24 * var(--art)); }
-.job-sprite.ff2 { --art: var(--px2); width: calc(28 * var(--art)); height: calc(28 * var(--art)); }
-.job-sprite.ff2nes { --art: var(--px2); width: calc(24 * var(--art)); height: calc(32 * var(--art)); }
-.job-sprite.ff2psp { --art: var(--px1); width: calc(52 * var(--art)); height: calc(60 * var(--art)); }
-.job-sprite.psp { --art: var(--px1); width: calc(48 * var(--art)); height: calc(42 * var(--art)); }
 .mon-icon, .tile-icon {
   --art: var(--px1);
   width: calc(68 * var(--art)); height: calc(56 * var(--art)); max-width: none;
@@ -1222,7 +1215,7 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
 .ff-name { font-weight: 700; font-size: 1.25rem; }
 .ff-lv { color: var(--lcd-dim); }
 .ff-class, .ff-hp { grid-column: 2 / -1; color: var(--lcd-dim); font-size: 0.875rem; }
-/* Each class's picture (NES 16x24 at --px2, PSP 48x42 at --px1) to the left of the name, level, class and HP. */
+/* Each member's Pixel Remaster sprite (19x25 at --px2) to the left of the name, level, class and HP. */
 .ff-member > .job-sprite { grid-row: 1 / span 3; align-self: center; }
 /* On a landing tile every picture gets the room a Pokémon icon takes (40x32 art pixels at --px2), so all tiles are the
    same height and a class sprite sits whole in the middle of that room. */
@@ -1232,12 +1225,6 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
 .ff2-spells { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px 16px; margin-bottom: 12px; }
 .ff-spell-row { display: flex; gap: 8px; align-items: flex-end; }
 .ff-spell-row > .field { flex: 1; min-width: 0; }
-/* On phones the PSP pictures are too wide to sit beside the text in a half-width window, so they go on top. */
-@media (max-width: 719px) {
-  .ff-member:has(> .job-sprite:is(.psp, .ff2psp)) { grid-template-columns: minmax(0, 1fr) auto; }
-  .ff-member:has(> .job-sprite:is(.psp, .ff2psp)) > :is(.ff-class, .ff-hp) { grid-column: 1 / -1; }
-  .ff-member > .job-sprite:is(.psp, .ff2psp) { grid-row: auto; grid-column: 1 / -1; justify-self: start; margin-bottom: 4px; }
-}
 .ff-gear-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; }
 .ff-gear-row + .ff-gear-row { margin-top: 8px; }
 .ff-worn { display: flex; align-items: center; gap: 6px; font-size: 0.875rem; font-weight: 500; }
