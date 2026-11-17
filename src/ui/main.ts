@@ -85,9 +85,10 @@ const setPageTitle = (name?: string) => { document.title = name ? `${name} · ${
  */
 /** A landing tile's picture: a Pokémon icon (68x56), or a Final Fantasy class sprite at its own size. */
 function tilePicture(path: string): HTMLImageElement {
-  // FF2's battle sprites share FF1 GBA's 26x24 frame; its other pictures are the 28x28 menu portraits.
-  const m = path.match(/\/(ff1)\/(nes|gba|psp|wsc)\/|\/ff2\/(gba)\/battle\/|\/(ff2)\/gba\//);
-  const job = (m?.[2] ?? m?.[3] ?? m?.[4]) as Ff1Platform | undefined;
+  // FF2's battle sprites share FF1 GBA's 26x24 frame; its other pictures are the 28x28 menu portraits. FF3's Famicom
+  // sprites are FF1 NES's 16x24.
+  const m = path.match(/\/(ff1)\/(nes|gba|psp|wsc)\/|\/ff2\/(gba)\/battle\/|\/(ff2)\/gba\/|\/ff3\/(nes)\//);
+  const job = (m?.[2] ?? m?.[3] ?? m?.[4] ?? m?.[5]) as Ff1Platform | undefined;
   if (!job) return pictureIcon(path, 68, 56, 'tile-icon');
   const [w, hgt] = FF1_SPRITE_SIZE[job];
   return pictureIcon(path, w, hgt, `tile-icon job-sprite ${job}`);

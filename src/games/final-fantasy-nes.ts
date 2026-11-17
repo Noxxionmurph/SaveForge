@@ -11,7 +11,7 @@ export default defineGame<Ff1NesSave>({
   shelf: 'final-fantasy',
   sampleGame: 'Final Fantasy I · NES',
   platform: 'NES · English',
-  editable: 'Your party’s names, stats, gear and spells, plus classes and levels in I and weapon skills in II; gil, items and key items.',
+  editable: 'Your party’s names, stats, gear and spells, plus classes and levels in I, weapon skills in II and job levels in III; gil, items and key items.',
   fileHint: 'Final Fantasy (NES) saves are 8,192 bytes (8 KB).',
   colors: { 'Final Fantasy': '#b3262d' },
   theme: 'nes',

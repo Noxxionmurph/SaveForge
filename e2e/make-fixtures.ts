@@ -18,6 +18,7 @@ import { buildFf1GbaSample } from '../src/core/ff1gba/sample.ts';
 import { buildFf2GbaSample } from '../src/core/ff2gba/sample.ts';
 import { buildFf1WscSample } from '../src/core/ff1wsc/sample.ts';
 import { buildFf2NesSample } from '../src/core/ff2nes/sample.ts';
+import { buildFf3NesSample } from '../src/core/ff3nes/sample.ts';
 import { buildFf2PspSample } from '../src/core/ff2psp/sample.ts';
 import { buildFf2WscSample } from '../src/core/ff2wsc/sample.ts';
 
@@ -43,6 +44,7 @@ writeFileSync(`${out}/dawn-of-souls.sav`, buildFf1GbaSample());
 writeFileSync(`${out}/dawn-of-souls-2.sav`, buildFf2GbaSample());
 writeFileSync(`${out}/ff1-wonderswan.sav`, buildFf1WscSample());
 writeFileSync(`${out}/ff2-famicom.sav`, buildFf2NesSample());
+writeFileSync(`${out}/ff3-famicom.sav`, buildFf3NesSample());
 writeFileSync(`${out}/ULUS1026300.zip`, buildFf2PspSample());
 writeFileSync(`${out}/ff2-wonderswan.sav`, buildFf2WscSample());
-console.log(`wrote sample.sav, rb.sav, rb-footer.sav, gold.sav, ruby.sav, emerald.sav, firered.sav, ULUS10251DATA00.zip, dawn-of-souls.sav, dawn-of-souls-2.sav ff1-wonderswan.sav, ff2-famicom.sav, ULUS1026300.zip and ff2-wonderswan.sav to ${out}`);
+console.log(`wrote sample.sav, rb.sav, rb-footer.sav, gold.sav, ruby.sav, emerald.sav, firered.sav, ULUS10251DATA00.zip, dawn-of-souls.sav, dawn-of-souls-2.sav ff1-wonderswan.sav, ff2-famicom.sav, ff3-famicom.sav, ULUS1026300.zip and ff2-wonderswan.sav to ${out}`);

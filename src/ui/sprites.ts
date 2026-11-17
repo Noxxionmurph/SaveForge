@@ -85,6 +85,16 @@ export function ff1ClassSprite(cls: number, platform: Exclude<Ff1Platform, 'ff2'
   return icon(`${BASE}/ff1/${platform}/${FF1_CLASS_FILES[cls] ?? 'warrior'}.png`, w, hgt, `job-sprite ${platform} ${cls2}`.trim());
 }
 
+/** File names of the Final Fantasy III (Famicom) jobs' battle sprites, by job number (Onion Kid 0 ... Ninja 21). */
+const FF3_NES_JOB_FILES = ['onion-kid', 'fighter', 'monk', 'white-wizard', 'black-wizard', 'red-wizard', 'archer', 'knight',
+  'thief', 'scholar', 'geomancer', 'dragoon', 'viking', 'master', 'magic-knight', 'conjurer', 'bard', 'warlock', 'shaman',
+  'summoner', 'sage', 'ninja'];
+/** A Final Fantasy III (Famicom) job's battle sprite (16x24). The game colours the Onion Kid by party member (0-3). */
+export function ff3NesJobSprite(job: number, member: number, cls2 = ''): HTMLImageElement {
+  const file = job ? FF3_NES_JOB_FILES[job] ?? 'onion-kid' : ['onion-kid', 'onion-kid-2', 'onion-kid-3', 'onion-kid'][member] ?? 'onion-kid';
+  return icon(`${BASE}/ff3/nes/${file}.png`, 16, 24, `job-sprite nes ${cls2}`.trim());
+}
+
 /** Item icon (32x32) from a "<category>/<name>" path. */
 export function itemIcon(path: string, cls = ''): HTMLImageElement {
   return icon(itemIconUrl(path), 32, 32, `item-icon ${cls}`.trim());
