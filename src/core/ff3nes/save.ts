@@ -161,8 +161,12 @@ export class Ff3Char {
     if (lv !== this.level) { this.d[this.o + 1] = lv - 1; this.grow(); }
   }
 
+  /** HP; 0 HP and KO go together, as they do in the game. */
   get hp() { return u16(this.d, this.o + 0x0c); }
-  set hp(v: number) { setU16(this.d, this.o + 0x0c, clamp(v, 0, this.maxHp)); }
+  set hp(v: number) {
+    setU16(this.d, this.o + 0x0c, clamp(v, 0, this.maxHp));
+    if (!this.hp !== this.has(0x80)) this.d[this.o + 2] ^= 0x80;
+  }
   get maxHp() { return u16(this.d, this.o + 0x0e); }
   set maxHp(v: number) { setU16(this.d, this.o + 0x0e, clamp(v, 1, MAX_HP)); if (this.hp > this.maxHp) this.hp = this.maxHp; }
 

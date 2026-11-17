@@ -16,7 +16,8 @@ export interface ItemListSpec {
   /** The items the picker offers. One the file holds that isn't among them is added for its row. */
   options: { value: number; label: string }[];
   nameOf(id: number): string;
-  spritePath(id: number): string;
+  /** The item's picture; leave it out for a game without item pictures. */
+  spritePath?(id: number): string;
   /** Unused now that the player picks the item; callers still pass it. */
   fresh?(): number;
   /** Items the pocket can only hold once: the add picker leaves out the ones already there. */
@@ -32,11 +33,12 @@ export function itemList(spec: ItemListSpec): HTMLElement {
     wrap.append(
       h('h3', {}, title, h('span', { class: 'muted count' }, `${items.length}/${slots}`)),
       ...items.map((it, i) => {
-        const icon = itemIcon(spec.spritePath(it.id));
-        return h('div', { class: 'item-row' },
+        const sprite = spec.spritePath;
+        const icon = sprite ? itemIcon(sprite(it.id)) : null;
+        return h('div', { class: icon ? 'item-row' : 'item-row no-icon' },
           icon,
           lazySelect(options.some((c) => c.value === it.id) ? options : [{ value: it.id, label: spec.nameOf(it.id) }, ...options],
-            it.id, (v) => { it.id = Number(v); setIconSrc(icon, itemIconUrl(spec.spritePath(it.id))); spec.markDirty(); },
+            it.id, (v) => { it.id = Number(v); if (icon && sprite) setIconSrc(icon, itemIconUrl(sprite(it.id))); spec.markDirty(); },
             { 'aria-label': `${title}, item ${i + 1}` }),
           numberInput(it.count, 1, Math.max(spec.maxCount, it.count), (v) => { it.count = v; spec.markDirty(); }, { 'aria-label': `Quantity of item ${i + 1}` }),
           h('button', {

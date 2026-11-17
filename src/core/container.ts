@@ -14,7 +14,7 @@ export interface Unwrapped {
 const plain = (data: Uint8Array): Unwrapped => ({ data, format: null, wrap: (s) => s });
 
 export function unwrapSave(data: Uint8Array): Unwrapped {
-  return sharkPort(data) ?? gameSharkGsv(data) ?? plain(data);
+  return sharkPort(data) ?? gameSharkGsv(data) ?? desmumeDsv(data) ?? actionReplayDs(data) ?? plain(data);
 }
 
 // ---------- SharkPort (.sps) ----------
@@ -90,4 +90,49 @@ function gameSharkGsv(data: Uint8Array): Unwrapped | null {
   const size = GSV_SIZES[view.getUint32(0x1c, true)] ?? data.length - GSV_PAYLOAD;
   if (GSV_PAYLOAD + size > data.length) return null;
   return { data: data.slice(GSV_PAYLOAD, GSV_PAYLOAD + size), format: 'GameShark SP', wrap: (s) => s, saveAs: '.sav' };
+}
+
+// ---------- DeSmuME (.dsv) ----------
+// DeSmuME keeps a Nintendo DS save as the raw save, then a 122-byte footer: the text "|<--Snip above here to create a
+// raw sav by excluding this DeSmuME savedata footer:", six u32 (the save's size, its padded size, the save chip's type,
+// address size and memory size, and a version) and "|-DESMUME SAVE-|". The edited save goes back in front of the same
+// footer.
+
+const DSV_START = '|<--Snip above here to create a raw sav by excluding this DeSmuME savedata footer:';
+const DSV_END = '|-DESMUME SAVE-|';
+const DSV_FOOTER = DSV_START.length + 24 + DSV_END.length;
+
+const text = (data: Uint8Array, at: number, n: number) => String.fromCharCode(...data.subarray(at, at + n));
+
+function desmumeDsv(data: Uint8Array): Unwrapped | null {
+  const at = data.length - DSV_FOOTER;
+  if (at <= 0 || text(data, at, DSV_START.length) !== DSV_START || text(data, data.length - DSV_END.length, DSV_END.length) !== DSV_END) return null;
+  const size = new DataView(data.buffer, data.byteOffset, data.byteLength).getUint32(at + DSV_START.length, true);
+  if (!size || size > at) return null;
+  const body = data.slice(0, at);
+  const footer = data.slice(at);
+  return {
+    data: data.slice(0, size),
+    format: 'DeSmuME',
+    wrap(save) {
+      const out = new Uint8Array(body.length + footer.length);
+      out.set(body);
+      out.set(save.subarray(0, body.length));
+      out.set(footer, body.length);
+      return out;
+    },
+  };
+}
+
+// ---------- Action Replay DS (.duc) ----------
+// The Action Replay DS's save backups: a 500-byte header that starts "ARDS000000000001" (the game's name and the
+// owner's notes follow), then the raw save. No checksum over the save has turned up, so an edited save is written as a
+// plain .sav, which emulators and flash cards read.
+
+const ARDS_MAGIC = 'ARDS000000000001';
+const ARDS_HEADER = 500;
+
+function actionReplayDs(data: Uint8Array): Unwrapped | null {
+  if (data.length <= ARDS_HEADER || text(data, 0, ARDS_MAGIC.length) !== ARDS_MAGIC) return null;
+  return { data: data.slice(ARDS_HEADER), format: 'Action Replay DS', wrap: (s) => s, saveAs: '.sav' };
 }

@@ -228,6 +228,45 @@
 /* The white edge and the grey line inside it. */
 :root[data-console="wsc"] .lcd { box-shadow: inset 0 0 0 2px #ffffff, inset 0 0 0 3px #8b899b, inset 0 0 0 5px var(--lcd); }
 
+/* Nintendo DS (silver, dark grey buttons), for games that set theme: 'nds' (?console=nds previews it). The screens are
+   its Final Fantasy III's menu windows: a slate blue that lightens towards the top, with a silver edge that is bright
+   along the top and left and greys towards the bottom right. */
+:root[data-console="nds"] {
+  --caught: color-mix(in srgb, var(--cart) 30%, var(--surface)); --caught-ink: var(--text); --caught-dim: var(--muted); --caught-edge: var(--cart-shade);
+  --bg: #d5d9e0; --surface: #e8ebf0; --surface-2: #f4f6f9; --line: #b3bac6; --line-strong: #7a8496;
+  --text: #161a22; --muted: #475063;
+  --button: #3b4560; --button-edge: #232a3d; --button-ink: #ffffff;
+  --lcd: #3a4673; --lcd-ink: #ffffff; --lcd-dim: #c5cdee; --lcd-edge: #1a2140; --lcd-low: #2b3459;
+  --lcd-hi: #f8f8e8; --lcd-lo: #909898;
+  --cart: #8d95a5; --cart-shade: #616a7c; --pin: #cfd4dc; --slot-bar: #2b3040;
+  --focus: #0b5cad; --danger: #a4161a;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-console="nds"]:not([data-theme="light"]) {
+    --bg: #0f1116; --surface: #191c23; --surface-2: #20242c; --line: #2f343e; --line-strong: #535a68;
+    --text: #eceef3; --muted: #a8aebb;
+    --button: #b4bfdc; --button-edge: #7f8aa8; --button-ink: #0f1116;
+    --lcd: #34406a; --lcd-ink: #ffffff; --lcd-dim: #bec7ea; --lcd-edge: #0b0f22; --lcd-low: #242c4e;
+    --lcd-hi: #d8dccc; --lcd-lo: #6c7474;
+    --cart: #616a7c; --cart-shade: #434a59; --pin: #cfd4dc; --slot-bar: #535a68;
+    --focus: #8bb8ff; --danger: #ff9a9a;
+  }
+}
+:root[data-console="nds"][data-theme="dark"] {
+  --bg: #0f1116; --surface: #191c23; --surface-2: #20242c; --line: #2f343e; --line-strong: #535a68;
+  --text: #eceef3; --muted: #a8aebb;
+  --button: #b4bfdc; --button-edge: #7f8aa8; --button-ink: #0f1116;
+  --lcd: #34406a; --lcd-ink: #ffffff; --lcd-dim: #bec7ea; --lcd-edge: #0b0f22; --lcd-low: #242c4e;
+  --lcd-hi: #d8dccc; --lcd-lo: #6c7474;
+  --cart: #616a7c; --cart-shade: #434a59; --pin: #cfd4dc; --slot-bar: #535a68;
+  --focus: #8bb8ff; --danger: #ff9a9a;
+}
+/* The lighter top and the silver edge: bright on the top and left, grey on the bottom and right. */
+:root[data-console="nds"] .lcd {
+  background-image: linear-gradient(to bottom, color-mix(in srgb, var(--lcd) 82%, #ffffff), var(--lcd) 40%, var(--lcd-low));
+  box-shadow: inset 2px 2px 0 var(--lcd-hi), inset -2px -2px 0 var(--lcd-lo);
+}
+
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body {
@@ -719,6 +758,7 @@ img[hidden] { display: none !important; }
 
 /* ---- bag rows with icons ---- */
 .item-row { grid-template-columns: 32px 1fr 76px auto; align-items: center; }
+.item-row.no-icon { grid-template-columns: 1fr 76px auto; }
 
 /* ---- Pokédex icon grid ---- */
 .dex-grid { grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); gap: 5px; }

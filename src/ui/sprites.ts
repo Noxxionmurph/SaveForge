@@ -95,6 +95,14 @@ export function ff3NesJobSprite(job: number, member: number, cls2 = ''): HTMLIma
   return icon(`${BASE}/ff3/nes/${file}.png`, 16, 24, `job-sprite nes ${cls2}`.trim());
 }
 
+/** Final Fantasy III (Nintendo DS) jobs drawn with the Famicom game's battle sprites, by the DS job number: the Freelancer
+ * and Onion Knight as the Onion Kid, the jobs the DS renamed as their Famicom selves (Black Belt as the Master, Dark
+ * Knight as the Magic Knight, Evoker as the Conjurer, Devout as the Shaman, Magus as the Warlock). */
+const FF3_DS_TO_NES = [0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 16, 13, 18, 17, 19, 20, 21];
+export function ff3DsJobSprite(job: number, hero: number, cls2 = ''): HTMLImageElement {
+  return ff3NesJobSprite(FF3_DS_TO_NES[job] ?? 0, hero, cls2);
+}
+
 /** Item icon (32x32) from a "<category>/<name>" path. */
 export function itemIcon(path: string, cls = ''): HTMLImageElement {
   return icon(itemIconUrl(path), 32, 32, `item-icon ${cls}`.trim());

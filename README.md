@@ -2,7 +2,7 @@
 
 One site, many games. Drop a save on the landing page, the game is detected from the file's structure
 (size, checksums, layout; never a hash, since saves change on every write), and that game's editor is
-lazy-loaded. Currently supported: Pokémon Red / Blue / Yellow, Gold / Silver / Crystal and Ruby / Sapphire / FireRed / LeafGreen / Emerald (English), and Final Fantasy (NES, English; I and II from Dawn of Souls on GBA, US; II on Famicom, English patch; I and II PSP Anniversary Edition, US; I on WonderSwan Color, Japan; II on WonderSwan Color, English patch; III on Famicom, English patch).
+lazy-loaded. Currently supported: Pokémon Red / Blue / Yellow, Gold / Silver / Crystal and Ruby / Sapphire / FireRed / LeafGreen / Emerald (English), and Final Fantasy (NES, English; I and II from Dawn of Souls on GBA, US; II on Famicom, English patch; I and II PSP Anniversary Edition, US; I on WonderSwan Color, Japan; II on WonderSwan Color, English patch; III on Famicom, English patch, and Nintendo DS, US).
 Everything is a self-contained "game module", so adding Gen 4–5, more Final Fantasy versions, Mega Man Battle Network, etc. never touches the shell.
 
 ## Look and feel
@@ -17,8 +17,9 @@ indigo shell and buttons, and the two-line frame and ruled paper of the Gen 3 tr
 the tokens (and that one frame rule) change, in the `data-console` blocks of `styles.css`. No game uses either yet.
 `theme: 'nes'` is the NES: grey and black, red buttons, and the deep blue, white-edged windows NES role-playing games
 draw their menus in, in place of an LCD. `theme: 'psp'` is the black PSP with silver buttons, its screens drawn as the
-PSP remake's blue gradient menu windows. Add `?console=gbc`, `?console=gba`, `?console=nes` or `?console=psp` (or `?console=gb`) to the
-address to preview a theme on every screen.
+PSP remake's blue gradient menu windows. `theme: 'nds'` is the silver DS with slate buttons, its screens drawn as Final
+Fantasy III's slate blue menu windows with a silver edge. Add `?console=gbc`, `?console=gba`, `?console=nes`,
+`?console=psp` or `?console=nds` (or `?console=gb`) to the address to preview a theme on every screen.
 Touches borrowed from the games themselves: HP bars use the game's own length and colour rules (`src/core/gen1/hp.ts`, from
 the disassembly in pret/pokered), the review dialog opens with the PLAYER / BADGES / POKÉDEX / TIME window the game shows when you
 save, the open tab has the menu cursor, the big readouts have a two-line frame like the in-game text boxes (on Gen 2 and Gen 3 pages, the frame the save's OPTION menu has chosen, in the game's own art, redrawn as you step through FRAME: `src/ui/windowFrame.ts`, `scripts/extract-frames.py`), the Options card is
@@ -368,6 +369,32 @@ stats as `growth()`, and a slot the game saves reads back unchanged.
 - **Names**: six tiles from the name screen: letters, numbers, - ' ! ? and the squeezed "il", "li" and "ll" tiles,
   which let a name like "Phillip" fit.
 
+## Final Fantasy III (Nintendo DS)
+
+`src/core/ff3ds/`. Worked out from a real save (US) and checked in DeSmuME (`scripts/dsrun.py`). Names, who can equip
+what, the stat, MP and experience tables and each job's battle commands are read out of the game's own files by
+`scripts/gen-ff3ds-data.mjs`, into `tables.ts`; its header says which file holds what.
+
+- **Opening**: the cartridge's 64 KB save, DeSmuME's .dsv (saved back in the same wrapper) or an Action Replay .duc
+  (saved back as a plain .sav) (see `src/core/container.ts`).
+- **Format** (`layout.ts`): Slots 1-3 at 0x0000, 0x3B10 and 0x7620 and the Quicksave at 0xB130. Each starts with
+  "cd1000\0EUReKa\0"; +0x20 holds its length and +0x1C its check value, the sum of its u32 words from +0x24 on. Only
+  slots that pass are opened, and saving redoes the value for each. The rest of the file (Mognet letters, Wi-Fi data)
+  is never read or shown.
+- **Party**: four records of 0x2EC bytes from slot + 0x70: name, which of the four heroes, level, exp, HP / max HP,
+  [current, max] MP for spell levels 1-8, the five stats without and with gear, ailments (+0x43: KO, Stone, Toad,
+  Silence, Mini, Blind and Poison from bit 0 up; the cure items clear the same bits, and bit 7 is the game's own), gear
+  (u16 item ids), spells (three places a level), job, the job before it, every job's level and battle commands, and the
+  battles left before the character is used to a new job. The full list is at the top of `save.ts`.
+- **Items**: (u16 item, u16 count) pairs from +0xC28: the bag (384), key items (64) and the Fat Chocobo (384); spells
+  can be carried too. Gil at +0x1928, the Job menu at +0x2578 and the jobs it offers from +0x28D9. The lists are written
+  back only when they change, since the game leaves empty leftovers in them.
+- **Jobs**: stats and max MP follow from job and level, and the game works them out again on the Status screen and when
+  a battle starts, so the editor shows them rather than letting you type them. Changing job works like the Job menu:
+  the old job is remembered, the new job's commands come in, and gear it can't use goes to the bag; the battles of
+  getting used to it are skipped. Hands pair as in the Equip menu (a bow wants arrows, a harp goes alone).
+- **Names**: up to six letters, numbers or ! ' ( ) - = ; + : , . / ?, no spaces.
+
 ## Final Fantasy II (WonderSwan Color)
 
 `src/core/ff2wsc/`, on top of the Famicom model (`src/core/ff2nes/save.ts`, through `WSC_FORMAT`). Item ids are the
@@ -560,6 +587,15 @@ Every screen explains itself in plain words, so keep it that way when you add a 
   made in the emulator. Only the English patch's letters are known, so Japanese names show as "?". The map, story
   flags, key items and guests aren't editable, and attack and defense on the status screen only catch up with new
   gear after the next battle, as in the game.
+
+- Final Fantasy III (Nintendo DS) was checked in the real game (US ROM in DeSmuME, 2026-11-17): a real save opens and
+  saves back byte for byte, and an edited copy (an Onion Knight renamed and made a Warrior with a Longsword and a
+  Mythril Shield, another at level 50, a spell forgotten, gil, Ribbons, Ninja taken out of the Job menu; in the
+  Quicksave a new name, gil and a knocked-out character) loads from LOAD GAME and from CONTINUE with every edit showing
+  in the menus, and the stats and MP the Status screen works out are the editor's. Each ailment was checked with its
+  cure item. Only checked with one real save, and only the US version is recognised. The map, story, key items and
+  Mognet letters aren't editable, attack and defense catch up with new gear after the next battle, and job levels can
+  be set but their progress towards the next one is left as it is.
 
 - Final Fantasy II (WonderSwan Color) was checked in the real game (English patch T-Eng 0.10 in Mednafen's WonderSwan
   core, 2026-11-06): a save made there opens, and edited copies (renamed Firion and Maria, 999 and 777 HP, 99 Strength,
