@@ -16,6 +16,8 @@ with sync_playwright() as p:
     page.on('pageerror', lambda e: errors.append(f'pageerror: {e}'))
     page.on('console', lambda m: errors.append(f'console.{m.type}: {m.text}') if m.type == 'error' and 'ERR_TUNNEL' not in m.text else None)
     page.goto(BASE)
+    tile = page.eval_on_selector('li.tile:has(.tile-name:text-is("Final Fantasy III")) img', 'i => [i.getAttribute("src"), i.className]')
+    assert tile[0].endswith('sprites/ff3/nes/onion-kid.png') and 'job-sprite nes' in tile[1], tile
     with page.expect_file_chooser() as fc:
         page.click('.slot')
     fc.value.set_files(f'{SP}/ff3-famicom.sav')
@@ -27,23 +29,32 @@ with sync_playwright() as p:
     page.get_by_role('spinbutton', name='Strength', exact=True).press('Tab')
     page.get_by_role('spinbutton', name='Ninja (locked)', exact=True).fill('30')
     page.get_by_role('spinbutton', name='Ninja (locked)', exact=True).press('Tab')
-    page.select_option('label.field:has-text("Right hand") select', label='Excalibur Sword')
+    page.select_option('label.field:has-text("Right hand") select', label='King Sword')
     page.click('.ff-member >> nth=2')
     page.click('button.ff-toggle:has-text("Sleep")')
-    page.click('button.ff-toggle:has-text("Flare")')
+    page.click('button.ff-toggle:has-text("Ice 2")')
+    assert page.locator('button.ff-toggle:has-text("Cure")').count() == 0, 'a Black Wizard is offered white magic'
+    page.click('.ff-member >> nth=3')
+    page.select_option('select[aria-label="Job"]', label='Black Wizard')
+    note = page.inner_text('label.field:has(select[aria-label="Job"]) .field-hint')
+    assert note == 'Headband and Kenpo went to the bag: a Black Wizard can’t use them.', note
+    assert page.eval_on_selector('select[aria-label="Job"] option[value="7"]', 'o => o.disabled && o.textContent') == 'Knight (Fire crystal)'
+    sprites = page.eval_on_selector_all('.ff-member img.job-sprite', 'l => l.map((i) => i.getAttribute("src").replace(/^.*sprites\\//, ""))')
+    assert sprites == ['ff3/nes/fighter.png', 'ff3/nes/white-wizard.png', 'ff3/nes/black-wizard.png', 'ff3/nes/black-wizard.png'], sprites
     page.screenshot(path=f'{SP}/ff3nes-party.png', full_page=True)
     page.click('button.tab:has-text("Items")')
     page.locator('label.field:has-text("Gil") input').fill('5000000')
     page.locator('label.field:has-text("Gil") input').press('Tab')
-    page.focus('label.field:has-text("Place 9") select')  # the bag pickers fill their options when touched
-    page.select_option('label.field:has-text("Place 9") select', label='Ribbon')
+    page.focus('label.field:has-text("Place 12") select')  # the bag pickers fill their options when touched
+    page.select_option('label.field:has-text("Place 12") select', label='Ribbon')
     page.click('button.ff-toggle:has-text("Eureka")')
     page.screenshot(path=f'{SP}/ff3nes-items.png', full_page=True)
     page.click('.save-btn')
     page.wait_for_selector('dialog.review-dialog[open]')
     review = page.inner_text('dialog.review-dialog')
-    for line in ('Name: Luneth → Kieron', 'Strength: 17 → 60', 'Ninja job level: 1 → 30', 'Right hand: Long Sword → Excalibur Sword',
-                 'Learned Sleep', 'Learned Flare', 'Gil: 4,820 → 5,000,000', 'Ribbon: 0 → 1', 'Eureka crystal jobs: open'):
+    for line in ('Name: Luneth → Kieron', 'Strength: 18 → 60', 'Ninja job level: 1 → 30', 'Right hand: Long Sword → King Sword',
+                 'Learned Sleep', 'Learned Ice 2', 'Job: Monk → Black Wizard', 'Headband: 0 → 1', 'Gil: 4,820 → 5,000,000',
+                 'Ribbon: 0 → 1', 'Jobs from crystals: Wind crystal → Eureka crystal'):
         assert line in review, (line, review)
     with page.expect_download() as dl:
         page.click('dialog.review-dialog button.primary')
@@ -58,12 +69,14 @@ const d = new Uint8Array(readFileSync(process.argv[1]));
 const f = new Ff3NesSave(d).slots[0];
 const c = f.party[0];
 console.log(JSON.stringify({ size: d.length, ok: slotOk(d, 0), name: c.name, str: c.stat('str'), ninja: c.jobLevel(21),
-  excalibur: c.gear(0) === ITEMS.indexOf('Excalibur Sword'), flare: f.party[2].knows(ITEMS.indexOf('Flare')),
-  sleep: f.party[2].knows(ITEMS.indexOf('Sleep')), gil: f.gil, ribbon: f.count(ITEMS.indexOf('Ribbon')), eureka: f.crystal(4) }));
+  king: c.gear(0) === ITEMS.indexOf('King Sword'), ice2: f.party[2].knows(ITEMS.indexOf('Ice 2')),
+  sleep: f.party[2].knows(ITEMS.indexOf('Sleep')), gil: f.gil, ribbon: f.count(ITEMS.indexOf('Ribbon')), eureka: f.crystal(4),
+  ingus: f.party[3].jobName, kenpo: f.count(ITEMS.indexOf('Kenpo')) }));
 """
 out = json.loads(subprocess.run(['node', '--input-type=module', '-e', check, f'{SP}/ff3nes-edited.sav'], cwd=REPO,
                                 capture_output=True, text=True, check=True).stdout)
 assert out['size'] == 8192 and out['ok'], out
-assert out['name'] == 'Kieron' and out['str'] == 60 and out['ninja'] == 30 and out['excalibur'], out
-assert out['flare'] and out['sleep'] and out['gil'] == 5000000 and out['ribbon'] == 1 and out['eureka'], out
+assert out['name'] == 'Kieron' and out['str'] == 60 and out['ninja'] == 30 and out['king'], out
+assert out['ice2'] and out['sleep'] and out['gil'] == 5000000 and out['ribbon'] == 1 and out['eureka'], out
+assert out['ingus'] == 'Black Wizard' and out['kenpo'] == 1, out
 print('ERRORS:', '; '.join(errors) or 'none')

@@ -6,6 +6,7 @@ export default defineGame<Ff3NesSave>({
   id: 'final-fantasy-3-nes',
   family: 'Final Fantasy',
   games: ['Final Fantasy III'],
+  icons: { 'Final Fantasy III': 'sprites/ff3/nes/onion-kid.png' }, // Luneth, the first party member, in battle
   shelf: 'final-fantasy',
   platform: 'Famicom · English patch',
   fileHint: 'Final Fantasy III (Famicom) saves are 8,192 bytes (8 KB).',

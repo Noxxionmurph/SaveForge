@@ -342,8 +342,10 @@ and were checked by loading edited saves in the game (Neo Demiforce's English pa
 ## Final Fantasy III (Famicom)
 
 `src/core/ff3nes/`. Offsets come from everything8215's disassembly (https://github.com/everything8215/ff3,
-`field-ram.txt` and `ff3j.asm`); names from its string table of the English fan translation (`ff3u-text.txt`, through
-`scripts/gen-ff3nes-data.mjs`).
+`field-ram.txt` and `ff3j.asm`). Names, job numbers, the level and exp tables and who can equip what are read out of the
+game itself (a Japanese ROM with the English fan translation) by `scripts/gen-ff3nes-data.mjs`, into `tables.ts`.
+Checked in an emulator with a real ROM: edited saves load and show the edits, the game's own job change gives the same
+stats as `growth()`, and a slot the game saves reads back unchanged.
 
 - **Format** (`layout.ts`): 8 KB of battery RAM. The game plays from a working copy at 0x000-0x3FF and saves it to one
   of three slots at 0x400, 0x800 and 0xC00. A slot is offered on the load screen only if +0x19 holds 0x5A and its 1,024
@@ -358,8 +360,13 @@ and were checked by loading edited saves in the game (Neo Demiforce's English pa
 - **Items**: capacity (+0x1B), gil (u24 at +0x1C, up to 9,999,999), the crystals' jobs (+0x21 bits 0-4), and the bag:
   32 item ids at +0xC0 with counts at +0xE0. The Fat Chocobo keeps a count for every item id at +0x300. Key items are
   in the bag; they're shown but not changed.
-- The job itself isn't changed here: a new job resets the stats and MP from that job's level-by-level tables, which
-  the game does in its Job menu.
+- **Jobs**: stats and max MP follow from job and level (the job's starting numbers plus its level-up table), so a new
+  level or job sets them the way the game would. Changing job works like the Job menu, minus the capacity points: the
+  old job's level is put by and the new one's comes back, and gear the new job can't use goes to the bag. Jobs are open
+  when the game would offer them (each crystal adds its jobs, in order: Wind, Fire, Water, Earth, Eureka) and from the
+  level each one asks for. Gear and spell lists only offer what the job can use.
+- **Names**: six tiles from the name screen: letters, numbers, - ' ! ? and the squeezed "il", "li" and "ll" tiles,
+  which let a name like "Phillip" fit.
 
 ## Final Fantasy II (WonderSwan Color)
 
@@ -545,6 +552,14 @@ Every screen explains itself in plain words, so keep it that way when you add a 
   Cure 5 learned, Excalibur and a Bronze Helm, 9,999,999 gil, Potions, an Elixir and the Masamune in the bag) loads with
   every edit showing in the menus. Only the English patch's letters are known, so Japanese names show as "?"; key
   terms, key items and the record of who has left aren't editable.
+
+- Final Fantasy III (Famicom) was checked in the real game (Japanese ROM with an English patch, in cynes, 2026-11-16):
+  an edited copy (names with ' and ! and the squeezed letters, stats, MP, spells, gear, arrows, gil, capacity, the
+  bag) loads with every edit showing in the menus; after a job change in the game's own Job menu the stats and MP are
+  the ones the editor works out, and a slot the game then saves opens with nothing changed. Only checked with saves
+  made in the emulator. Only the English patch's letters are known, so Japanese names show as "?". The map, story
+  flags, key items and guests aren't editable, and attack and defense on the status screen only catch up with new
+  gear after the next battle, as in the game.
 
 - Final Fantasy II (WonderSwan Color) was checked in the real game (English patch T-Eng 0.10 in Mednafen's WonderSwan
   core, 2026-11-06): a save made there opens, and edited copies (renamed Firion and Maria, 999 and 777 HP, 99 Strength,

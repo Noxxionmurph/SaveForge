@@ -1,13 +1,14 @@
 // Final Fantasy III (Famicom) editor UI. Loaded lazily by the shell via the game module.
 
 import {
-  AILMENTS, BAG_SIZE, CRYSTALS, GEAR_CHOICES, GEAR_SLOTS, ITEMS, ITEM_KINDS, JOBS, KIND, MAX_COUNT, MAX_CP, MAX_EXP, MAX_GIL,
-  MAX_HP, MAX_LEVEL, MAX_MP, MAX_STAT, SCHOOLS, SPELLS_PER_LEVEL, STAT_KEYS, STAT_LABELS, Ff3Slot, isArrow, spellLevel, spellsOfLevel,
-  type Ff3Char, type Ff3NesSave,
+  AILMENTS, BAG_SIZE, CRYSTALS, GEAR_SLOTS, ITEMS, ITEM_KINDS, JOBS, KIND, MAX_COUNT, MAX_CP, MAX_EXP, MAX_GIL, MAX_HP,
+  MAX_LEVEL, MAX_MP, MAX_STAT, SCHOOLS, SPELLS_PER_LEVEL, STAT_KEYS, STAT_LABELS, Ff3Slot, canEquip, isArrow, minLevel,
+  spellLevel, spellsOfLevel, type Ff3Char, type Ff3NesSave,
 } from '../../../core/ff3nes/save.ts';
 import { NAME_LENGTH, asSaved } from '../../../core/ff3nes/text.ts';
 import type { MountEditor } from '../../../core/types.ts';
 import { clear, field, h, lazySelect, numberInput, selectInput, textInput } from '../../dom.ts';
+import { ff3NesJobSprite } from '../../sprites.ts';
 import { tabBar, tabPanel } from '../../tabs.ts';
 
 type Tab = 'party' | 'items';
@@ -21,11 +22,16 @@ const BAG_OPTIONS = [{ value: 0, label: '—' },
   ...ITEMS.map((n, id) => ({ value: id, label: KIND.spell.includes(id) ? `${n} (${SCHOOLS[ITEM_KINDS[id]]} ${spellLevel(id)})` : n }))
     .filter((o) => o.value && Ff3Slot.bagItem(o.value))];
 const itemName = (id: number) => ITEMS[id] || `Item ${id}`;
+const listed = (names: string[]) => (names.length < 3 ? names.join(' and ') : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`);
+/** The crystal whose jobs include `job`. */
+const crystalOf = (job: number) => CRYSTALS.find((c) => c.jobs.includes(job))?.name ?? '';
 
 export const mountFf3NesEditor: MountEditor<Ff3NesSave> = (container, s, host) => {
   let tab: Tab = 'party';
   let slot: Ff3Slot = s.usedSlots[0];
   let who = 0;
+  /** A line about what the last change did besides the obvious, shown once on the next render. */
+  let notice: { where: 'job' | 'gear'; text: string } | null = null;
   const markDirty = () => host.markDirty();
   const nameOf = (c: Ff3Char) => c.name || `Character ${c.index + 1}`;
 
@@ -55,6 +61,7 @@ export const mountFf3NesEditor: MountEditor<Ff3NesSave> = (container, s, host) =
         'aria-label': `${nameOf(c)}, ${c.jobName}, level ${c.level}. Edit`,
         onclick: () => { who = i; onPick(); },
       },
+      ff3NesJobSprite(c.job, i, c.has(0x80) ? 'fallen' : ''),
       h('span', { class: 'ff-name' }, c.name || '—'),
       h('span', { class: 'ff-class' }, c.jobName),
       h('span', { class: 'ff-lv' }, `L${c.level}`),
@@ -87,10 +94,12 @@ export const mountFf3NesEditor: MountEditor<Ff3NesSave> = (container, s, host) =
   function characterSheet(c: Ff3Char, repaint: () => void): Node[] {
     const edited = () => { markDirty(); repaint(); };
     const redraw = () => { markDirty(); render(); };
+    const shown = notice;
+    notice = null;
     const nameNote = h('span', { class: 'field-hint' });
     const name = textInput(c.name, NAME_LENGTH, (v) => {
       c.name = v;
-      nameNote.textContent = asSaved(v) !== v ? `Saved as “${asSaved(v)}”: the name screen only has the letters A to Z and a to z.` : '';
+      nameNote.textContent = asSaved(v) !== v.trimEnd() ? `Saved as “${asSaved(v)}”: up to six letters, numbers or - ' ! ? fit.` : '';
       edited();
     }, { 'aria-label': 'Name' });
     const backRow = h('input', { type: 'checkbox', checked: c.backRow });
@@ -98,16 +107,18 @@ export const mountFf3NesEditor: MountEditor<Ff3NesSave> = (container, s, host) =
 
     const basics = h('section', { class: 'card' },
       h('h3', {}, `${nameOf(c)} · ${c.jobName}`),
-      h('div', { class: 'grid' }, h('label', { class: 'field' }, h('span', { class: 'field-label' }, 'Name'), name, nameNote)),
+      h('div', { class: 'grid' },
+        h('label', { class: 'field' }, h('span', { class: 'field-label' }, 'Name'), name, nameNote),
+        field('Job', jobSelect(c, redraw), shown?.where === 'job' ? shown.text : undefined)),
       h('div', { class: 'grid pair' },
-        field('Level', numberInput(c.level, 1, MAX_LEVEL, (v) => { c.level = v; edited(); })),
-        field('Exp', numberInput(c.exp, 0, MAX_EXP, (v) => { c.exp = v; markDirty(); })),
+        field('Level', numberInput(c.level, 1, MAX_LEVEL, (v) => { c.level = v; redraw(); })),
+        field('Exp', numberInput(c.exp, 0, MAX_EXP, (v) => { c.exp = v; redraw(); })),
         field('HP', numberInput(c.hp, 0, MAX_HP, (v) => { c.hp = v; edited(); })),
         field('Max HP', numberInput(c.maxHp, 1, MAX_HP, (v) => { c.maxHp = v; edited(); })),
       ),
       h('div', { class: 'subgroup' },
         h('h4', {}, 'Stats'),
-        h('p', { class: 'field-hint' }, 'Without gear. A new job sets these again from that job’s numbers.'),
+        h('p', { class: 'field-hint' }, 'Without gear. A new job or level sets them the way the game would.'),
         h('div', { class: 'grid compact' },
           STAT_KEYS.map((k) => field(STAT_LABELS[k], numberInput(c.stat(k), 1, MAX_STAT, (v) => { c.setStat(k, v); markDirty(); }))))),
       h('div', { class: 'subgroup' },
@@ -117,24 +128,50 @@ export const mountFf3NesEditor: MountEditor<Ff3NesSave> = (container, s, host) =
       h('div', { class: 'button-row' },
         h('button', { onclick: () => { c.restore(); redraw(); } }, 'Restore HP, MP and status')),
     );
-    return [basics, jobCard(c), gearCard(c, redraw), magicCard(c, redraw)];
+    return [basics, jobCard(c), gearCard(c, redraw, shown?.where === 'gear' ? shown.text : ''), magicCard(c, redraw)]
+      .filter((n): n is Node => n !== null);
+  }
+
+  /** The Job menu's choice: the jobs the crystals have handed out, from the lowest level each asks for. No capacity is
+   * spent, and gear the new job can't use goes to the bag. */
+  function jobSelect(c: Ff3Char, redraw: () => void): HTMLSelectElement {
+    const open = slot.jobsOpen;
+    const sel = h('select', {
+      'aria-label': 'Job',
+      onchange: () => {
+        const moved = c.changeJob(Number(sel.value), slot);
+        if (moved.length) notice = { where: 'job', text: `${listed(moved.map(itemName))} went to the bag: a ${c.jobName} can’t use ${moved.length > 1 ? 'them' : 'it'}.` };
+        redraw();
+      },
+    }, JOBS.map((n, j) => {
+      const why = j === c.job ? '' : !open.includes(j) ? ` (${crystalOf(j)} crystal)` : c.level < minLevel(j) ? ` (level ${minLevel(j)})` : '';
+      return h('option', { value: String(j), disabled: j !== c.job && !c.canBecome(j, open) }, n + why);
+    }));
+    sel.value = String(c.job);
+    return sel;
   }
 
   function jobCard(c: Ff3Char): Node {
     const open = new Set(slot.jobsOpen);
     return h('section', { class: 'card' },
       h('h3', {}, 'Job levels'),
-      h('p', { class: 'muted card-note' }, `Now a ${c.jobName}. Change jobs in the game’s Job menu.`),
       h('div', { class: 'grid compact' }, JOBS.map((n, j) => field(j === c.job ? `${n} (now)` : open.has(j) ? n : `${n} (locked)`,
         numberInput(c.jobLevel(j), 1, MAX_LEVEL, (v) => { c.setJobLevel(j, v); markDirty(); })))));
   }
 
-  function gearCard(c: Ff3Char, redraw: () => void): Node {
+  function gearCard(c: Ff3Char, redraw: () => void, gearNotice: string): Node {
     const rows = GEAR_SLOTS.map((label, g) => {
       const current = c.gear(g);
-      const ids = !current || GEAR_CHOICES[g].includes(current) ? GEAR_CHOICES[g] : [current, ...GEAR_CHOICES[g]];
-      const options = [{ value: 0, label: '—' }, ...ids.filter((id) => ITEMS[id]).map((id) => ({ value: id, label: itemName(id) }))];
-      const pick = field(label, selectInput(options, current, (v) => { c.setGear(g, Number(v)); redraw(); }));
+      const ids = c.gearChoices(g);
+      const options = [{ value: 0, label: '—' },
+        ...(current && !ids.includes(current) ? [{ value: current, label: `${itemName(current)} (can’t equip)` }] : []),
+        ...ids.map((id) => ({ value: id, label: itemName(id) }))];
+      const pick = field(label, selectInput(options, current, (v) => {
+        const other = g < 2 ? c.gear(1 - g) : 0;
+        c.setGear(g, Number(v));
+        if (other && !c.gear(1 - g)) notice = { where: 'gear', text: `${GEAR_SLOTS[1 - g]} emptied: ${itemName(other)} doesn’t go with ${itemName(Number(v))}.` };
+        redraw();
+      }));
       return g < 2 && isArrow(current)
         ? [pick, field(`${label}: arrows`, numberInput(c.arrows(g), 1, MAX_COUNT, (v) => { c.setArrows(g, v); markDirty(); }))]
         : [pick];
@@ -142,28 +179,32 @@ export const mountFf3NesEditor: MountEditor<Ff3NesSave> = (container, s, host) =
     return h('section', { class: 'card' },
       h('h3', {}, 'Equipped'),
       h('div', { class: 'grid' }, rows),
-      h('p', { class: 'field-hint' }, 'Attack and defense catch up when the game next checks gear (the next battle or menu). Worn gear isn’t in the bag, so what you take off here is gone.'));
+      gearNotice ? h('p', { class: 'field-hint', role: 'status' }, gearNotice) : null,
+      h('p', { class: 'field-hint' }, 'Attack and defense on the status screen catch up after the next battle. Worn gear isn’t in the bag, so what you take off here is gone.'));
   }
 
-  function magicCard(c: Ff3Char, redraw: () => void): Node {
+  function magicCard(c: Ff3Char, redraw: () => void): Node | null {
     const levels = Array.from({ length: 8 }, (_, i) => i + 1).map((lv) => {
       const known = c.spellsAt(lv);
+      const learnable = spellsOfLevel(lv).filter((id) => canEquip(c.job, id));
+      if (!known.length && !learnable.length && !c.maxMp(lv)) return null;
       const full = known.length >= SPELLS_PER_LEVEL;
       return h('div', { class: 'subgroup' },
         h('h4', {}, `Level ${lv}`),
         h('div', { class: 'grid pair' },
           field('MP', numberInput(c.mp(lv), 0, MAX_MP, (v) => { c.setMp(lv, v); markDirty(); })),
           field('Max MP', numberInput(c.maxMp(lv), 0, MAX_MP, (v) => { c.setMaxMp(lv, v); redraw(); }))),
-        h('div', { class: 'ff-toggles' }, spellsOfLevel(lv).map((id) => {
+        h('div', { class: 'ff-toggles' }, spellsOfLevel(lv).filter((id) => c.knows(id) || learnable.includes(id)).map((id) => {
           const on = c.knows(id);
           const btn = toggle(ITEMS[id], on, (yes) => { if (yes) c.learn(id); else c.forget(id); }, redraw);
           if (!on && full) btn.disabled = true;
           return btn;
         })));
-    });
+    }).filter((n): n is HTMLElement => n !== null);
+    if (!levels.length) return null;
     return h('section', { class: 'card' },
       h('h3', {}, 'Magic'),
-      h('p', { class: 'muted card-note' }, `Up to ${SPELLS_PER_LEVEL} spells a level. Black, white, then the summon.`),
+      h('p', { class: 'muted card-note' }, `Up to ${SPELLS_PER_LEVEL} spells a level, from what a ${c.jobName} can learn.`),
       ...levels);
   }
 
@@ -203,9 +244,9 @@ export const mountFf3NesEditor: MountEditor<Ff3NesSave> = (container, s, host) =
         field('Add', lazySelect(storeOptions, 0, (v) => { if (Number(v)) { slot.setStored(Number(v), 1); markDirty(); render(); } }))),
       h('section', { class: 'card' },
         h('h3', {}, 'Jobs'),
-        h('p', { class: 'muted card-note' }, 'Each crystal adds jobs to the Job menu.'),
+        h('p', { class: 'muted card-note' }, 'Each crystal adds jobs to the Job menu, in this order.'),
         h('div', { class: 'ff-toggles' }, CRYSTALS.map((cr, n) => toggle(`${cr.name}: ${cr.jobs.map((j) => JOBS[j]).join(', ')}`,
-          slot.crystal(n), (on) => slot.setCrystal(n, on))))),
+          slot.crystal(n), (on) => slot.setCrystal(n, on), render)))),
       keys.length
         ? h('section', { class: 'card' }, h('h3', {}, 'Key items'), h('p', {}, keys.join(', ')),
           h('p', { class: 'field-hint' }, 'Key items move the story on, so they can’t be changed here.'))

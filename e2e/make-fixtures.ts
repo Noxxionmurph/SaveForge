@@ -47,4 +47,4 @@ writeFileSync(`${out}/ff2-famicom.sav`, buildFf2NesSample());
 writeFileSync(`${out}/ff3-famicom.sav`, buildFf3NesSample());
 writeFileSync(`${out}/ULUS1026300.zip`, buildFf2PspSample());
 writeFileSync(`${out}/ff2-wonderswan.sav`, buildFf2WscSample());
-console.log(`wrote sample.sav, rb.sav, rb-footer.sav, gold.sav, ruby.sav, emerald.sav, firered.sav, ULUS10251DATA00.zip, dawn-of-souls.sav, dawn-of-souls-2.sav ff1-wonderswan.sav, ff2-famicom.sav, ULUS1026300.zip and ff2-wonderswan.sav to ${out}`);
+console.log(`wrote sample.sav, rb.sav, rb-footer.sav, gold.sav, ruby.sav, emerald.sav, firered.sav, ULUS10251DATA00.zip, dawn-of-souls.sav, dawn-of-souls-2.sav ff1-wonderswan.sav, ff2-famicom.sav, ff3-famicom.sav, ULUS1026300.zip and ff2-wonderswan.sav to ${out}`);
