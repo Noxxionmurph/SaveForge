@@ -102,13 +102,17 @@ const STATUS_FILES: Record<string, string> = { ko: 'ko', dead: 'ko', stone: 'sto
   silence: 'silence', mini: 'mini' };
 export function statusBadges(...names: (string | undefined)[]): HTMLImageElement[] {
   return names.flatMap((n) => {
-    const file = STATUS_FILES[(n ?? '').toLowerCase()];
-    if (!n || !file) return [];
-    const img = icon(`${BASE}/ff-status/${file}.png`, 10, 10, 'status-badge');
+    const img = statusIcon(n);
+    if (!n || !img) return [];
     img.alt = n;
     img.title = n;
     return [img];
   });
+}
+/** The same icon unnamed, for a button or label that already says the status; null when the status has none. */
+export function statusIcon(name: string | undefined): HTMLImageElement | null {
+  const file = STATUS_FILES[(name ?? '').toLowerCase()];
+  return file ? icon(`${BASE}/ff-status/${file}.png`, 10, 10, 'status-badge') : null;
 }
 
 /** Item icon (32x32) from a "<category>/<name>" path. */

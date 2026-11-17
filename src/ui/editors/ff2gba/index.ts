@@ -9,6 +9,7 @@ import type { MountEditor } from '../../../core/types.ts';
 import { clear, field, h, numberInput, selectInput, textInput } from '../../dom.ts';
 import { ff2Portrait, ff2PspPortrait } from '../../sprites.ts';
 import { tabBar, tabPanel } from '../../tabs.ts';
+import { ffHpBar, ffMpBar } from '../ff/menu.ts';
 
 type Tab = 'party' | 'items' | 'gear';
 const TABS: { id: Tab; label: string }[] = [
@@ -55,8 +56,8 @@ export const makeFf2Editor = (portrait: (who: string) => HTMLImageElement): Moun
       },
       portrait(c.portrait),
       h('span', { class: 'ff-name' }, c.name || '—'),
-      h('span', { class: 'ff-hp' }, `HP ${c.hp}/${c.maxHp}`),
-      h('span', { class: 'ff-class' }, `MP ${c.mp}/${c.maxMp}`))));
+      h('span', { class: 'ff-hp' }, `HP ${c.hp}/${c.maxHp}`, ffHpBar(c.hp, c.maxHp)),
+      h('span', { class: 'ff-class' }, `MP ${c.mp}/${c.maxMp}`, ffMpBar(c.mp, c.maxMp)))));
     };
     paint();
     return { node, paint };
@@ -81,7 +82,7 @@ export const makeFf2Editor = (portrait: (who: string) => HTMLImageElement): Moun
     }, { 'aria-label': 'Name' });
 
     const basics = h('section', { class: 'card' },
-      h('h3', {}, c.name || `Character ${who + 1}`),
+      h('h3', { class: 'ff-sheet-title' }, portrait(c.portrait), h('span', {}, c.name || `Character ${who + 1}`)),
       s.format.guestNamesFixed && !HEROES.includes(c.portrait)
         ? h('p', { class: 'field-hint' }, 'The game always calls guests by their own names, so only Firion, Maria, Guy and Leon can be renamed.')
         : h('div', { class: 'grid' }, h('label', { class: 'field' }, h('span', { class: 'field-label' }, 'Name'), name, nameNote)),

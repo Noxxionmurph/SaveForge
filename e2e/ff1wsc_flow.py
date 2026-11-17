@@ -25,10 +25,11 @@ with sync_playwright() as p:
     assert page.locator('.ff-member img.job-sprite.prj[src*="ff1/pr/jobs/"]').count() == 4
     # party: rename, promote, level, blind, swap the weapon
     page.fill('input[aria-label="Name"]', 'クラウド')
-    page.select_option('label.field:has-text("Class") select', label='Knight')
+    page.click('.ff-classes button:has-text("Knight")')
+    assert page.inner_text('.ff-classes .ff-class-tile.now') == 'Knight'
     page.get_by_role('spinbutton', name='Level', exact=True).fill('40')
     page.get_by_role('spinbutton', name='Level', exact=True).press('Tab')
-    page.select_option('label.field:has-text("Ailment") select', label='Blind')
+    page.click('h4:text-is("Ailment") + .ff-toggles button.ff-toggle:text-is("Blind")')
     page.select_option('label.field:has-text("Weapon") select', label='Excalibur')
     # the black mage: forget Fire, learn Focus, more level 4 MP
     page.click('.ff-member >> nth=3')

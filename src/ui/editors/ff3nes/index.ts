@@ -8,8 +8,9 @@ import {
 import { NAME_LENGTH, asSaved } from '../../../core/ff3nes/text.ts';
 import type { MountEditor } from '../../../core/types.ts';
 import { clear, field, h, lazySelect, numberInput, selectInput, textInput } from '../../dom.ts';
-import { ff3NesJobSprite, statusBadges } from '../../sprites.ts';
+import { ff3NesJobSprite, statusBadges, statusIcon } from '../../sprites.ts';
 import { tabBar, tabPanel } from '../../tabs.ts';
+import { ffHpBar, jobBoard } from '../ff/menu.ts';
 
 type Tab = 'party' | 'items';
 const TABS: { id: Tab; label: string }[] = [
@@ -65,7 +66,7 @@ export const mountFf3NesEditor: MountEditor<Ff3NesSave> = (container, s, host) =
       h('span', { class: 'ff-name' }, c.name || '—', ...statusBadges(...AILMENTS.filter(([bit]) => c.has(bit)).map(([, n]) => n))),
       h('span', { class: 'ff-class' }, c.jobName),
       h('span', { class: 'ff-lv' }, `L${c.level}`),
-      h('span', { class: 'ff-hp' }, c.has(0x80) ? 'KO' : `HP ${c.hp}/${c.maxHp}`))));
+      h('span', { class: 'ff-hp' }, c.has(0x80) ? 'KO' : `HP ${c.hp}/${c.maxHp}`, ffHpBar(c.has(0x80) ? 0 : c.hp, c.maxHp)))));
     };
     paint();
     return { node, paint };
@@ -79,8 +80,8 @@ export const mountFf3NesEditor: MountEditor<Ff3NesSave> = (container, s, host) =
     return h('div', { class: 'stack' }, win.node, sheet);
   }
 
-  function toggle(label: string, on: boolean, set: (on: boolean) => void, after?: () => void): HTMLButtonElement {
-    const btn = h('button', { class: 'ff-toggle', 'aria-pressed': String(on) }, label);
+  function toggle(label: string, on: boolean, set: (on: boolean) => void, after?: () => void, icon?: Node | null): HTMLButtonElement {
+    const btn = h('button', { class: 'ff-toggle', 'aria-pressed': String(on) }, icon ?? null, label);
     btn.addEventListener('click', () => {
       const next = btn.getAttribute('aria-pressed') !== 'true';
       set(next);
@@ -106,7 +107,7 @@ export const mountFf3NesEditor: MountEditor<Ff3NesSave> = (container, s, host) =
     backRow.addEventListener('change', () => { c.backRow = backRow.checked; markDirty(); });
 
     const basics = h('section', { class: 'card' },
-      h('h3', {}, `${nameOf(c)} · ${c.jobName}`),
+      h('h3', { class: 'ff-sheet-title' }, ff3NesJobSprite(c.job, who, c.has(0x80) ? 'fallen' : ''), h('span', {}, `${nameOf(c)} · ${c.jobName}`)),
       h('div', { class: 'grid' },
         h('label', { class: 'field' }, h('span', { class: 'field-label' }, 'Name'), name, nameNote),
         field('Job', jobSelect(c, redraw), shown?.where === 'job' ? shown.text : undefined)),
@@ -123,7 +124,7 @@ export const mountFf3NesEditor: MountEditor<Ff3NesSave> = (container, s, host) =
           STAT_KEYS.map((k) => field(STAT_LABELS[k], numberInput(c.stat(k), 1, MAX_STAT, (v) => { c.setStat(k, v); markDirty(); }))))),
       h('div', { class: 'subgroup' },
         h('h4', {}, 'Status'),
-        h('div', { class: 'ff-toggles' }, AILMENTS.map(([bit, n]) => toggle(n, c.has(bit), (on) => c.setAilment(bit, on), redraw)))),
+        h('div', { class: 'ff-toggles' }, AILMENTS.map(([bit, n]) => toggle(n, c.has(bit), (on) => c.setAilment(bit, on), redraw, statusIcon(n))))),
       h('label', { class: 'check-row' }, backRow, 'Back row'),
       h('div', { class: 'button-row' },
         h('button', { onclick: () => { c.restore(); redraw(); } }, 'Restore HP, MP and status')),
@@ -151,12 +152,15 @@ export const mountFf3NesEditor: MountEditor<Ff3NesSave> = (container, s, host) =
     return sel;
   }
 
+  /** The job board; a locked job says which crystal hands it out. */
   function jobCard(c: Ff3Char): Node {
     const open = new Set(slot.jobsOpen);
     return h('section', { class: 'card' },
       h('h3', {}, 'Job levels'),
-      h('div', { class: 'grid compact' }, JOBS.map((n, j) => field(j === c.job ? `${n} (now)` : open.has(j) ? n : `${n} (locked)`,
-        numberInput(c.jobLevel(j), 1, MAX_LEVEL, (v) => { c.setJobLevel(j, v); markDirty(); })))));
+      jobBoard(JOBS.map((name, j) => ({
+        name, sprite: ff3NesJobSprite(j, who), level: c.jobLevel(j), now: j === c.job,
+        locked: j === c.job || open.has(j) ? '' : `${crystalOf(j)} crystal`, setLevel: (v) => { c.setJobLevel(j, v); markDirty(); },
+      })), MAX_LEVEL));
   }
 
   function gearCard(c: Ff3Char, redraw: () => void, gearNotice: string): Node {

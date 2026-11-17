@@ -8,8 +8,9 @@ import {
 import { ARMOR, KEY_ITEMS, SPELLS, WEAPONS } from '../../../core/ff1psp/tables.ts';
 import type { MountEditor } from '../../../core/types.ts';
 import { clear, field, h, numberInput, selectInput, textInput } from '../../dom.ts';
-import { ff1ClassSprite, statusBadges } from '../../sprites.ts';
+import { ff1ClassSprite, statusBadges, statusIcon } from '../../sprites.ts';
 import { tabBar, tabPanel } from '../../tabs.ts';
+import { classBoard, ffHpBar, ffMpBar } from '../ff/menu.ts';
 
 type Tab = 'party' | 'items' | 'gear';
 const TABS: { id: Tab; label: string }[] = [
@@ -54,7 +55,8 @@ export const mountFf1PspEditor: MountEditor<Ff1PspSave> = (container, s, host) =
       h('span', { class: 'ff-name' }, c.name || '—', ...statusBadges(c.fallen ? 'KO' : '')),
       h('span', { class: 'ff-class' }, CLASS_NAMES[c.cls]),
       h('span', { class: 'ff-lv' }, `Lv ${c.level}`),
-      h('span', { class: 'ff-hp' }, c.fallen ? 'Fallen' : `HP ${c.hp}/${c.maxHp}`))));
+      h('span', { class: 'ff-hp' }, c.fallen ? 'Fallen' : `HP ${c.hp}/${c.maxHp}`, ffHpBar(c.fallen ? 0 : c.hp, c.maxHp)),
+      h('span', { class: 'ff-hp' }, `MP ${c.mp}/${c.maxMp}`, ffMpBar(c.mp, c.maxMp)))));
     };
     paint();
     return { node, paint };
@@ -81,22 +83,19 @@ export const mountFf1PspEditor: MountEditor<Ff1PspSave> = (container, s, host) =
     fallen.addEventListener('change', () => { c.fallen = fallen.checked; edited(); });
 
     const basics = h('section', { class: 'card' },
-      h('h3', {}, c.name || `Character ${who + 1}`),
+      h('h3', { class: 'ff-sheet-title' }, ff1ClassSprite(c.cls, 'psp', c.fallen ? 'fallen' : ''), h('span', {}, c.name || `Character ${who + 1}`)),
       h('div', { class: 'grid' },
         h('label', { class: 'field' }, h('span', { class: 'field-label' }, 'Name'), name, nameNote),
-        field('Class', selectInput(CLASS_NAMES.map((n, i) => ({ value: i, label: n })), c.cls, (v) => { c.cls = Number(v); redraw(); })),
-      ),
-      h('div', { class: 'grid' },
         field('Level', numberInput(c.level, 1, MAX_LEVEL, (v) => { c.level = v; edited(); })),
         field('Exp', numberInput(c.exp, 0, MAX_EXP, (v) => { c.exp = v; markDirty(); }), 'Extra Exp turns into level ups after your next battle.'),
       ),
       h('div', { class: 'grid pair' },
         field('HP', numberInput(c.hp, 0, MAX_HP, (v) => { c.hp = v; edited(); })),
         field('Max HP', numberInput(c.maxHp, 1, MAX_HP, (v) => { c.maxHp = v; edited(); })),
-        field('MP', numberInput(c.mp, 0, MAX_MP, (v) => { c.mp = v; markDirty(); })),
-        field('Max MP', numberInput(c.maxMp, 0, MAX_MP, (v) => { c.maxMp = v; markDirty(); })),
+        field('MP', numberInput(c.mp, 0, MAX_MP, (v) => { c.mp = v; edited(); })),
+        field('Max MP', numberInput(c.maxMp, 0, MAX_MP, (v) => { c.maxMp = v; edited(); })),
       ),
-      h('label', { class: 'check-row' }, fallen, 'Fallen in battle'),
+      h('label', { class: 'check-row' }, fallen, statusIcon('KO'), 'Fallen in battle'),
       h('div', { class: 'subgroup' },
         h('h4', {}, 'Stats'),
         h('div', { class: 'grid compact' },
@@ -105,7 +104,9 @@ export const mountFf1PspEditor: MountEditor<Ff1PspSave> = (container, s, host) =
       h('div', { class: 'button-row' },
         h('button', { onclick: () => { c.restore(); redraw(); } }, 'Restore HP and MP')),
     );
-    const cards: Node[] = [basics, gearCard(c, redraw)];
+    const classes = h('section', { class: 'card' }, h('h3', {}, 'Class'),
+      classBoard(CLASS_NAMES.map((name, id) => ({ id, name })), c.cls, (id) => ff1ClassSprite(id, 'psp'), (id) => { c.cls = id; redraw(); }));
+    const cards: Node[] = [basics, classes, gearCard(c, redraw)];
     const magic = magicCard(c, redraw);
     if (magic) cards.push(magic);
     return cards;

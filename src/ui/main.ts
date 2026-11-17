@@ -212,7 +212,8 @@ async function openGame(game: GameModule, data: Uint8Array, isSample = false): P
     renderError(`Couldn't open this file as ${moduleLabel(game)}.`, `${e instanceof Error ? e.message : String(e)} It may be damaged or from a different game.`, () => renderChooser(data, detectGames(data)));
     return;
   }
-  const container = h('main', { class: 'editor' }, h('p', { class: 'muted' }, 'Loading editor…'));
+  const container = h('main', { class: 'editor', dataset: { family: shelfId(game.family).slice('shelf-'.length) } },
+    h('p', { class: 'muted' }, 'Loading editor…'));
   let identity: GameIdentity;
   try { identity = game.identify?.(data) ?? { names: game.games }; } catch { identity = { names: game.games }; }
   const names = identity.names.length ? identity.names : game.games;

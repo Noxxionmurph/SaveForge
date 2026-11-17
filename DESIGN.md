@@ -36,6 +36,8 @@ PSP (`data-console="psp"`): `--bg` `#d9dbe0` / `#0d0e11`, `--button` piano black
 
 Nintendo DS (`data-console="nds"`): `--bg` `#d5d9e0` / `#0f1116`, `--button` slate `#3b4560` / `#b4bfdc`, and `--lcd` is Final Fantasy III's menu window, slate blue `#3a4673` / `#34406a` that lightens towards the top, with a silver edge that is bright along the top and left and grey along the bottom and right.
 
+Final Fantasy on GBA (Dawn of Souls) keeps the indigo GBA shell, but its windows are the game's own rather than the pale GBA screen: blue `#3939de` darkening to `#000063`, edged white, light grey, black and steel blue, in light and dark.
+
 Rules:
 - There's one filled `--button` per screen. Everything else uses the plain bordered button. Filters must look different from bulk-action buttons.
 - Colour on tiles (`--label`) belongs to the game (Red is red, Crystal is light blue). It's only used for the tile's left stripe.
@@ -78,6 +80,7 @@ These rules cover every series' art. The fixed box sizes below are Pokémon's; a
 
 Use the shared pieces before writing new ones: `ui/tabs.ts`, `itemList.ts`, `monMenu.ts`, `monDialog.ts`, `hpBar.ts`, `gameChoice.ts` (OPTION-style choice and step rows), `typeChip.ts` and `dexTab.ts`.
 - **LCD panel** (`.lcd`): for anything the game itself shows. Ink and dim tokens only, in the pixel font.
+- **Final Fantasy pages**: `main.ts` tags the editor with its series (`data-family`). On a Final Fantasy page every card is one of the console's menu windows, so the whole page reads like the game's menu: the pixel font, fields as darker wells, outlined buttons, and toggles bright when on and greyed when off. Notes and hints stay in the body font. `editors/ff/menu.ts` has the shared pieces: the party's HP and MP bars, the job board (FF3), the class board (FF1) and the status buttons.
 - **Tabs**: a ▸ cursor marks the active tab, like the in-game menu.
 - **Pokémon window**: Esc and × both discard, Save commits.
 - **Tiles**: a game-colour stripe, the name, the platform, and the icon at `--px2`.
