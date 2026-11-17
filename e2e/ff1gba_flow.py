@@ -22,7 +22,7 @@ with sync_playwright() as p:
     page.wait_for_selector('.ff-party')
     assert page.get_attribute('html', 'data-console') == 'gba'
     assert page.locator('.ff-member').all_inner_texts()[0].startswith('Brom')
-    assert page.locator('.ff-member img.job-sprite.gba').count() == 4
+    assert page.locator('.ff-member img.job-sprite.prj[src*="ff1/pr/jobs/"]').count() == 4
     # party: rename, level, poison, swap the weapon, teach a spell
     page.fill('input[aria-label="Name"]', 'Kieron')
     page.get_by_role('spinbutton', name='Level', exact=True).fill('40')

@@ -22,7 +22,7 @@ with sync_playwright() as p:
     page.wait_for_selector('.ff-party')
     assert page.get_attribute('html', 'data-console') == 'wsc'
     assert page.locator('.ff-member').all_inner_texts()[0].startswith('ブロム')
-    assert page.locator('.ff-member img.job-sprite.wsc').count() == 4
+    assert page.locator('.ff-member img.job-sprite.prj[src*="ff1/pr/jobs/"]').count() == 4
     # party: rename, promote, level, blind, swap the weapon
     page.fill('input[aria-label="Name"]', 'クラウド')
     page.select_option('label.field:has-text("Class") select', label='Knight')

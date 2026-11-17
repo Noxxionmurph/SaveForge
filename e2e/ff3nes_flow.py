@@ -40,7 +40,7 @@ with sync_playwright() as p:
     assert note == 'Headband and Kenpo went to the bag: a Black Wizard can’t use them.', note
     assert page.eval_on_selector('select[aria-label="Job"] option[value="7"]', 'o => o.disabled && o.textContent') == 'Knight (Fire crystal)'
     sprites = page.eval_on_selector_all('.ff-member img.job-sprite', 'l => l.map((i) => i.getAttribute("src").replace(/^.*sprites\\//, ""))')
-    assert sprites == ['ff3/nes/fighter.png', 'ff3/nes/white-wizard.png', 'ff3/nes/black-wizard.png', 'ff3/nes/black-wizard.png'], sprites
+    assert sprites == ['ff3/pr/jobs/warrior.png', 'ff3/pr/jobs/white-mage.png', 'ff3/pr/jobs/black-mage.png', 'ff3/pr/jobs/black-mage.png'], sprites
     page.screenshot(path=f'{SP}/ff3nes-party.png', full_page=True)
     page.click('button.tab:has-text("Items")')
     page.locator('label.field:has-text("Gil") input').fill('5000000')

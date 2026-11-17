@@ -56,51 +56,43 @@ export function eggIcon(cls = ''): HTMLElement {
   return img;
 }
 
+/** Every Final Fantasy I-III party picture is the Pixel Remaster's standing battle sprite (19x25 art pixels, one frame for
+ * all), whichever version's save is open, so the three games and all their editors look alike. */
+function prSprite(game: 'ff1' | 'ff2' | 'ff3', file: string, cls2: string): HTMLImageElement {
+  return icon(`${BASE}/${game}/pr/jobs/${file}.png`, 19, 25, `job-sprite prj ${cls2}`.trim());
+}
+
 /** File names of the twelve Final Fantasy classes' pictures, by class number (Warrior 0 ... Black Wizard 11). */
 const FF1_CLASS_FILES = ['warrior', 'thief', 'monk', 'red-mage', 'white-mage', 'black-mage',
   'knight', 'ninja', 'master', 'red-wizard', 'white-wizard', 'black-wizard'];
-
-/** A Final Fantasy class's picture: the NES standing sprite (16x24) or the PSP party picture (48x42). */
-/** Each version's class sprites (and Final Fantasy II's portraits, 'ff2') are drawn at their own size, in art pixels. */
-export const FF1_SPRITE_SIZE = { nes: [16, 24], gba: [26, 24], psp: [48, 42], wsc: [26, 24], ff2: [28, 28] } as const;
-export type Ff1Platform = keyof typeof FF1_SPRITE_SIZE;
-/** A Final Fantasy II (Dawn of Souls) character's menu portrait. */
-export function ff2Portrait(who: string): HTMLImageElement {
-  return icon(`${BASE}/ff2/gba/${who}.png`, 28, 28, 'job-sprite ff2');
-}
-/** A Final Fantasy II (Famicom) character's menu portrait (24x32, from the game's own tiles and menu colours). */
-export function ff2NesPortrait(who: string): HTMLImageElement {
-  return icon(`${BASE}/ff2/nes/${who}.png`, 24, 32, 'job-sprite ff2nes');
-}
-/** A Final Fantasy II (WonderSwan Color) character's menu portrait (28x28, from its party menu). */
-export function ff2WscPortrait(who: string): HTMLImageElement {
-  return icon(`${BASE}/ff2/wsc/${who}.png`, 28, 28, 'job-sprite ff2');
-}
-/** A Final Fantasy II (PSP) character's menu portrait (52x60, from the disc). */
-export function ff2PspPortrait(who: string): HTMLImageElement {
-  return icon(`${BASE}/ff2/psp/${who}.png`, 52, 60, 'job-sprite ff2psp');
-}
-export function ff1ClassSprite(cls: number, platform: Exclude<Ff1Platform, 'ff2'>, cls2 = ''): HTMLImageElement {
-  const [w, hgt] = FF1_SPRITE_SIZE[platform];
-  return icon(`${BASE}/ff1/${platform}/${FF1_CLASS_FILES[cls] ?? 'warrior'}.png`, w, hgt, `job-sprite ${platform} ${cls2}`.trim());
+/** A Final Fantasy class's picture. */
+export type Ff1Platform = 'nes' | 'gba' | 'psp' | 'wsc';
+export function ff1ClassSprite(cls: number, _platform: Ff1Platform, cls2 = ''): HTMLImageElement {
+  return prSprite('ff1', FF1_CLASS_FILES[cls] ?? 'warrior', cls2);
 }
 
-/** File names of the Final Fantasy III (Famicom) jobs' battle sprites, by job number (Onion Kid 0 ... Ninja 21). */
-const FF3_NES_JOB_FILES = ['onion-kid', 'fighter', 'monk', 'white-wizard', 'black-wizard', 'red-wizard', 'archer', 'knight',
-  'thief', 'scholar', 'geomancer', 'dragoon', 'viking', 'master', 'magic-knight', 'conjurer', 'bard', 'warlock', 'shaman',
-  'summoner', 'sage', 'ninja'];
-/** A Final Fantasy III (Famicom) job's battle sprite (16x24). The game colours the Onion Kid by party member (0-3). */
+/** A Final Fantasy II character's picture, by first name in lower case ("firion"). Every version of the game uses it. */
+export function ff2Portrait(who: string): HTMLImageElement { return prSprite('ff2', who, ''); }
+export const ff2NesPortrait = ff2Portrait;
+export const ff2WscPortrait = ff2Portrait;
+export const ff2PspPortrait = ff2Portrait;
+
+/** Final Fantasy III's jobs, by the Famicom job number (Onion Kid 0 ... Ninja 21), as Pixel Remaster file names. */
+const FF3_NES_JOB_FILES = ['', 'warrior', 'monk', 'white-mage', 'black-mage', 'red-mage', 'ranger', 'knight', 'thief',
+  'scholar', 'geomancer', 'dragoon', 'viking', 'black-belt', 'dark-knight', 'evoker', 'bard', 'magus', 'devout', 'summoner',
+  'sage', 'ninja'];
+/** The same, by the Nintendo DS and PSP job number (Freelancer 0, Onion Knight 1, Warrior 2 ... Ninja 22). */
+const FF3_DS_JOB_FILES = ['', '', 'warrior', 'monk', 'white-mage', 'black-mage', 'red-mage', 'ranger', 'knight', 'thief',
+  'scholar', 'geomancer', 'dragoon', 'viking', 'dark-knight', 'evoker', 'bard', 'black-belt', 'devout', 'magus', 'summoner',
+  'sage', 'ninja'];
+const onionKnight = (hero: number) => `onion-knight-${hero >= 0 && hero < 4 ? hero : 0}`;
+/** A Final Fantasy III (Famicom) job's picture. The Onion Kid is the member's own Onion Knight (0 Luneth ... 3 Ingus). */
 export function ff3NesJobSprite(job: number, member: number, cls2 = ''): HTMLImageElement {
-  const file = job ? FF3_NES_JOB_FILES[job] ?? 'onion-kid' : ['onion-kid', 'onion-kid-2', 'onion-kid-3', 'onion-kid'][member] ?? 'onion-kid';
-  return icon(`${BASE}/ff3/nes/${file}.png`, 16, 24, `job-sprite nes ${cls2}`.trim());
+  return prSprite('ff3', FF3_NES_JOB_FILES[job] || onionKnight(member), cls2);
 }
-
-/** Final Fantasy III (Nintendo DS) jobs drawn with the Famicom game's battle sprites, by the DS job number: the Freelancer
- * and Onion Knight as the Onion Kid, the jobs the DS renamed as their Famicom selves (Black Belt as the Master, Dark
- * Knight as the Magic Knight, Evoker as the Conjurer, Devout as the Shaman, Magus as the Warlock). */
-const FF3_DS_TO_NES = [0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 15, 16, 13, 18, 17, 19, 20, 21];
+/** A Final Fantasy III (Nintendo DS or PSP) job's picture. The Freelancer and the Onion Knight are the hero's Onion Knight. */
 export function ff3DsJobSprite(job: number, hero: number, cls2 = ''): HTMLImageElement {
-  return ff3NesJobSprite(FF3_DS_TO_NES[job] ?? 0, hero, cls2);
+  return prSprite('ff3', FF3_DS_JOB_FILES[job] || onionKnight(hero), cls2);
 }
 
 /** Item icon (32x32) from a "<category>/<name>" path. */

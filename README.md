@@ -318,7 +318,7 @@ tables straight out of its data banks into `tables.ts`.
   level 1-16), and gear in both hands, head, body and arms (an empty hand is the "Hands" item, 0x30).
 - **Items**: gil (+0x4A8), and the bag: 150 item ids at +0x4B4 and their counts at +0x54A. Key items are in the bag
   too; they're shown but not changed.
-- Portraits in the party window come from the game's own party menu (SaveForge-assets).
+- The party window shows each character's Pixel Remaster battle sprite, as every Final Fantasy I-III page does (SaveForge-assets).
 
 ## Final Fantasy II (Famicom)
 
@@ -338,7 +338,7 @@ and were checked by loading edited saves in the game (Neo Demiforce's English pa
   Attack, defense and the rest are worked out again at the start of every battle.
 - **Items**: gil (u24 at +0x1C, up to 9,999,999), and the bag: 32 places of one item each at +0x60. Key items are bits
   at +0x1A/+0x1B (item k is bit k); they're shown but not changed.
-- Portraits are drawn from the game's own tiles (24x32) in its menu colours (SaveForge-assets).
+- The party window shows each character's Pixel Remaster battle sprite, as every Final Fantasy I-III page does (SaveForge-assets).
 
 ## Final Fantasy III (Famicom)
 
@@ -466,7 +466,7 @@ for what the PSP added come from the game's BOOT.BIN.
   fourth place is named at +0x4A2. Gil at +0x498 (up to 9,999,999), bag ids at +0x4A4 and counts at +0x53A.
 - **New items**: the Destroy and Revive tomes and spells, and the Soul of Rebirth weapons (Ragnarok, Artemis Bow,
   Gigantaxe, Staff of Light, Dragon Claws, Gungnir, Dancing Dagger, Abel's Lance, Longinus).
-- Portraits come from the disc's own face pictures (52x60, SaveForge-assets).
+- The party window shows each character's Pixel Remaster battle sprite, as every Final Fantasy I-III page does (SaveForge-assets).
 
 ## Final Fantasy (PSP, Anniversary Edition)
 

@@ -26,7 +26,7 @@ with sync_playwright() as p:
     assert page.get_attribute('html', 'data-console') == 'nds'
     assert page.locator('.ff-member').all_inner_texts()[0].startswith('Luneth')
     sprites = page.eval_on_selector_all('.ff-member img.job-sprite', 'l => l.map((i) => i.getAttribute("src").replace(/^.*sprites\\//, ""))')
-    assert sprites == ['ff3/nes/fighter.png', 'ff3/nes/black-wizard.png', 'ff3/nes/white-wizard.png', 'ff3/nes/monk.png'], sprites
+    assert sprites == ['ff3/pr/jobs/warrior.png', 'ff3/pr/jobs/black-mage.png', 'ff3/pr/jobs/white-mage.png', 'ff3/pr/jobs/monk.png'], sprites
     assert page.locator('dl.stats dd').all_inner_texts() == ['12', '12', '12', '10', '10'], page.locator('dl.stats dd').all_inner_texts()
     page.fill('input[aria-label="Name"]', 'Kie ro')
     note = page.inner_text('label.field:has(input[aria-label="Name"]) .field-hint')
