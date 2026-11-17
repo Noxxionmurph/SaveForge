@@ -110,6 +110,7 @@ GAMES = [
     ('Final Fantasy (GBA)', lambda page: open_file(page, 'dawn-of-souls.sav')),
     ('Final Fantasy III (Famicom)', lambda page: open_file(page, 'ff3-famicom.sav')),
     ('Final Fantasy III (Nintendo DS)', lambda page: open_file(page, 'ff3-ds.sav')),
+    ('Final Fantasy III (PSP)', lambda page: open_file(page, 'NPUH10125DATA00.zip')),
     ('Final Fantasy II (GBA)', lambda page: open_file(page, 'dawn-of-souls-2.sav')),
     ('Final Fantasy (WonderSwan Color)', lambda page: open_file(page, 'ff1-wonderswan.sav')),
     ('Final Fantasy (PSP)', lambda page: open_file(page, 'ULUS10251DATA00.zip')),

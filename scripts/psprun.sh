@@ -7,6 +7,9 @@
 # left 128, L 256, R 512, triangle 4096, circle 8192, cross 16384, square 32768.
 # Final Fantasy (US): START at 8, 10, 12 and 14 s skips to the title; cross at 17 opens Load Game; cross at 20 loads File 1;
 # triangle at 26 opens the menu (cross confirms, circle goes back). The game writes saves to MEMSTICK straight away.
+# Final Fantasy III (US): cross at 11 s clears the auto-save notice; START at 16, 20, 24 and 28 s skips to the title; cross
+# at 34, 36 and 39 s and circle at 41 load the first save listed, and the game is on the map by 50 s; triangle at 60
+# opens the menu (down moves the cursor, cross picks; the Item screen takes circle twice to leave).
 set -e
 BIN=$1; DISC=$2; MS=$3; END=$4; PRESS=$5; SHOTS=$6; OUT=$7
 mkdir -p "$OUT"

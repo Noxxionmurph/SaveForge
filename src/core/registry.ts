@@ -13,6 +13,7 @@ import finalFantasy2Psp from '../games/final-fantasy-2-psp.ts';
 import finalFantasy2Wsc from '../games/final-fantasy-2-wsc.ts';
 import finalFantasy3Nes from '../games/final-fantasy-3-nes.ts';
 import finalFantasy3Ds from '../games/final-fantasy-3-ds.ts';
+import finalFantasy3Psp from '../games/final-fantasy-3-psp.ts';
 import finalFantasyPsp from '../games/final-fantasy-psp.ts';
 import finalFantasyWsc from '../games/final-fantasy-wsc.ts';
 import type { Detection, EditableSave, GameModule } from './types.ts';
@@ -34,6 +35,7 @@ export const GAMES: GameModule[] = [
   finalFantasy2Wsc,
   finalFantasy3Nes,
   finalFantasy3Ds,
+  finalFantasy3Psp,
   // megaManBattleNetwork... goes here.
 ];
 
