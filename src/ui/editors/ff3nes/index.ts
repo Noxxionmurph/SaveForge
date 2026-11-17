@@ -8,7 +8,7 @@ import {
 import { NAME_LENGTH, asSaved } from '../../../core/ff3nes/text.ts';
 import type { MountEditor } from '../../../core/types.ts';
 import { clear, field, h, lazySelect, numberInput, selectInput, textInput } from '../../dom.ts';
-import { ff3NesJobSprite } from '../../sprites.ts';
+import { ff3NesJobSprite, statusBadges } from '../../sprites.ts';
 import { tabBar, tabPanel } from '../../tabs.ts';
 
 type Tab = 'party' | 'items';
@@ -62,7 +62,7 @@ export const mountFf3NesEditor: MountEditor<Ff3NesSave> = (container, s, host) =
         onclick: () => { who = i; onPick(); },
       },
       ff3NesJobSprite(c.job, i, c.has(0x80) ? 'fallen' : ''),
-      h('span', { class: 'ff-name' }, c.name || '—'),
+      h('span', { class: 'ff-name' }, c.name || '—', ...statusBadges(...AILMENTS.filter(([bit]) => c.has(bit)).map(([, n]) => n))),
       h('span', { class: 'ff-class' }, c.jobName),
       h('span', { class: 'ff-lv' }, `L${c.level}`),
       h('span', { class: 'ff-hp' }, c.has(0x80) ? 'KO' : `HP ${c.hp}/${c.maxHp}`))));

@@ -1222,6 +1222,8 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
 .tile { grid-template-columns: 10px 1fr calc(40 * var(--px2)); min-height: calc(32 * var(--px2) + 14px); }
 .tile-icon.job-sprite { margin: 0; justify-self: center; }
 .ff-member > .job-sprite.fallen { opacity: 0.35; }
+/* A status icon (10x10 art) after the name, on a small dark chip so its white pixels read on every console's window. */
+.status-badge { display: inline-block; image-rendering: pixelated; --art: var(--px2); width: calc(10 * var(--art)); height: calc(10 * var(--art)); margin-left: 4px; padding: 1px; background: rgb(0 0 0 / .55); border-radius: 2px; vertical-align: middle; box-sizing: content-box; }
 .ff2-spells { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 8px 16px; margin-bottom: 12px; }
 .ff-spell-row { display: flex; gap: 8px; align-items: flex-end; }
 .ff-spell-row > .field { flex: 1; min-width: 0; }

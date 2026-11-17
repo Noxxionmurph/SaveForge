@@ -8,7 +8,7 @@ import {
 import { ARMOR, KEY_ITEMS, SPELLS, WEAPONS } from '../../../core/ff1gba/tables.ts';
 import type { MountEditor } from '../../../core/types.ts';
 import { clear, field, h, numberInput, selectInput, textInput } from '../../dom.ts';
-import { ff1ClassSprite } from '../../sprites.ts';
+import { ff1ClassSprite, statusBadges } from '../../sprites.ts';
 import { tabBar, tabPanel } from '../../tabs.ts';
 
 type Tab = 'party' | 'items' | 'gear';
@@ -51,7 +51,7 @@ export const mountFf1GbaEditor: MountEditor<Ff1GbaSave> = (container, s, host) =
         onclick: () => { who = i; onPick(); },
       },
       ff1ClassSprite(c.cls, 'gba', c.ailment === 1 ? 'fallen' : ''),
-      h('span', { class: 'ff-name' }, c.name || '—'),
+      h('span', { class: 'ff-name' }, c.name || '—', ...statusBadges(AILMENTS.find((a) => a.bit === c.ailment)?.label)),
       h('span', { class: 'ff-class' }, CLASS_NAMES[c.cls]),
       h('span', { class: 'ff-lv' }, `Lv ${c.level}`),
       h('span', { class: 'ff-hp' }, c.ailment ? AILMENTS.find((a) => a.bit === c.ailment)!.label : `HP ${c.hp}/${c.maxHp}`))));

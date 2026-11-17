@@ -23,6 +23,7 @@ KINDS = {
     'ribbon': ('img.ribbon-icon', True, 'list'),
     'Pokéblock': ('img.pokeblock-icon', True, 'big'),
     'Final Fantasy class': ('img.job-sprite', True, None),
+    'status icon': ('img.status-badge', True, None),
     'type icon': ('img.type-icon', False, 24),
     'shiny mark': ('img.shiny-icon', False, 16),
     '♂/♀': ('svg.gender-icon', False, '0.75em'),

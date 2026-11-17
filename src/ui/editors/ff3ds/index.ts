@@ -9,7 +9,7 @@ import type { Ff3PspSave } from '../../../core/ff3psp/save.ts';
 import type { MountEditor } from '../../../core/types.ts';
 import { clear, field, h, numberInput, selectInput, textInput } from '../../dom.ts';
 import { itemList } from '../../itemList.ts';
-import { ff3DsJobSprite } from '../../sprites.ts';
+import { ff3DsJobSprite, statusBadges } from '../../sprites.ts';
 import { tabBar, tabPanel } from '../../tabs.ts';
 
 type Tab = 'party' | 'items';
@@ -62,7 +62,7 @@ const ff3Editor = (gearHint: string): MountEditor<Ff3DsSave> => (container, s, h
         onclick: () => { who = i; onPick(); },
       },
       ff3DsJobSprite(c.job, c.hero, c.has(KO) ? 'fallen' : ''),
-      h('span', { class: 'ff-name' }, c.name || '—'),
+      h('span', { class: 'ff-name' }, c.name || '—', ...statusBadges(...AILMENTS.filter(([bit]) => c.has(bit)).map(([, n]) => n))),
       h('span', { class: 'ff-class' }, c.jobName),
       h('span', { class: 'ff-lv' }, `L${c.level}`),
       h('span', { class: 'ff-hp' }, c.has(KO) ? 'KO' : `HP ${c.hp}/${c.maxHp}`))));

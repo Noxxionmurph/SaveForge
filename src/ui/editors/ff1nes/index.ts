@@ -8,7 +8,7 @@ import { ARMOR, CONSUMABLES, KEY_ITEMS, SPELLS, WEAPONS } from '../../../core/ff
 import { NAME_LENGTH, asSaved } from '../../../core/ff1nes/text.ts';
 import type { MountEditor } from '../../../core/types.ts';
 import { clear, field, h, numberInput, selectInput, textInput } from '../../dom.ts';
-import { ff1ClassSprite } from '../../sprites.ts';
+import { ff1ClassSprite, statusBadges } from '../../sprites.ts';
 import { tabBar, tabPanel } from '../../tabs.ts';
 
 type Tab = 'party' | 'items' | 'world';
@@ -47,7 +47,7 @@ export const mountFf1NesEditor: MountEditor<Ff1NesSave> = (container, s, host) =
         onclick: () => { who = i; onPick(); },
       },
       ff1ClassSprite(c.cls, 'nes', c.ailment === 1 ? 'fallen' : ''),
-      h('span', { class: 'ff-name' }, c.name || '—'),
+      h('span', { class: 'ff-name' }, c.name || '—', ...statusBadges(AILMENTS[c.ailment])),
       h('span', { class: 'ff-class' }, CLASS_NAMES[c.cls]),
       h('span', { class: 'ff-lv' }, `L${c.level}`),
       h('span', { class: 'ff-hp' }, c.ailment ? AILMENTS[c.ailment] : `HP ${c.hp}/${c.maxHp}`))));
