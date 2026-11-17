@@ -22,8 +22,8 @@ with sync_playwright() as p:
     page.wait_for_selector('.ff-party')
     assert page.get_attribute('html', 'data-console') == 'wsc'
     assert page.locator('.ff-member').all_inner_texts()[0].startswith('Firion')
-    assert page.locator('.ff-member img.job-sprite.ff2').count() == 3
-    assert page.evaluate("[...document.querySelectorAll('.ff-member img')].every((i) => i.complete && i.naturalWidth === 28)")
+    assert page.locator('.ff-member img.job-sprite.prj[src*="ff2/pr/jobs/"]').count() == 3
+    assert page.evaluate("[...document.querySelectorAll('.ff-member img')].every((i) => i.complete && i.naturalWidth === 19)")
     page.fill('input[aria-label="Name"]', 'Kieron')
     page.get_by_role('spinbutton', name='Strength', exact=True).fill('60')
     page.get_by_role('spinbutton', name='Strength', exact=True).press('Tab')

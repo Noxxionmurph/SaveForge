@@ -24,7 +24,7 @@ with sync_playwright() as p:
     assert page.get_attribute('html', 'data-console') == 'psp'
     names = page.locator('.ff-member .ff-name').all_inner_texts()
     assert names == ['Firion', 'Maria', 'Guy', 'Leon'], names
-    assert page.locator('.ff-member img.job-sprite.ff2psp').count() == 4
+    assert page.locator('.ff-member img.job-sprite.prj[src*="ff2/pr/jobs/"]').count() == 4
     # Leon: a PSP-only weapon and spell
     page.click('.ff-member >> nth=3')
     page.select_option('label.field:has-text("Right hand") select', label='Longinus')
