@@ -35,6 +35,12 @@ const CH = {
 };
 const SPELL_SLOTS = 24;
 
+/** The four Orbs in the order the menu and the load screen show them. */
+export const ORB_NAMES = ['Fire', 'Earth', 'Wind', 'Water'] as const;
+/** Each Orb's story flag as [offset, bit], in ORB_NAMES order: the load screen and the menu both draw the Orbs from these,
+ * and the game keeps no other copy (checked in mGBA by lighting them in a fresh save and letting the game save again). */
+const ORB_FLAGS: readonly (readonly [number, number])[] = [[0x72a, 0x08], [0x72a, 0x02], [0x72c, 0x04], [0x72b, 0x20]];
+
 export const STAT_KEYS = ['str', 'agi', 'int', 'sta', 'luck'] as const;
 export type StatKey = typeof STAT_KEYS[number];
 export const STAT_LABELS: Record<StatKey, string> = { str: 'Strength', agi: 'Agility', int: 'Intellect', sta: 'Stamina', luck: 'Luck' };
@@ -208,6 +214,16 @@ export class Ff1GbaFile {
   }
   get bagFull() { return this.items.length >= FILE.itemCount; }
 
+  /** Orb `i` (see ORB_NAMES), lit or dark. */
+  orbLit(i: number) {
+    const [o, bit] = ORB_FLAGS[i];
+    return (this.d[this.at + o] & bit) !== 0;
+  }
+  setOrb(i: number, on: boolean) {
+    const [o, bit] = ORB_FLAGS[i];
+    this.d[this.at + o] = on ? this.d[this.at + o] | bit : this.d[this.at + o] & ~bit;
+  }
+
   /** Key items are bits counting down from the top bit of the byte before +0x748: id 1 (the Lute) is bit 7 of +0x747. */
   private keyBit(id: number) { return { at: this.at + FILE.keyItemsEnd - 1 - ((id - 1) >> 3), bit: 0x80 >> ((id - 1) & 7) }; }
   hasKeyItem(id: number) { const { at, bit } = this.keyBit(id); return (this.d[at] & bit) !== 0; }
@@ -295,6 +311,7 @@ function describeChanges(b: Ff1GbaSave, a: Ff1GbaSave): ChangeGroup[] {
       if (fb.hasKeyItem(i + 1) !== fa.hasKeyItem(i + 1)) items.push(`${name}: ${fa.hasKeyItem(i + 1) ? 'added' : 'removed'}`);
     });
     add(`${prefix}Items`, items);
+    add(`${prefix}Orbs`, ORB_NAMES.flatMap((n, i) => fb.orbLit(i) === fa.orbLit(i) ? [] : [`${n} Orb: ${fa.orbLit(i) ? 'lit' : 'dark'}`]));
   }
   return groups;
 }

@@ -304,6 +304,9 @@ tables straight out of its data banks into `tables.ts`.
   marked when the class can't equip or learn them. The game works out attack, defence and the like again from the gear.
 - **Items**: gil, consumables, weapons, armor and the 36 key items, per file. The bag's cells carry a fourth byte that
   belongs to something else; it is never touched.
+- **Orbs**: one story flag each (Fire bit 3 and Earth bit 1 of +0x72A, Water bit 5 of +0x72B, Wind bit 2 of +0x72C, the
+  same bits as the WonderSwan game's). The load screen and the menu both draw the Orbs from them, and the game keeps no
+  other copy.
 - A save with files of both games asks which to open (two modules: `final-fantasy-gba.ts` and `final-fantasy-2-gba.ts`).
 
 ## Final Fantasy II (GBA, Dawn of Souls)
@@ -449,6 +452,8 @@ which follow the same order item for item). Everything else was found by saving 
   works out attack, defence and the like again from the gear.
 - **Items**: gil (+0x13F), the bag (86 cells of [item id, count] from +0x93, which the item screen lists in order; worn
   gear isn't in it, spare weapons and armor are), and key items (a list of up to 32 ids from +0x73, in the order found).
+- **Orbs**: one story flag each (Fire bit 3 and Earth bit 1 of +0x30, Water bit 5 of +0x31, Wind bit 2 of +0x32). The
+  game copies the four into bits 0-3 of +0x14B, which the menu draws from, so the editor sets or clears both.
 - Play time (+0x147: hours, minutes, seconds, frames) and steps (+0x143) are shown, not edited.
 
 ## Final Fantasy II (PSP, Anniversary Edition)
@@ -589,7 +594,8 @@ Every screen explains itself in plain words, so keep it that way when you add a 
   Flare learned, gil, Potions, key items added and removed) loads with every edit showing in the load screen and menus.
   The level 1 to 8 "magic level" byte and the per-level growth numbers are left alone, and only the US release is
   recognised. There's no sample button: a save the game would start from needs map and story data the editor doesn't
-  build. Final Fantasy II was checked the same way with a real save (a renamed Firion with 9,999 HP, 99 Strength, sword
+  build. The Orbs (2026-11-18): Earth and Wind lit in a file the game had just saved show on its load screen and in
+  the menu, and saving again changes nothing else. Final Fantasy II was checked the same way with a real save (a renamed Firion with 9,999 HP, 99 Strength, sword
   skill 16 and Excalibur, Fire at 16, Ultima learned in place of Toad, Maria's Ribbon, Josef's MP, gil, Elixirs and a
   Holy Tome all show in its menus). Its key terms, the fourth party member and the record of who has left aren't
   editable, and progress towards the next skill or spell level is left as it is.
@@ -638,8 +644,9 @@ Every screen explains itself in plain words, so keep it that way when you add a 
   2026-11-06): a save made there opens, and an edited copy (a renamed character promoted to Knight at level 50 with
   Excalibur, a Ribbon, 999 HP and 99 Strength, a poisoned Thief, a spell swapped and MP raised, gil, Potions, an Aegis
   Shield and key items added and removed) loads with every edit showing in the menus. The sample file is also one the
-  game loads. Only checked with saves made in the emulator, not a real cartridge's; the map, story flags and the four
-  crystals aren't editable.
+  game loads. Only checked with saves made in the emulator, not a real cartridge's; the map and other story flags
+  aren't editable. The Orbs (2026-11-18): copies with two of them lit show those two in the menu, and the game's own
+  ちゅうだん save afterwards keeps them; a save with only the flags set gets +0x14B filled in by the game.
 
 - Final Fantasy II (PSP): a real save decrypts, opens and encrypts back to the same SAVEDATA.SAV. In the real game (US
   disc in PPSSPP's headless build, 2026-11-06) an edited file (Firion renamed, his HP, 9,999,999 gil) shows the edits on

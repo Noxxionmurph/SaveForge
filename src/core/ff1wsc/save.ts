@@ -45,6 +45,14 @@ const CH = {
 };
 const SPELL_SLOTS = 24;
 
+/** The four Orbs in the order the menu shows them. */
+export const ORB_NAMES = ['Fire', 'Earth', 'Wind', 'Water'] as const;
+/** Each Orb's story flag as [offset, bit], in ORB_NAMES order. The game copies the four into bits 0-3 of ORB_BITS, which
+ * the menu draws from, so an Orb is lit or dark in both places. Found by lighting them in Mednafen: a save with only the
+ * flags set gets ORB_BITS filled in when the game saves again. */
+const ORB_FLAGS: readonly (readonly [number, number])[] = [[0x30, 0x08], [0x30, 0x02], [0x32, 0x04], [0x31, 0x20]];
+const ORB_BITS = 0x14b;
+
 export const STAT_KEYS = ['str', 'agi', 'int', 'vit', 'luck'] as const;
 export type StatKey = typeof STAT_KEYS[number];
 export const STAT_LABELS: Record<StatKey, string> = { str: 'Strength', agi: 'Agility', int: 'Intelligence', vit: 'Vitality', luck: 'Luck' };
@@ -269,6 +277,18 @@ export class Ff1WscFile {
   }
   get bagFull() { return this.items.length >= FILE.bagSlots; }
 
+  /** Orb `i` (see ORB_NAMES), lit or dark. */
+  orbLit(i: number) {
+    const [o, bit] = ORB_FLAGS[i];
+    return (this.d[this.at + o] & bit) !== 0;
+  }
+  setOrb(i: number, on: boolean) {
+    const [o, bit] = ORB_FLAGS[i];
+    const flip = (at: number, b: number) => { this.d[at] = on ? this.d[at] | b : this.d[at] & ~b; };
+    flip(this.at + o, bit);
+    flip(this.at + ORB_BITS, 1 << i);
+  }
+
   // Key items: a list of 32 item ids (1-17) at +0x73, in the order they were found.
   private get keyList() { return [...this.d.subarray(this.at + FILE.keyItems, this.at + FILE.keyItems + FILE.keySlots)]; }
   hasKeyItem(k: number) { return this.keyList.includes(k); }
@@ -357,6 +377,7 @@ function describeChanges(b: Ff1WscSave, a: Ff1WscSave): ChangeGroup[] {
       if (fb.hasKeyItem(i + 1) !== fa.hasKeyItem(i + 1)) items.push(`${name}: ${fa.hasKeyItem(i + 1) ? 'added' : 'removed'}`);
     });
     add(`${prefix}Items`, items);
+    add(`${prefix}Orbs`, ORB_NAMES.flatMap((n, i) => fb.orbLit(i) === fa.orbLit(i) ? [] : [`${n} Orb: ${fa.orbLit(i) ? 'lit' : 'dark'}`]));
   }
   return groups;
 }
