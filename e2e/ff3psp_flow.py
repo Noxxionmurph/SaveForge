@@ -18,7 +18,7 @@ with sync_playwright() as p:
     page.on('console', lambda m: errors.append(f'console.{m.type}: {m.text}') if m.type == 'error' and 'ERR_TUNNEL' not in m.text else None)
     page.goto(BASE)
     ports = page.inner_text('li.tile:has(.tile-name:text-is("Final Fantasy III")) .tile-platform')
-    assert ports == 'Famicom · Nintendo DS · PSP', ports
+    assert ports == 'Famicom · Nintendo DS · PSP · Steam', ports
     with page.expect_file_chooser() as fc:
         page.click('.slot')
     fc.value.set_files(f'{SP}/NPUH10125DATA00.zip')

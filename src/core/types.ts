@@ -99,9 +99,17 @@ export interface GameModule<S extends EditableSave = EditableSave> {
    * screens drawn as the deep blue windows NES role-playing games use. 'psp' is the black PSP, with the screens drawn as
    * the PSP remake's blue gradient menu windows. 'wsc' is the pearl WonderSwan Color, with the screens drawn as its Final
    * Fantasy's flat blue windows. 'nds' is the silver Nintendo DS, with the screens drawn as its Final Fantasy III's
-   * slate blue windows with a silver edge. See styles.css.
+   * slate blue windows with a silver edge. 'pr' is a slate grey PC, with the screens drawn as the Pixel Remasters' royal
+   * blue windows. See styles.css.
    */
-  readonly theme?: 'gb' | 'gbc' | 'gba' | 'nes' | 'psp' | 'wsc' | 'nds';
+  readonly theme?: 'gb' | 'gbc' | 'gba' | 'nes' | 'psp' | 'wsc' | 'nds' | 'pr';
+  /**
+   * Save the edited file under exactly the name it was opened with, for games that find their saves by name (the Pixel
+   * Remasters' slot files have fixed names and no extension). Off: "<name>-edited.<ext>".
+   */
+  readonly keepFileName?: boolean;
+  /** Steps for putting the edited file back, shown after Save in place of the emulator ones. */
+  readonly saveSteps?: readonly string[];
   /** Optional small picture per game name (a path inside the artwork, e.g. "sprites/pokemon/25.png"), shown on the landing page. */
   readonly icons?: Readonly<Record<string, string>>;
   /**
