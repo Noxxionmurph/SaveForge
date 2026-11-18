@@ -159,7 +159,7 @@
   --focus: #8bb8ff; --danger: #ff9a9a;
 }
 /* The windows' white edge, inside the dark outline. */
-:root[data-console="nes"] .lcd { box-shadow: inset 0 0 0 2px #ffffff, inset 0 0 0 4px var(--lcd); }
+:root[data-console="nes"] .lcd, :root[data-console="nes"] .editor[data-family="final-fantasy"] .card { box-shadow: inset 0 0 0 2px #ffffff, inset 0 0 0 4px var(--lcd); }
 
 /* PSP (piano black, silver buttons), for games that set theme: 'psp' (?console=psp previews it). The screens are the PSP
    remake's menu windows: a deep blue that fades down the window, with a thin silver edge. */
@@ -191,7 +191,7 @@
   --focus: #8bb8ff; --danger: #ff9a9a;
 }
 /* The fade and the silver edge. */
-:root[data-console="psp"] .lcd {
+:root[data-console="psp"] .lcd, :root[data-console="psp"] .editor[data-family="final-fantasy"] .card {
   background-image: linear-gradient(to bottom, var(--lcd), var(--lcd-low));
   box-shadow: inset 0 0 0 1px #c9d2ea, inset 0 0 0 3px var(--lcd);
 }
@@ -226,7 +226,7 @@
   --focus: #8bb8ff; --danger: #ff9a9a;
 }
 /* The white edge and the grey line inside it. */
-:root[data-console="wsc"] .lcd { box-shadow: inset 0 0 0 2px #ffffff, inset 0 0 0 3px #8b899b, inset 0 0 0 5px var(--lcd); }
+:root[data-console="wsc"] .lcd, :root[data-console="wsc"] .editor[data-family="final-fantasy"] .card { box-shadow: inset 0 0 0 2px #ffffff, inset 0 0 0 3px #8b899b, inset 0 0 0 5px var(--lcd); }
 
 /* Nintendo DS (silver, dark grey buttons), for games that set theme: 'nds' (?console=nds previews it). The screens are
    its Final Fantasy III's menu windows: a slate blue that lightens towards the top, with a silver edge that is bright
@@ -262,10 +262,12 @@
   --focus: #8bb8ff; --danger: #ff9a9a;
 }
 /* The lighter top and the silver edge: bright on the top and left, grey on the bottom and right. */
-:root[data-console="nds"] .lcd {
+:root[data-console="nds"] .lcd, :root[data-console="nds"] .editor[data-family="final-fantasy"] .card {
   background-image: linear-gradient(to bottom, color-mix(in srgb, var(--lcd) 82%, #ffffff), var(--lcd) 40%, var(--lcd-low));
   box-shadow: inset 2px 2px 0 var(--lcd-hi), inset -2px -2px 0 var(--lcd-lo);
 }
+/* A tall window (a Final Fantasy page's cards) keeps the light band to its top, so the text under it stays on the blue. */
+:root[data-console="nds"] .editor[data-family="final-fantasy"] .card { background-image: linear-gradient(to bottom, color-mix(in srgb, var(--lcd) 82%, #ffffff), var(--lcd) min(40%, 88px), var(--lcd-low)); }
 
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
@@ -1206,16 +1208,17 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
 
 /* ---- Final Fantasy (NES) ---- */
 /* The main menu's four party windows. */
-.ff-party { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; padding: 10px; }
+.ff-party { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; padding: 8px; }
 @media (min-width: 720px) { .ff-party { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
 .ff-member {
-  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 2px 8px; text-align: left; align-items: baseline;
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 2px 6px; text-align: left; align-items: baseline;
   font: 500 1rem/1.2 var(--font-display); color: var(--lcd-ink); background: transparent;
-  border: 2px solid transparent; border-radius: 6px; padding: 8px 10px 8px 22px; min-height: 0; position: relative; box-shadow: none;
+  border: 2px solid transparent; border-radius: 6px; padding: 8px 6px 8px 16px; min-height: 0; position: relative; box-shadow: none;
 }
 .ff-member:hover { border-color: color-mix(in srgb, var(--lcd-ink) 35%, transparent); }
 .ff-member.on { border-color: var(--lcd-ink); }
-.ff-member.on::before { content: '▸'; position: absolute; left: 6px; top: 8px; }
+/* Narrow side padding, so a four-figure HP line (HP 9999/9999) fits beside the sprite two to a row from a 390px phone. */
+.ff-member.on::before { content: '▸'; position: absolute; left: 4px; top: 8px; }
 .ff-name { font-weight: 700; font-size: 1.25rem; }
 .ff-lv { color: var(--lcd-dim); }
 .ff-class, .ff-hp { grid-column: 2 / -1; color: var(--lcd-dim); font-size: 0.875rem; }
@@ -1248,6 +1251,93 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
   font: 600 1rem var(--font-display); color: var(--lcd-ink); background: var(--lcd); border-color: var(--lcd-edge);
 }
 .ff-toggle[aria-pressed="false"] { font-family: var(--font-display); border-style: dashed; }
+.ff-toggle { display: inline-flex; align-items: center; gap: 8px; }
+.ff-toggle > .status-badge { margin-left: 0; }
+.ff-toggle[aria-pressed="false"] > .status-badge { opacity: 0.6; }
+.check-row > .status-badge { margin-left: 0; }
+/* The HP and MP bars under each party member's numbers (editors/ff/menu.ts), in the window's colours. A member has up
+   to four lines (name, class, HP, MP), so the sprite spans four rows. */
+.ff-member > .job-sprite { grid-row: 1 / span 4; }
+.ff-member .hp-bar {
+  height: 6px; margin-top: 3px;
+  background: rgb(0 0 0 / 0.35); border-color: color-mix(in srgb, var(--lcd-ink) 45%, transparent);
+}
+.ff-member .hp-bar.mp { --hp-color: #6cc4ff; }
+
+/* ---- Final Fantasy pages: every card is one of the game's menu windows ----
+   main.ts tags the editor with its series. On a Final Fantasy page each card takes the console's window (the fill and
+   edge of .lcd and its console rules above): white text in the pixel font, fields as darker wells in the window, buttons
+   as outlined commands, and the toggles bright when on and greyed when off, like the game's own menus. Notes and hints
+   stay in the body font, since the game never says them. */
+.editor[data-family="final-fantasy"] .card {
+  font-family: var(--font-display); color: var(--lcd-ink); color-scheme: dark;
+  background: var(--lcd); border: 2px solid var(--lcd-edge); border-radius: 6px;
+  box-shadow: inset 0 2px 0 rgb(0 0 0 / 0.12), inset 0 0 18px rgb(0 0 0 / 0.08);
+}
+.editor[data-family="final-fantasy"] .card h3 { font-size: 1.125rem; font-weight: 700; }
+.editor[data-family="final-fantasy"] .card :is(h4, .field-label) { font-size: 0.875rem; font-weight: 500; color: var(--lcd-dim); }
+.editor[data-family="final-fantasy"] .card :is(.field-hint, .card-note, .muted) { color: var(--lcd-dim); }
+.editor[data-family="final-fantasy"] .card :is(.field-hint, .card-note, .check-row .muted) { font-family: var(--font-body); }
+.editor[data-family="final-fantasy"] .card :is(input, select) {
+  font-family: var(--font-display); color: var(--lcd-ink); background: rgb(0 0 0 / 0.28);
+  border-color: color-mix(in srgb, var(--lcd-ink) 40%, transparent); box-shadow: inset 0 2px 0 rgb(0 0 0 / 0.25);
+}
+.editor[data-family="final-fantasy"] .card option { background: var(--lcd); color: var(--lcd-ink); }
+.editor[data-family="final-fantasy"] .card button:not(.ff-toggle, .ff-class-tile) {
+  font-family: var(--font-display); color: var(--lcd-ink); background: rgb(255 255 255 / 0.1);
+  border-color: color-mix(in srgb, var(--lcd-ink) 60%, transparent);
+}
+.editor[data-family="final-fantasy"] .card .ff-toggle[aria-pressed="true"] {
+  color: var(--lcd-ink); background: rgb(255 255 255 / 0.18); border-color: var(--lcd-ink);
+}
+.editor[data-family="final-fantasy"] .card .ff-toggle[aria-pressed="false"] {
+  color: var(--lcd-dim); background: transparent; border-color: color-mix(in srgb, var(--lcd-dim) 55%, transparent);
+}
+/* A readout window inside a window (the stats) is a darker panel in it. */
+.editor[data-family="final-fantasy"] .card .lcd {
+  background: rgb(0 0 0 / 0.22); background-image: none; border: 1px solid color-mix(in srgb, var(--lcd-ink) 25%, transparent);
+  box-shadow: none;
+}
+.editor[data-family="final-fantasy"] :is(.card, .lcd) :focus-visible { outline-color: var(--lcd-ink); }
+.editor[data-family="final-fantasy"] .card input[type="checkbox"] { accent-color: var(--lcd-ink); }
+/* Dawn of Souls (Final Fantasy I and II on the GBA) draws its own windows, not the GBA theme's pale screen: a blue that
+   darkens towards the bottom, edged white, light grey, black and steel blue (colours from the game's own screens). */
+:root[data-console="gba"] .editor[data-family="final-fantasy"] {
+  --lcd: #2121a5; --lcd-hi: #3939de; --lcd-low: #000063; --lcd-ink: #ffffff; --lcd-dim: #c8c8f8; --lcd-edge: #ffffff;
+}
+:root[data-console="gba"] .editor[data-family="final-fantasy"] :is(.card, .ff-party) {
+  background-image: linear-gradient(to bottom, var(--lcd-hi), var(--lcd-low));
+  box-shadow: inset 0 0 0 1px #cecece, inset 0 0 0 2px #212121, inset 0 0 0 3px #21528c;
+}
+/* The character's sprite beside their name at the top of their sheet. */
+.ff-sheet-title { display: flex; align-items: center; gap: 12px; }
+/* The job board: every job's sprite and the character's level in it. The current job has the menu cursor; locked ones are greyed. */
+.ff-jobs { display: grid; grid-template-columns: repeat(auto-fill, minmax(148px, 1fr)); gap: 6px; }
+/* Two to a row from a 375px phone up: the longest name (Freelancer) fits beside its sprite at 0.875rem. */
+.ff-job {
+  display: grid; grid-template-columns: auto minmax(0, 1fr); align-items: center; gap: 4px 8px; position: relative;
+  padding: 8px 8px 8px 12px; border: 2px solid transparent; border-radius: 6px; background: rgb(0 0 0 / 0.16);
+}
+.ff-job > .job-sprite { grid-row: 1 / span 2; }
+.ff-job-name { font-size: 0.875rem; line-height: 1.15; overflow-wrap: break-word; }
+.ff-job-name small { display: block; font-size: 0.75rem; color: var(--lcd-dim); }
+.ff-job > input { grid-column: 2; width: 5.5em; }
+.ff-job.now { border-color: var(--lcd-ink); background: rgb(255 255 255 / 0.1); }
+.ff-job.now::before { content: '▸'; position: absolute; left: 2px; top: 50%; translate: 0 -50%; }
+.ff-job.locked > .job-sprite { filter: grayscale(1); opacity: 0.5; }
+.ff-job.locked .ff-job-name { color: var(--lcd-dim); }
+/* The class board (Final Fantasy I): each class's sprite over its name, three to a row on a phone, so the six classes sit
+   over the six they become, and six to a row on a wider screen. The character's class has the menu cursor. */
+.ff-classes { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+@media (min-width: 640px) { .ff-classes { grid-template-columns: repeat(6, minmax(0, 1fr)); } }
+.ff-class-tile {
+  display: grid; justify-items: center; align-content: start; gap: 4px; position: relative; min-height: 0; padding: 8px 4px;
+  font: 500 0.875rem/1.15 var(--font-display); color: var(--lcd-dim); text-align: center;
+  background: rgb(0 0 0 / 0.16); border: 2px solid transparent; border-radius: 6px; box-shadow: none;
+}
+.ff-class-tile:hover { border-color: color-mix(in srgb, var(--lcd-ink) 35%, transparent); }
+.ff-class-tile.now { color: var(--lcd-ink); border-color: var(--lcd-ink); background: rgb(255 255 255 / 0.1); }
+.ff-class-tile.now::before { content: '▸'; position: absolute; left: 5px; top: 6px; }
 
 
 /* ---- UX review pass ---- */

@@ -9,8 +9,9 @@ import type { Ff3PspSave } from '../../../core/ff3psp/save.ts';
 import type { MountEditor } from '../../../core/types.ts';
 import { clear, field, h, numberInput, selectInput, textInput } from '../../dom.ts';
 import { itemList } from '../../itemList.ts';
-import { ff3DsJobSprite, statusBadges } from '../../sprites.ts';
+import { ff3DsJobSprite, statusBadges, statusIcon } from '../../sprites.ts';
 import { tabBar, tabPanel } from '../../tabs.ts';
+import { ffHpBar, jobBoard } from '../ff/menu.ts';
 
 type Tab = 'party' | 'items';
 const TABS: { id: Tab; label: string }[] = [
@@ -65,7 +66,7 @@ const ff3Editor = (gearHint: string): MountEditor<Ff3DsSave> => (container, s, h
       h('span', { class: 'ff-name' }, c.name || '—', ...statusBadges(...AILMENTS.filter(([bit]) => c.has(bit)).map(([, n]) => n))),
       h('span', { class: 'ff-class' }, c.jobName),
       h('span', { class: 'ff-lv' }, `L${c.level}`),
-      h('span', { class: 'ff-hp' }, c.has(KO) ? 'KO' : `HP ${c.hp}/${c.maxHp}`))));
+      h('span', { class: 'ff-hp' }, c.has(KO) ? 'KO' : `HP ${c.hp}/${c.maxHp}`, ffHpBar(c.has(KO) ? 0 : c.hp, c.maxHp)))));
     };
     paint();
     return { node, paint };
@@ -79,8 +80,8 @@ const ff3Editor = (gearHint: string): MountEditor<Ff3DsSave> => (container, s, h
     return h('div', { class: 'stack' }, win.node, sheet);
   }
 
-  function toggle(text: string, on: boolean, set: (on: boolean) => void, after?: () => void): HTMLButtonElement {
-    const btn = h('button', { class: 'ff-toggle', 'aria-pressed': String(on) }, text);
+  function toggle(text: string, on: boolean, set: (on: boolean) => void, after?: () => void, icon?: Node | null): HTMLButtonElement {
+    const btn = h('button', { class: 'ff-toggle', 'aria-pressed': String(on) }, icon ?? null, text);
     btn.addEventListener('click', () => {
       const next = btn.getAttribute('aria-pressed') !== 'true';
       set(next);
@@ -106,7 +107,7 @@ const ff3Editor = (gearHint: string): MountEditor<Ff3DsSave> => (container, s, h
     const locked = JOBS.some((_, j) => !slot.jobOpen(j));
 
     const basics = h('section', { class: 'card' },
-      h('h3', {}, `${nameOf(c)} · ${c.jobName}`),
+      h('h3', { class: 'ff-sheet-title' }, ff3DsJobSprite(c.job, c.hero, c.has(KO) ? 'fallen' : ''), h('span', {}, `${nameOf(c)} · ${c.jobName}`)),
       h('div', { class: 'grid' },
         h('label', { class: 'field' }, h('span', { class: 'field-label' }, 'Name'), name, nameNote),
         field('Job', jobSelect(c, redraw), shown?.where === 'job' ? shown.text : locked ? 'Locked jobs open on the Items tab.' : undefined)),
@@ -123,7 +124,7 @@ const ff3Editor = (gearHint: string): MountEditor<Ff3DsSave> => (container, s, h
         h('p', { class: 'field-hint' }, 'With gear. The game sets them from the job and level.')),
       h('div', { class: 'subgroup' },
         h('h4', {}, 'Status'),
-        h('div', { class: 'ff-toggles' }, AILMENTS.map(([bit, n]) => toggle(n, c.has(bit), (on) => c.setAilment(bit, on), redraw)))),
+        h('div', { class: 'ff-toggles' }, AILMENTS.map(([bit, n]) => toggle(n, c.has(bit), (on) => c.setAilment(bit, on), redraw, statusIcon(n))))),
       h('div', { class: 'button-row' },
         h('button', { onclick: () => { c.restore(); redraw(); } }, 'Restore HP, MP and status')),
     );
@@ -149,8 +150,10 @@ const ff3Editor = (gearHint: string): MountEditor<Ff3DsSave> => (container, s, h
   function jobCard(c: Ff3DsChar): Node {
     return h('section', { class: 'card' },
       h('h3', {}, 'Job levels'),
-      h('div', { class: 'grid compact' }, JOBS.map((n, j) => field(j === c.job ? `${n} (now)` : slot.jobOpen(j) ? n : `${n} (locked)`,
-        numberInput(c.jobLevel(j), 1, MAX_LEVEL, (v) => { c.setJobLevel(j, v); markDirty(); })))));
+      jobBoard(JOBS.map((name, j) => ({
+        name, sprite: ff3DsJobSprite(j, c.hero), level: c.jobLevel(j), now: j === c.job,
+        locked: j === c.job || slot.jobOpen(j) ? '' : 'Locked', setLevel: (v) => { c.setJobLevel(j, v); markDirty(); },
+      })), MAX_LEVEL));
   }
 
   function gearCard(c: Ff3DsChar, redraw: () => void, gearNotice: string): Node {

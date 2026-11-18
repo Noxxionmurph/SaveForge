@@ -9,6 +9,7 @@ import type { MountEditor } from '../../../core/types.ts';
 import { clear, field, h, numberInput, selectInput, textInput } from '../../dom.ts';
 import { ff2NesPortrait, ff2WscPortrait } from '../../sprites.ts';
 import { tabBar, tabPanel } from '../../tabs.ts';
+import { ffHpBar, ffMpBar } from '../ff/menu.ts';
 
 type Tab = 'party' | 'items';
 const TABS: { id: Tab; label: string }[] = [
@@ -64,8 +65,8 @@ const makeEditor = (portrait: (who: string) => HTMLImageElement): MountEditor<Ff
       },
       portrait(c.portrait),
       h('span', { class: 'ff-name' }, nameOf(c)),
-      h('span', { class: 'ff-hp' }, `HP ${c.hp}/${c.maxHp}`),
-      h('span', { class: 'ff-class' }, `MP ${c.mp}/${c.maxMp}`))));
+      h('span', { class: 'ff-hp' }, `HP ${c.hp}/${c.maxHp}`, ffHpBar(c.hp, c.maxHp)),
+      h('span', { class: 'ff-class' }, `MP ${c.mp}/${c.maxMp}`, ffMpBar(c.mp, c.maxMp)))));
     };
     paint();
     return { node, paint };
@@ -90,7 +91,7 @@ const makeEditor = (portrait: (who: string) => HTMLImageElement): MountEditor<Ff
     }, { 'aria-label': 'Name' });
 
     const basics = h('section', { class: 'card' },
-      h('h3', {}, nameOf(c)),
+      h('h3', { class: 'ff-sheet-title' }, portrait(c.portrait), h('span', {}, nameOf(c))),
       h('div', { class: 'grid' }, h('label', { class: 'field' }, h('span', { class: 'field-label' }, 'Name'), name, nameNote)),
       h('div', { class: 'grid pair' },
         field('HP', numberInput(c.hp, 0, MAX_HP, (v) => { c.hp = v; edited(); })),

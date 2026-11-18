@@ -10,6 +10,7 @@ import type { MountEditor } from '../../../core/types.ts';
 import { clear, field, h, numberInput, selectInput, textInput } from '../../dom.ts';
 import { ff1ClassSprite, statusBadges } from '../../sprites.ts';
 import { tabBar, tabPanel } from '../../tabs.ts';
+import { classBoard, ffHpBar, statusPicker } from '../ff/menu.ts';
 
 type Tab = 'party' | 'items' | 'world';
 const TABS: { id: Tab; label: string }[] = [
@@ -50,7 +51,7 @@ export const mountFf1NesEditor: MountEditor<Ff1NesSave> = (container, s, host) =
       h('span', { class: 'ff-name' }, c.name || '—', ...statusBadges(AILMENTS[c.ailment])),
       h('span', { class: 'ff-class' }, CLASS_NAMES[c.cls]),
       h('span', { class: 'ff-lv' }, `L${c.level}`),
-      h('span', { class: 'ff-hp' }, c.ailment ? AILMENTS[c.ailment] : `HP ${c.hp}/${c.maxHp}`))));
+      h('span', { class: 'ff-hp' }, c.ailment ? AILMENTS[c.ailment] : `HP ${c.hp}/${c.maxHp}`, ffHpBar(c.ailment === 1 ? 0 : c.hp, c.maxHp)))));
     };
     paint();
     return { node, paint };
@@ -77,13 +78,9 @@ export const mountFf1NesEditor: MountEditor<Ff1NesSave> = (container, s, host) =
     const level = numberInput(c.level, 1, MAX_LEVEL, (v) => { c.setLevel(v); exp.value = String(c.exp); edited(); });
 
     const basics = h('section', { class: 'card' },
-      h('h3', {}, c.name || `Character ${who + 1}`),
+      h('h3', { class: 'ff-sheet-title' }, ff1ClassSprite(c.cls, 'nes', c.ailment === 1 ? 'fallen' : ''), h('span', {}, c.name || `Character ${who + 1}`)),
       h('div', { class: 'grid' },
         h('label', { class: 'field' }, h('span', { class: 'field-label' }, 'Name'), name, nameNote),
-        field('Class', selectInput(CLASS_NAMES.map((n, i) => ({ value: i, label: n })), c.cls, (v) => { c.cls = Number(v); redraw(); })),
-        field('Status', selectInput(AILMENTS.map((n, i) => ({ value: i, label: n })), c.ailment, (v) => { c.ailment = Number(v); edited(); })),
-      ),
-      h('div', { class: 'grid' },
         field('Level', level, 'Stats stay as they are: the game rolls them at each level up.'),
         field('Exp', exp),
       ),
@@ -98,6 +95,9 @@ export const mountFf1NesEditor: MountEditor<Ff1NesSave> = (container, s, host) =
         h('h4', {}, 'Battle'),
         h('div', { class: 'grid compact' }, SUBSTAT_KEYS.map((k) => field(SUBSTAT_LABEL[k], numberInput(c.substat(k), 0, 255, (v) => { c.setSubstat(k, v); markDirty(); })))),
         h('p', { class: 'field-hint' }, 'These follow the gear you change below, as they do in the game’s equip menu.')),
+      h('div', { class: 'subgroup' },
+        h('h4', {}, 'Status'),
+        statusPicker(AILMENTS.map((label, value) => ({ value, label })), c.ailment, (v) => { c.ailment = v; redraw(); })),
       h('div', { class: 'button-row' },
         h('button', {
           onclick: () => {
@@ -108,7 +108,9 @@ export const mountFf1NesEditor: MountEditor<Ff1NesSave> = (container, s, host) =
           },
         }, 'Restore HP and MP')),
     );
-    return [basics, gearCard(c, 'weapon', redraw), gearCard(c, 'armor', redraw), magicCard(c, redraw)];
+    const classes = h('section', { class: 'card' }, h('h3', {}, 'Class'),
+      classBoard(CLASS_NAMES.map((name, id) => ({ id, name })), c.cls, (id) => ff1ClassSprite(id, 'nes'), (id) => { c.cls = id; redraw(); }));
+    return [basics, classes, gearCard(c, 'weapon', redraw), gearCard(c, 'armor', redraw), magicCard(c, redraw)];
   }
 
   function gearCard(c: Ff1Char, kind: 'weapon' | 'armor', redraw: () => void): Node {

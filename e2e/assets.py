@@ -146,13 +146,11 @@ with sync_playwright() as p:
                 for i in range(page.locator('button.tab').count()):
                     page.locator('button.tab').nth(i).click(); page.wait_for_timeout(150)
                     scan(f'{game} tab {i + 1}')
-                # poison the first member, for the status icon beside the name (I: a Status or Ailment list; III: buttons)
+                # poison the first member, for the status icon beside the name (the Status or Ailment buttons)
                 page.locator('button.tab').first.click(); page.wait_for_timeout(150)
-                pick = page.locator('label.field:has-text("Status") select, label.field:has-text("Ailment") select')
-                poison = page.locator('h4:text-is("Status") + .ff-toggles button.ff-toggle:text-is("Poison")')
-                if pick.count():
-                    pick.first.select_option(label='Poison')
-                elif poison.count():
+                poison = page.locator('h4:text-is("Status") + .ff-toggles button.ff-toggle:text-is("Poison"), '
+                                      'h4:text-is("Ailment") + .ff-toggles button.ff-toggle:text-is("Poison")')
+                if poison.count():
                     poison.first.click()
                 else:
                     continue

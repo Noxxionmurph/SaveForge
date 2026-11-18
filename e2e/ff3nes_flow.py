@@ -29,6 +29,7 @@ with sync_playwright() as p:
     page.get_by_role('spinbutton', name='Strength', exact=True).press('Tab')
     page.get_by_role('spinbutton', name='Ninja (locked)', exact=True).fill('30')
     page.get_by_role('spinbutton', name='Ninja (locked)', exact=True).press('Tab')
+    assert page.inner_text('label.ff-job:has(input[aria-label="Ninja (locked)"]) small') == 'Eureka crystal'   # the job board says where it comes from
     page.select_option('label.field:has-text("Right hand") select', label='King Sword')
     page.click('.ff-member >> nth=2')
     page.click('button.ff-toggle:has-text("Sleep")')

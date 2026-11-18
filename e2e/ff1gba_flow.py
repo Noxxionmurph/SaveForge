@@ -23,11 +23,15 @@ with sync_playwright() as p:
     assert page.get_attribute('html', 'data-console') == 'gba'
     assert page.locator('.ff-member').all_inner_texts()[0].startswith('Brom')
     assert page.locator('.ff-member img.job-sprite.prj[src*="ff1/pr/jobs/"]').count() == 4
+    assert page.locator('.ff-member .hp-bar:not(.mp)').count() == 4                 # an HP bar for everyone, MP bars for the casters
+    assert page.locator('.ff-member .hp-bar.mp').count() == 2
+    assert page.inner_text('.ff-classes .ff-class-tile.now') == 'Warrior'
     # party: rename, level, poison, swap the weapon, teach a spell
     page.fill('input[aria-label="Name"]', 'Kieron')
     page.get_by_role('spinbutton', name='Level', exact=True).fill('40')
     page.get_by_role('spinbutton', name='Level', exact=True).press('Tab')
-    page.select_option('label.field:has-text("Ailment") select', label='Poison')
+    page.click('h4:text-is("Ailment") + .ff-toggles button.ff-toggle:text-is("Poison")')
+    assert page.locator('h4:text-is("Ailment") + .ff-toggles button[aria-pressed="true"]').all_inner_texts() == ['Poison']
     page.select_option('label.field:has-text("Weapon") select', label='Excalibur (can’t equip)')
     page.click('.ff-member >> nth=3')
     page.click('.ff-magic-row .ff-toggle:text-is("Fire")')        # forget Fire, then level 1 has room for Focus
