@@ -321,6 +321,11 @@ tables straight out of its data banks into `tables.ts`.
   level 1-16), and gear in both hands, head, body and arms (an empty hand is the "Hands" item, 0x30).
 - **Items**: gil (+0x4A8), and the bag: 150 item ids at +0x4B4 and their counts at +0x54A. Key items are in the bag
   too; they're shown but not changed.
+- **Key terms** (`keyterms.ts`, shared with the Famicom and WonderSwan pages): 16 places at +0x6CC holding the terms
+  learned (1-15: Wild Rose, Mythril, Dreadnought, Palamecia, Airship, Goddess's Bell, Sunfire, Mysidia, Ultima Tome,
+  Dragoons, Wyverns, Cyclone, Jade Passage, Mask, Ekmet Teloess), the most recent first and zeros after, and how many
+  there are at +0x6FF. The editor adds a term at the front, as the game does, and closes up the gap when one is taken
+  away.
 - The party window shows each character's Pixel Remaster battle sprite, as every Final Fantasy I-III page does (SaveForge-assets).
 
 ## Final Fantasy II (Famicom)
@@ -341,6 +346,8 @@ and were checked by loading edited saves in the game (Neo Demiforce's English pa
   Attack, defense and the rest are worked out again at the start of every battle.
 - **Items**: gil (u24 at +0x1C, up to 9,999,999), and the bag: 32 places of one item each at +0x60. Key items are bits
   at +0x1A/+0x1B (item k is bit k); they're shown but not changed.
+- **Key terms**: 16 places at +0x80, each 0xF0 plus the term's number (the same 15 as Dawn of Souls, in the same order),
+  the most recent first and zeros after. Learning one moves the others down a place (0E/9597).
 - The party window shows each character's Pixel Remaster battle sprite, as every Final Fantasy I-III page does (SaveForge-assets).
 
 ## Final Fantasy III (Famicom)
@@ -441,6 +448,8 @@ writing values into a save and reading them back in the game's menus.
   pairs for the eight weapon skills (+0x40: unarmed, knife, sword, staff, axe, spear, bow, shield) and the 16 spells
   (+0x50).
 - **Items**: gil (u32 at +0x422) and the bag: 63 places of one item each at +0x426.
+- **Key terms**: 16 places at +0x5A6 holding term numbers 1-15 (Dawn of Souls' order), the most recent first, and how
+  many there are at +0x5D3. The Wrd menu lists them.
 
 ## Final Fantasy (WonderSwan Color)
 
@@ -476,6 +485,8 @@ for what the PSP added come from the game's BOOT.BIN.
   (the bytes from +0x24 on, plus 0xF40). The Soul of Rebirth files after them aren't opened yet.
 - **Characters**: nine records of 0x7E bytes from file + 0x22, laid out like Dawn of Souls' (Leon is the ninth); the
   fourth place is named at +0x4A2. Gil at +0x498 (up to 9,999,999), bag ids at +0x4A4 and counts at +0x53A.
+- **Key terms**: 48 places at +0x6FC with how many there are at +0x74F, like Dawn of Souls' list, but the PSP has 45
+  terms and the names of the 30 it added aren't known yet, so they aren't editable.
 - **New items**: the Destroy and Revive tomes and spells, and the Soul of Rebirth weapons (Ragnarok, Artemis Bow,
   Gigantaxe, Staff of Light, Dragon Claws, Gungnir, Dancing Dagger, Abel's Lance, Longinus).
 - The party window shows each character's Pixel Remaster battle sprite, as every Final Fantasy I-III page does (SaveForge-assets).
@@ -604,14 +615,17 @@ Every screen explains itself in plain words, so keep it that way when you add a 
   build. The Orbs (2026-11-18): Earth and Wind lit in a file the game had just saved show on its load screen and in
   the menu, and saving again changes nothing else. Final Fantasy II was checked the same way with a real save (a renamed Firion with 9,999 HP, 99 Strength, sword
   skill 16 and Excalibur, Fire at 16, Ultima learned in place of Toad, Maria's Ribbon, Josef's MP, gil, Elixirs and a
-  Holy Tome all show in its menus). Its key terms, the fourth party member and the record of who has left aren't
-  editable, and progress towards the next skill or spell level is left as it is.
+  Holy Tome all show in its menus). Its fourth party member and the record of who has left aren't editable, and
+  progress towards the next skill or spell level is left as it is. Key terms (2026-11-18): a copy of the real save given
+  Mask and without Dreadnought shows exactly that list, most recent first, in the Key Terms menu.
 
 - Final Fantasy II (Famicom) was checked in the real game (Neo Demiforce's English patch 1.0 in cynes, 2026-11-06): a
   save made there opens, and an edited copy (renamed Firion and Maria, 777 HP, new stats, weapon skills 2-9, Fire and
   Cure 5 learned, Excalibur and a Bronze Helm, 9,999,999 gil, Potions, an Elixir and the Masamune in the bag) loads with
   every edit showing in the menus. Only the English patch's letters are known, so Japanese names show as "?"; key
-  terms, key items and the record of who has left aren't editable.
+  items and the record of who has left aren't editable. Key terms (2026-11-18): a slot the editor gave Wild Rose,
+  Dreadnought and Mask loads with them in place, and the game's Say list shows them, most recent first (the patch
+  calls Dreadnought "Warship").
 
 - Final Fantasy III (Famicom) was checked in the real game (Japanese ROM with an English patch, in cynes, 2026-11-16):
   an edited copy (names with ' and ! and the squeezed letters, stats, MP, spells, gear, arrows, gil, capacity, the
@@ -650,7 +664,8 @@ Every screen explains itself in plain words, so keep it that way when you add a 
   core, 2026-11-06): a save made there opens, and edited copies (renamed Firion and Maria, 999 and 777 HP, 99 Strength,
   sword skill 9, Fire at 5, a Mythril Sword, 9,999,999 and 123,456 gil, Elixirs, Potions and a Ribbon in the bag) load
   with the edits showing in the menus. Only checked with saves made in the emulator. The fourth party member, key items
-  and the map aren't editable.
+  and the map aren't editable. Key terms (2026-11-18): a save given Dreadnought, Mask and Ekmet Teloess and without Wild
+  Rose shows exactly that list in the Wrd menu, and the game's own quick save afterwards keeps it.
 
 - Final Fantasy (WonderSwan Color) was checked in the real game (Japanese ROM in Mednafen's WonderSwan core,
   2026-11-06): a save made there opens, and an edited copy (a renamed character promoted to Knight at level 50 with

@@ -1,14 +1,16 @@
 // Final Fantasy II (Dawn of Souls, GBA) save model: the three Final Fantasy II files of the cartridge (see
 // ../ff1gba/layout.ts). Every field reads and writes the save's bytes directly; serialize() redoes the checksum of each
 // file that loaded. Offsets were found by comparing a real save with the game's menus, and checked by loading edited
-// saves in mGBA: names, HP and MP, stats, weapon skills, spells, gear, the fourth party member, gil and the bag all show
-// up in the game, and the game works out attack, defence and the like again from the gear.
+// saves in mGBA: names, HP and MP, stats, weapon skills, spells, gear, the fourth party member, gil, the bag and the
+// key terms all show up in the game, and the game works out attack, defence and the like again from the gear.
 
 import { clamp } from '../bytes.ts';
 import { FF2, FILE_COUNT, fileBase, fileOk, writeChecksum } from '../ff1gba/layout.ts';
 import type { ChangeGroup, EditableSave, SummaryLine } from '../types.ts';
+import { KEY_TERMS, KeyTermList, type KeyTermFormat } from './keyterms.ts';
 import { ITEMS, SPELLS } from './tables.ts';
 
+export { KEY_TERMS };
 export const MAX_GIL = 999_999;
 export const MAX_HP = 9_999;
 export const MAX_MP = 999;
@@ -57,6 +59,8 @@ export interface Ff2Format {
   /** Offsets inside a file. */
   chars: number; charStride: number; charCount: number;
   guest: number; steps: number; gil: number; playTime: number; bagIds: number; bagCounts: number;
+  /** The key terms (see keyterms.ts); null where they aren't known yet. */
+  keyTerms: KeyTermFormat | null;
   maxGil: number;
   items: readonly string[];
   spells: readonly string[];
@@ -74,6 +78,7 @@ export const GBA_FORMAT: Ff2Format = {
   fileOk: (d, i) => fileOk(d, FF2, i),
   writeChecksum: (d, at) => writeChecksum(d, at, FF2.size),
   chars: 0x22, charStride: 0x80, charCount: 8, guest: 0x4b2, steps: 0x4a4, gil: 0x4a8, playTime: 0x4ac, bagIds: 0x4b4, bagCounts: 0x54a,
+  keyTerms: { at: 0x6cc, add: 0, count: 0x6ff },
   maxGil: MAX_GIL, items: ITEMS, spells: SPELLS, kind: KIND, gearChoices: GEAR_CHOICES, portraits: PORTRAITS,
 };
 /** Offsets inside a character record. */
@@ -211,6 +216,8 @@ export class Ff2GbaFile {
   readonly number: number;
   readonly used: boolean;
   readonly characters: Ff2GbaChar[];
+  /** The key terms learned, where the format knows them. */
+  readonly keyTerms: KeyTermList | null;
   private readonly f: Ff2Format;
   constructor(d: Uint8Array, index: number, f: Ff2Format = GBA_FORMAT) {
     this.d = d;
@@ -219,6 +226,7 @@ export class Ff2GbaFile {
     this.at = f.fileAt(index);
     this.used = f.fileOk(d, index);
     this.characters = Array.from({ length: f.charCount }, (_, i) => new Ff2GbaChar(d, this.at, i, f));
+    this.keyTerms = f.keyTerms ? new KeyTermList(d, this.at, f.keyTerms) : null;
   }
   /** Firion, Maria and Guy, and whoever is travelling with them in the fourth place (if anyone). */
   get party(): Ff2GbaChar[] {
@@ -329,6 +337,11 @@ export class Ff2GbaSave implements EditableSave {
         if (x !== y) items.push(`${name}: ${x} → ${y}`);
       });
       add(`${prefix}Items`, items);
+      const [ka, kb] = [fa.keyTerms, fb.keyTerms];
+      if (ka && kb) {
+        add(`${prefix}Key terms`, KEY_TERMS.flatMap((n, k) => (ka.knows(k + 1) === kb.knows(k + 1) ? []
+          : [`${n}: ${ka.knows(k + 1) ? 'learned' : 'forgotten'}`])));
+      }
     }
     return groups;
   }

@@ -20,6 +20,7 @@ export function buildFf2NesSample(): Uint8Array {
   const gil = 18_350;
   d[at + 0x1c] = gil & 0xff; d[at + 0x1d] = (gil >> 8) & 0xff; d[at + 0x1e] = gil >> 16;
   d[at + 0x1a] = 0x02; // the Ring
+  d[at + 0x80] = 0xf2; d[at + 0x81] = 0xf1; // key terms: Mythril, learned after Wild Rose
   [0x10, 0x10, 0x10, 0x11, 0x12, 0x17, 0x19, 0x9c].forEach((id, i) => { d[at + 0x60 + i] = id; });
   PARTY.forEach((m, i) => {
     const o = at + 0x100 + i * 0x40, o2 = at + 0x200 + i * 0x40;

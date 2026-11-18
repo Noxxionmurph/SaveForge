@@ -2,7 +2,8 @@
 // moved, so the Famicom model (../ff2nes/save.ts) does the work through WSC_FORMAT. Each slot holds nine character
 // records of 0x74 bytes from slot + 6, one per character (Firion, Maria, Guy, Minwu, Josef, Gordon, Leila, Ricard,
 // Leon); the editor shows the three heroes. Gil is a 32-bit number at slot + 0x422 and the bag 63 single items at
-// slot + 0x426 (the 64th place is the menu's bin). Item ids are the Famicom ones. Checked in the game (see README).
+// slot + 0x426 (the 64th place is the menu's bin), the key terms at slot + 0x5A6 with how many there are at
+// slot + 0x5D3. Item ids are the Famicom ones. Checked in the game (see README).
 
 import { Ff2NesSave, NES_FORMAT, type Ff2SlotFormat } from '../ff2nes/save.ts';
 import { SLOT_COUNT, slotBase, slotOk, writeChecksum } from './layout.ts';
@@ -26,6 +27,7 @@ export const WSC_FORMAT: Ff2SlotFormat = {
   spellByte: (id) => id, spellId: (v) => (v >= 1 && v <= 40 ? v : 0),
   emptyHandByte: 0x30,
   gil: 0x422, gilBytes: 4, keyItems: null, bag: 0x426, bagSize: BAG_SIZE,
+  keyTerms: { at: 0x5a6, add: 0, count: 0x5d3 },
   weaponSkills: WEAPON_SKILLS,
   name: { length: NAME_LENGTH, decode: decodeName, encode: encodeName, asSaved },
 };

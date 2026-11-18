@@ -23,6 +23,7 @@ export function buildFf2WscSample(): Uint8Array {
   const gil = 18_350;
   for (let i = 0; i < 4; i++) d[at + 0x422 + i] = (gil >> (8 * i)) & 0xff;
   [0x10, 0x10, 0x10, 0x11, 0x12, 0x17, 0x19, 0x9c].forEach((id, i) => { d[at + 0x426 + i] = id; });
+  d[at + 0x5a6] = 2; d[at + 0x5a7] = 1; d[at + 0x5d3] = 2; // key terms: Mythril, learned after Wild Rose
   PARTY.forEach((m, i) => {
     const o = at + 6 + i * RECORD;
     d[o] = m.id;

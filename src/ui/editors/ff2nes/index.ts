@@ -1,7 +1,7 @@
 // Final Fantasy II (Famicom) editor UI. Loaded lazily by the shell via the game module.
 
 import {
-  EMPTY_HAND, GEAR_CHOICES, GEAR_SLOTS, GUEST_NAMES, ITEMS, KIND, MAX_GIL, MAX_HP, MAX_MP, MAX_SKILL, MAX_STAT,
+  EMPTY_HAND, GEAR_CHOICES, GEAR_SLOTS, GUEST_NAMES, ITEMS, KEY_TERMS, KIND, MAX_GIL, MAX_HP, MAX_MP, MAX_SKILL, MAX_STAT,
   SPELLS, SPELL_SLOTS, STAT_KEYS, STAT_LABELS,
   type Ff2NesChar, type Ff2NesSave, type Ff2NesSlot,
 } from '../../../core/ff2nes/save.ts';
@@ -9,7 +9,7 @@ import type { MountEditor } from '../../../core/types.ts';
 import { clear, field, h, numberInput, selectInput, textInput } from '../../dom.ts';
 import { ff2NesPortrait, ff2WscPortrait } from '../../sprites.ts';
 import { tabBar, tabPanel } from '../../tabs.ts';
-import { ffHpBar, ffMpBar } from '../ff/menu.ts';
+import { ffHpBar, ffMpBar, ffToggle } from '../ff/menu.ts';
 
 type Tab = 'party' | 'items';
 const TABS: { id: Tab; label: string }[] = [
@@ -166,7 +166,15 @@ const makeEditor = (portrait: (who: string) => HTMLImageElement): MountEditor<Ff
       keys.length
         ? h('section', { class: 'card' }, h('h3', {}, 'Key items'), h('p', {}, keys.join(', ')),
           h('p', { class: 'field-hint' }, 'Key items move the story on, so they can’t be changed here.'))
-        : h('span'));
+        : h('span'),
+      keyTermsCard());
+  }
+
+  function keyTermsCard(): Node {
+    return h('section', { class: 'card' },
+      h('h3', {}, 'Key terms'),
+      h('div', { class: 'ff-toggles' }, KEY_TERMS.map((n, k) => ffToggle(n, slot.keyTerms.knows(k + 1), (on) => { slot.keyTerms.set(k + 1, on); markDirty(); }))),
+      h('p', { class: 'field-hint' }, 'Asking people about key terms moves the story on, so learning one early can skip ahead or leave a quest stuck.'));
   }
 
   render();

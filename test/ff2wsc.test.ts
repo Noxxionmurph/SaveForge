@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
-import { EMPTY_HAND, ITEMS, SPELLS, SPELL_SLOTS } from '../src/core/ff2nes/save.ts';
+import { EMPTY_HAND, ITEMS, KEY_TERMS, SPELLS, SPELL_SLOTS } from '../src/core/ff2nes/save.ts';
 import { SAVE_SIZE, detectFf2Wsc, slotBase, slotOk } from '../src/core/ff2wsc/layout.ts';
 import { buildFf2WscSample } from '../src/core/ff2wsc/sample.ts';
 import { BAG_SIZE, Ff2WscSave, WEAPON_SKILLS } from '../src/core/ff2wsc/save.ts';
@@ -68,6 +68,27 @@ test('edits read back and the slot checksum is redone', () => {
   assert.ok(changes.includes('Name: Firion → Kieron'), changes.join('\n'));
   assert.ok(changes.includes('Sword skill: 5 → 16'));
   assert.ok(changes.includes('Gil: 18,350 → 9,999,999'));
+});
+
+test('key terms: a new one goes first, a forgotten one closes up, and the count follows', () => {
+  const s = new Ff2WscSave(buildFf2WscSample());
+  const slot = s.usedSlots[0];
+  const at = slotBase(0);
+  assert.deepEqual(slot.keyTerms.learned.map((k) => KEY_TERMS[k - 1]), ['Mythril', 'Wild Rose']);
+  slot.keyTerms.set(KEY_TERMS.indexOf('Ekmet Teloess') + 1, true);
+  slot.keyTerms.set(KEY_TERMS.indexOf('Wild Rose') + 1, false);
+  const out = s.serialize();
+  assert.ok(slotOk(out, 0));
+  assert.deepEqual([...out.subarray(at + 0x5a6, at + 0x5a9)], [15, 2, 0]);
+  assert.equal(out[at + 0x5d3], 2);
+  const changes = new Ff2WscSave(out).describeChanges(new Ff2WscSave(buildFf2WscSample())).flatMap((g) => g.lines);
+  assert.ok(changes.includes('Ekmet Teloess: learned') && changes.includes('Wild Rose: forgotten'), changes.join('\n'));
+  KEY_TERMS.forEach((_, k) => slot.keyTerms.set(k + 1, true));
+  assert.equal(s.serialize()[at + 0x5d3], 15);
+  KEY_TERMS.forEach((_, k) => slot.keyTerms.set(k + 1, false));
+  const none = s.serialize();
+  assert.deepEqual([...none.subarray(at + 0x5a6, at + 0x5b6)], new Array(16).fill(0));
+  assert.equal(none[at + 0x5d3], 0);
 });
 
 // Real saves are never committed. FF2_WSC_SAVE=<file> runs this on one.

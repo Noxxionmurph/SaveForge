@@ -6,12 +6,13 @@
 // Item ids are the same as Dawn of Souls (GBA), so the names come from that version's table.
 
 import { clamp } from '../bytes.ts';
+import { KEY_TERMS, KeyTermList, type KeyTermFormat } from '../ff2gba/keyterms.ts';
 import { ITEMS as GBA_ITEMS, SPELLS } from '../ff2gba/tables.ts';
 import type { ChangeGroup, EditableSave, SummaryLine } from '../types.ts';
 import { SLOT_COUNT, slotBase, slotOk, writeChecksum } from './layout.ts';
 import { NAME_LENGTH, asSaved, decodeName, encodeName } from './text.ts';
 
-export { SPELLS };
+export { KEY_TERMS, SPELLS };
 export const MAX_GIL = 9_999_999;
 export const MAX_HP = 9_999;
 export const MAX_MP = 999;
@@ -76,6 +77,7 @@ export interface Ff2SlotFormat {
   emptyHandByte: number;
   gil: number; gilBytes: 3 | 4;
   keyItems: number | null;
+  keyTerms: KeyTermFormat;
   bag: number; bagSize: number;
   weaponSkills: readonly string[];
   name: { length: number; decode(b: Uint8Array): string; encode(t: string): Uint8Array; asSaved(t: string): string };
@@ -93,6 +95,7 @@ export const NES_FORMAT: Ff2SlotFormat = {
   spellByte: (id) => id + 0x97, spellId: (v) => (v >= 0x98 && v <= 0xbf ? v - 0x97 : 0),
   emptyHandByte: 0,
   gil: 0x1c, gilBytes: 3, keyItems: 0x1a, bag: 0x60, bagSize: BAG_SIZE,
+  keyTerms: { at: 0x80, add: 0xf0, count: null },
   weaponSkills: WEAPON_SKILLS,
   name: { length: NAME_LENGTH, decode: decodeName, encode: encodeName, asSaved },
 };
@@ -210,6 +213,8 @@ export class Ff2NesSlot {
   readonly number: number;
   readonly used: boolean;
   readonly characters: Ff2NesChar[];
+  /** The key terms learned (see ../ff2gba/keyterms.ts). */
+  readonly keyTerms: KeyTermList;
   constructor(d: Uint8Array, index: number, f: Ff2SlotFormat = NES_FORMAT) {
     this.d = d;
     this.f = f;
@@ -217,6 +222,7 @@ export class Ff2NesSlot {
     this.at = f.slotAt(index);
     this.used = f.slotOk(d, index);
     this.characters = Array.from({ length: f.charCount }, (_, i) => new Ff2NesChar(d, this.at, i, f));
+    this.keyTerms = new KeyTermList(d, this.at, f.keyTerms);
   }
   get party(): Ff2NesChar[] { return this.characters.filter((c) => c.present); }
   get gil() { return readLe(this.d, this.at + this.f.gil, this.f.gilBytes); }
@@ -307,6 +313,8 @@ export class Ff2NesSave implements EditableSave {
         if (x !== y) items.push(`${itemName(id)}: ${x} → ${y}`);
       }
       add(`${prefix}Items`, items);
+      add(`${prefix}Key terms`, KEY_TERMS.flatMap((n, k) => (sa.keyTerms.knows(k + 1) === sb.keyTerms.knows(k + 1) ? []
+        : [`${n}: ${sa.keyTerms.knows(k + 1) ? 'learned' : 'forgotten'}`])));
     }
     return groups;
   }
