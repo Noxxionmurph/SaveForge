@@ -26,7 +26,7 @@ def run(browser, mode):
     page.on('request', lambda r: local_art.append(r.url) if r.url.startswith(BASE) and '/assets/' in r.url else None)
     page.route(ART + '**', art_ok if mode == 'ok' else art_gone)
     page.goto(BASE)
-    page.wait_for_selector('.sample-row button')
+    page.wait_for_selector('.sample-row select')
     page.wait_for_function("[...document.querySelectorAll('img.tile-icon')].length === 14")
     page.wait_for_timeout(600)
     tiles = page.evaluate("[...document.querySelectorAll('img.tile-icon')].map(i => [i.hidden, i.complete, i.naturalWidth])")
@@ -40,7 +40,7 @@ def run(browser, mode):
         assert all(not hid and nw > 0 for hid, comp, nw in tiles), tiles
     else:
         assert all(hid for hid, comp, nw in tiles), tiles
-    page.click('.sample-row button'); page.wait_for_selector('.tabs')
+    page.select_option('.sample-row select >> nth=0', label='Pokémon Yellow'); page.wait_for_selector('.tabs')
     assert page.locator('.editor-head ~ footer.site-foot').count() == 1 or page.locator('footer.site-foot').count() == 1
     assert 'Not affiliated' in page.locator('footer.site-foot').inner_text()
     tabs = page.locator('button.tab')

@@ -22,7 +22,7 @@ with sync_playwright() as p:
     page.on('pageerror', lambda e: errors.append(f'pageerror: {e}'))
     page.on('console', lambda m: errors.append(f'console.{m.type}: {m.text}') if m.type == 'error' and 'ERR_TUNNEL' not in m.text else None)
     page.goto(BASE)
-    page.click('.sample-btn:text-is("Final Fantasy I · NES")')
+    page.select_option('.sample-row select >> nth=1', label='Final Fantasy I')
     page.wait_for_selector('.ff-party')
     assert page.get_attribute('html', 'data-console') == 'nes'
     assert page.locator('.ff-member').all_inner_texts()[0].startswith('Brom')

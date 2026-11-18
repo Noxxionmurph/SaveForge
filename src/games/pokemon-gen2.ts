@@ -24,6 +24,8 @@ export default defineGame<Gen2Save>({
     names: GAMES,
     note: "Gold and Silver saves are identical inside, so the file can't say which one yours is. Your choice only changes the name shown here; the editor works the same either way.",
   }),
+  sampleGame: 'Pokémon Gold / Silver',
+  sample: async () => ({ fileName: 'sample-gen2.sav', data: (await import('../core/gen2/sample.ts')).buildSampleSave('gs') }),
   load: async (data) => new (await import('../core/gen2/save.ts')).Gen2Save(data, 'gs'),
   loadEditor: async () => (await import('../ui/editors/gen2/index.ts')).mountGen2Editor,
 });

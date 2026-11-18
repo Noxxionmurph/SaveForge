@@ -18,6 +18,7 @@ export default defineGame<Gen2Save>({
   icons: { 'Pokémon Crystal': 'sprites/pokemon/245.png' },
   theme: 'gbc',
   detect: (data) => (detectGen2(data) === 'crystal' ? { confidence: 'certain' } : null),
+  sampleGame: 'Pokémon Crystal',
   sample: async () => ({ fileName: 'sample-crystal.sav', data: (await import('../core/gen2/sample.ts')).buildSampleSave('crystal') }),
   load: async (data) => new (await import('../core/gen2/save.ts')).Gen2Save(data, 'crystal'),
   loadEditor: async () => (await import('../ui/editors/gen2/index.ts')).mountGen2Editor,

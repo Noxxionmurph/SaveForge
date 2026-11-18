@@ -314,19 +314,28 @@ function worksWith(): HTMLElement {
         h('strong', {}, family), seriesRange(family, games))));
 }
 
-/** "No save handy?" and a button per game that can build a sample, named in full so they stay clear across series. */
+const sampleName = (g: GameModule): string => g.sampleGame ?? g.games.join(' / ');
+
+/** "No save handy?" and one dropdown per series listing every game that can build a sample. */
 function sampleRow(): HTMLElement | null {
-  const withSample = GAMES.filter((g) => g.sample);
-  if (!withSample.length) return null;
+  const picks = [...gamesByFamily()].flatMap(([family, games]) => {
+    // Alphabetical, so Final Fantasy's ports group by game number whatever order the modules load in.
+    const withSample = games.filter((g) => g.sample).sort((a, b) => sampleName(a).localeCompare(sampleName(b)));
+    if (!withSample.length) return [];
+    const select = h('select', {
+      onchange: () => {
+        const game = withSample[select.selectedIndex - 1];
+        select.selectedIndex = 0;
+        if (game) void openSample(game);
+      },
+    }, h('option', { value: '' }, 'Choose a game'),
+    withSample.map((g) => h('option', { value: g.id }, sampleName(g))));
+    return [h('label', { class: 'sample-pick' }, h('span', {}, family), select)];
+  });
+  if (!picks.length) return null;
   return h('div', { class: 'sample-row' },
     h('span', { class: 'muted' }, 'No save handy? Try a sample:'),
-    h('div', { class: 'sample-buttons' }, withSample.map((g) => {
-      const name = g.sampleGame ?? g.games.join(' / ');
-      const button = h('button', { class: 'sample-btn', onclick: () => void openSample(g) }, name);
-      const color = g.colors?.[name] ?? g.colors?.[g.games[0]];
-      if (color) button.style.setProperty('--label', color);
-      return button;
-    })));
+    h('div', { class: 'sample-selects' }, picks));
 }
 
 /** What the Save button lists, from the first game that offers an example. Same window as the real review list. */

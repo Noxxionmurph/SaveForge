@@ -65,9 +65,9 @@ SCAN = """async () => {
 }"""
 
 GAMES = [
-    ('Yellow', lambda page: page.click('.sample-row button:has-text("Yellow")')),
-    ('Crystal', lambda page: page.click('.sample-row button:has-text("Crystal")')),
-    ('Emerald', lambda page: page.click('.sample-row button:has-text("Emerald")')),
+    ('Yellow', lambda page: page.select_option('.sample-row select >> nth=0', label='Pokémon Yellow')),
+    ('Crystal', lambda page: page.select_option('.sample-row select >> nth=0', label='Pokémon Crystal')),
+    ('Emerald', lambda page: page.select_option('.sample-row select >> nth=0', label='Pokémon Emerald')),
     ('Red/Blue', lambda page: open_file(page, 'rb.sav')),
     ('Gold', lambda page: open_file(page, 'gold.sav')),
     ('Ruby', lambda page: open_file(page, 'ruby.sav')),

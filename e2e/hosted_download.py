@@ -19,7 +19,7 @@ with sync_playwright() as p:
     page.goto(BASE)
     page.wait_for_selector('.slot')
     assert page.title() == 'SaveForge', page.title()
-    page.click('.sample-row button')
+    page.select_option('.sample-row select >> nth=0', label='Pokémon Yellow')
     page.wait_for_selector('.tabs')
     assert 'zip' in page.inner_text('.dl-note').lower(), page.inner_text('.editor-head')
     # edit -> dirty; Close must now go through the in-page dialog (confirm() is dead)

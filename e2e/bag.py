@@ -8,7 +8,7 @@ with sync_playwright() as p:
     page = ctx.new_page()
     page.on('pageerror', lambda e: errors.append(str(e)))
     page.goto(BASE)
-    page.click('.sample-row button'); page.wait_for_selector('.tabs')
+    page.select_option('.sample-row select >> nth=0', label='Pokémon Yellow'); page.wait_for_selector('.tabs')
     page.click('button.tab:has-text("Bag")')
     rows = page.locator('.item-row')
     n = rows.count()

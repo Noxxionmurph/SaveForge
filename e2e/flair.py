@@ -31,7 +31,7 @@ with sync_playwright() as p:
     page = ctx.new_page()
     page.on('pageerror', lambda e: errors.append(f'pageerror: {e}'))
     page.on('console', lambda m: errors.append(f'console.{m.type}: {m.text}') if m.type == 'error' and 'ERR_TUNNEL' not in m.text else None)
-    page.goto(BASE); page.click('.sample-row button'); page.wait_for_selector('.tabs')
+    page.goto(BASE); page.select_option('.sample-row select >> nth=0', label='Pokémon Yellow'); page.wait_for_selector('.tabs')
 
     # the trainer card types itself in the first time it is drawn: an animation only, so the text is there at once
     assert page.locator('.tcard.boot').count() == 1
@@ -254,7 +254,7 @@ with sync_playwright() as p:
     # people who ask for less motion get no type-in
     ctx = b.new_context(viewport={'width': 390, 'height': 844}, reduced_motion='reduce')
     page = ctx.new_page()
-    page.goto(BASE); page.click('.sample-row button'); page.wait_for_selector('.tabs')
+    page.goto(BASE); page.select_option('.sample-row select >> nth=0', label='Pokémon Yellow'); page.wait_for_selector('.tabs')
     assert page.eval_on_selector('.tcard-name', 'e => getComputedStyle(e).animationName') == 'none'
     ctx.close()
 
@@ -262,7 +262,7 @@ with sync_playwright() as p:
     ctx = b.new_context(viewport={'width': 390, 'height': 844})
     page = ctx.new_page()
     page.on('pageerror', lambda e: errors.append(f'pageerror: {e}'))
-    page.goto(f'{BASE}?console=gba'); page.click('.sample-row button'); page.wait_for_selector('.tabs')
+    page.goto(f'{BASE}?console=gba'); page.select_option('.sample-row select >> nth=0', label='Pokémon Yellow'); page.wait_for_selector('.tabs')
     assert page.evaluate("getComputedStyle(document.querySelector('.lcd.tcard')).boxShadow").count('inset') == 2
     assert 'repeating-linear-gradient' in page.evaluate("getComputedStyle(document.querySelector('.lcd.tcard')).backgroundImage")
     ctx.close()
@@ -281,7 +281,7 @@ with sync_playwright() as p:
     page.on('pageerror', lambda e: errors.append(f'pageerror: {e}'))
     page.goto(BASE); page.wait_for_selector('.slot')
     pixel_only(page, '.demo .lcd.review-list', 'welcome page')
-    page.click('.sample-row button'); page.wait_for_selector('.tabs')
+    page.select_option('.sample-row select >> nth=0', label='Pokémon Yellow'); page.wait_for_selector('.tabs')
     pixel_only(page, '.lcd.tcard', 'trainer card'); pixel_only(page, '.lcd.options-window', 'options window')
     page.click('button.tab:has-text("Party")'); page.wait_for_selector('.pikachu-card')
     pixel_only(page, '.lcd.friend', 'friendship and mood windows')
@@ -300,7 +300,7 @@ with sync_playwright() as p:
     ctx = b.new_context(viewport={'width': 1100, 'height': 800})
     page = ctx.new_page()
     page.on('pageerror', lambda e: errors.append(f'pageerror: {e}'))
-    page.goto(BASE); page.click('.sample-row button'); page.wait_for_selector('.tabs')
+    page.goto(BASE); page.select_option('.sample-row select >> nth=0', label='Pokémon Yellow'); page.wait_for_selector('.tabs')
     assert not page.locator('.badge-caption').is_visible()
     for i, n in enumerate(['Boulder', 'Cascade', 'Thunder', 'Rainbow', 'Soul', 'Marsh', 'Volcano', 'Earth']):
         name = page.locator('.badge-btn').nth(i).locator('.badge-name')

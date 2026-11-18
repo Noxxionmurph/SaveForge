@@ -10,7 +10,7 @@ with sync_playwright() as p:
         page = ctx.new_page()
         page.on('pageerror', lambda e: errors.append(f'pageerror: {e}'))
         page.on('console', lambda m: errors.append(f'console.{m.type}: {m.text}') if m.type == 'error' and 'ERR_TUNNEL' not in m.text else None)
-        page.goto(BASE); page.click('.sample-row button'); page.wait_for_selector('.tabs'); page.click('button.tab:has-text("Party")')
+        page.goto(BASE); page.select_option('.sample-row select >> nth=0', label='Pokémon Yellow'); page.wait_for_selector('.tabs'); page.click('button.tab:has-text("Party")')
         card = page.locator('section.pikachu-card')
         assert card.count() == 1
         react = card.locator('.pika-preview')

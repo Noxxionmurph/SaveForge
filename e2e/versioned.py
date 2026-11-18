@@ -27,7 +27,7 @@ with sync_playwright() as p:
     page.route(ART + '**', art_ok)
     page.goto(BASE)
     page.wait_for_selector('.slot')
-    page.click('.sample-row button'); page.wait_for_selector('.tabs')          # a file opens and an editor module is loaded on the way
+    page.select_option('.sample-row select >> nth=0', label='Pokémon Yellow'); page.wait_for_selector('.tabs')          # a file opens and an editor module is loaded on the way
     page.click('button.tab:has-text("Party")'); page.wait_for_selector('.mon-main')
     hrefs = page.eval_on_selector_all('link[rel=stylesheet]', 'els => els.map(e => e.getAttribute("href"))')
     scripts = page.eval_on_selector_all('script[src]', 'els => els.map(e => e.getAttribute("src"))')

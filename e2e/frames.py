@@ -81,8 +81,8 @@ with sync_playwright() as p:
         page.goto(BASE); page.wait_for_selector('.slot')
         assert page.evaluate("document.documentElement.dataset.frame") is None, 'the landing page has no frame'
         for sample, fset, count in (('Crystal', 'gen2', 8), ('Emerald', 'emerald', 20)):
-            page.wait_for_selector('.sample-row button')
-            page.click(f'.sample-row button:has-text("{sample}")'); page.wait_for_selector('.tabs'); page.wait_for_timeout(300)
+            page.wait_for_selector('.sample-row select')
+            page.select_option('.sample-row select >> nth=0', label=f'Pokémon {sample}'); page.wait_for_selector('.tabs'); page.wait_for_timeout(300)
             framed(page, fset, 1, f'{sample} {width}')
             # dark mode: the windows stay dark (Gen 3's too: the frame is drawn in a dark version of its colours), light: Gen 3's are the game's white
             paper = page.evaluate(f"getComputedStyle(document.querySelector('{BIG}')).getPropertyValue('--lcd').trim().toLowerCase()")
@@ -110,7 +110,7 @@ with sync_playwright() as p:
             page.goto(BASE); page.wait_for_selector('.slot')
             assert page.evaluate("document.documentElement.dataset.frame") is None, 'the frame is gone on the landing page'
         # Gen 1 has no FRAME setting, so it keeps the plain two-line frame
-        page.click('.sample-row button:has-text("Yellow")'); page.wait_for_selector('.tabs')
+        page.select_option('.sample-row select >> nth=0', label='Pokémon Yellow'); page.wait_for_selector('.tabs')
         s = page.evaluate(STATE, BIG)
         assert s['frame'] is None and all(w['key'] is None and not w['bg'].startswith('url(') for w in s['wins']), s
         if width == 390:

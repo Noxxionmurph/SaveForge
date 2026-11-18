@@ -23,7 +23,7 @@ with sync_playwright() as p:
     page.goto(BASE)
     assert page.locator('.tile:has-text("Crystal") img.tile-icon').count() == 1, 'Crystal tile'
 
-    page.click('.sample-row button:has-text("Crystal")')
+    page.select_option('.sample-row select >> nth=0', label='Pokémon Crystal')
     page.wait_for_selector('.tabs')
     assert page.get_attribute('html', 'data-console') == 'gbc'
     assert page.inner_text('.game-name') == 'Pokémon Crystal', page.inner_text('.game-name')

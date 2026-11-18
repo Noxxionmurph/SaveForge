@@ -18,6 +18,8 @@ export default defineGame<Ff2NesSave>({
     if (found === 'ok') return { confidence: 'certain' };
     return found ? { confidence: 'likely', note: "It looks like a Final Fantasy II save, but it fails the game's save check." } : null;
   },
+  sampleGame: 'Final Fantasy II',
+  sample: async () => ({ fileName: 'sample-ff-2-nes.sav', data: (await import('../core/ff2nes/sample.ts')).buildFf2NesSample() }),
   load: async (data) => new (await import('../core/ff2nes/save.ts')).Ff2NesSave(data),
   loadEditor: async () => (await import('../ui/editors/ff2nes/index.ts')).mountFf2NesEditor,
 });

@@ -22,7 +22,7 @@ def check(p, name, size):
     page.on('pageerror', lambda e: errors.append(f'{name} pageerror: {e}'))
     page.on('console', lambda m: errors.append(f'{name} console.{m.type}: {m.text}') if m.type == 'error' and 'ERR_TUNNEL' not in m.text else None)
     page.goto(BASE)
-    page.click('.sample-row button'); page.wait_for_selector('.tabs')
+    page.select_option('.sample-row select >> nth=0', label='Pokémon Yellow'); page.wait_for_selector('.tabs')
 
     # the guidance line under the tabs (only the Pokédex has one) is as wide as the content under it (it used to stop at about 690px)
     page.click('button.tab:has-text("Pokédex")')

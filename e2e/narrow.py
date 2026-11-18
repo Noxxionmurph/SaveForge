@@ -22,7 +22,7 @@ with sync_playwright() as p:
         page.on('pageerror', lambda e: errors.append(f'pageerror: {e}'))
         page.goto(BASE); page.wait_for_selector('.slot')
         seen = {'landing page': page.evaluate(SCAN)}
-        page.click('.sample-row button'); page.wait_for_selector('.tabs'); page.wait_for_timeout(1200)
+        page.select_option('.sample-row select >> nth=0', label='Pokémon Yellow'); page.wait_for_selector('.tabs'); page.wait_for_timeout(1200)
         for tab in ('Trainer', 'Bag', 'Party', 'Boxes', 'Pokédex'):
             page.click(f'button.tab:has-text("{tab}")'); page.wait_for_timeout(250); seen[tab] = page.evaluate(SCAN)
         page.click('button.tab:has-text("Party")'); page.locator('.mon-main').nth(0).click(); page.wait_for_selector('dialog.mon-dialog[open]'); page.wait_for_timeout(250)

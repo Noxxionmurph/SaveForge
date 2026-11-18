@@ -326,11 +326,9 @@ a { color: inherit; text-underline-offset: 3px; }
 }
 .series-chip:hover { border-color: var(--button); }
 .sample-row { display: grid; gap: 6px; margin-top: 14px; }
-.sample-buttons { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }
-/* one per line on phones, so a long title never leaves one button alone on a row of its own */
-@media (max-width: 520px) { .sample-buttons { grid-template-columns: 1fr; } }
-.sample-btn { display: flex; align-items: center; gap: 10px; text-align: left; padding-left: 0; overflow: hidden; }
-.sample-btn::before { content: ''; align-self: stretch; width: 6px; margin-block: -6px -3px; background: var(--label, var(--line-strong)); }
+.sample-selects { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px; }
+.sample-pick { display: grid; gap: 2px; font-size: 0.875rem; }
+.sample-pick select { width: 100%; }
 .sample-note {
   margin-top: 6px; padding: 8px 12px; max-width: 36em; font-size: 0.875rem;
   background: var(--surface); border: 1px dashed var(--line-strong); border-radius: 6px;
