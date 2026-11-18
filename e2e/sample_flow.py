@@ -20,7 +20,7 @@ with sync_playwright() as p:
     assert selects.count() == 2, 'one dropdown per series'
     opts = lambda i: selects.nth(i).locator('option').all_inner_texts()
     assert opts(0) == ['Choose a game', 'Pokémon Crystal', 'Pokémon Emerald', 'Pokémon FireRed / LeafGreen', 'Pokémon Gold / Silver', 'Pokémon Ruby / Sapphire', 'Pokémon Yellow'], opts(0)
-    assert len(opts(1)) == 12 and 'Final Fantasy III · DS' in opts(1), opts(1)
+    assert opts(1) == ['Choose a game', 'Final Fantasy I', 'Final Fantasy II', 'Final Fantasy III'], opts(1)
     # the first screen names each series and links to its shelf
     chips = page.locator('.works-with .series-chip')
     assert chips.all_inner_texts() == ['Pokémon Red to Emerald', 'Final Fantasy'], chips.all_inner_texts()

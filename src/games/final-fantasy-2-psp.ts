@@ -14,8 +14,6 @@ export default defineGame<Ff2PspSave>({
   colors: { 'Final Fantasy II Anniversary Edition': '#6a3b9e' },
   theme: 'psp',
   detect: (data) => (openFf2Psp(data) ? { confidence: 'certain' } : null),
-  sampleGame: 'Final Fantasy II · PSP',
-  sample: async () => ({ fileName: 'sample-ff-2-psp.sav', data: (await import('../core/ff2psp/sample.ts')).buildFf2PspSample() }),
   load: async (data) => new (await import('../core/ff2psp/save.ts')).Ff2PspSave(data),
   loadEditor: async () => (await import('../ui/editors/ff2gba/index.ts')).mountFf2PspEditor,
 });

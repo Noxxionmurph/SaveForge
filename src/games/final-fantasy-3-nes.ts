@@ -17,7 +17,7 @@ export default defineGame<Ff3NesSave>({
     if (found === 'ok') return { confidence: 'certain' };
     return found ? { confidence: 'likely', note: "It looks like a Final Fantasy III save, but it fails the game's save check." } : null;
   },
-  sampleGame: 'Final Fantasy III · Famicom',
+  sampleGame: 'Final Fantasy III',
   sample: async () => ({ fileName: 'sample-ff-3-nes.sav', data: (await import('../core/ff3nes/sample.ts')).buildFf3NesSample() }),
   load: async (data) => new (await import('../core/ff3nes/save.ts')).Ff3NesSave(data),
   loadEditor: async () => (await import('../ui/editors/ff3nes/index.ts')).mountFf3NesEditor,

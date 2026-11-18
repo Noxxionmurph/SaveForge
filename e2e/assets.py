@@ -107,7 +107,7 @@ GAMES = [
     ('Gold', lambda page: open_file(page, 'gold.sav')),
     ('Ruby', lambda page: open_file(page, 'ruby.sav')),
     ('Emerald', lambda page: open_file(page, 'emerald.sav')),
-    ('Final Fantasy (NES)', lambda page: page.select_option('.sample-row select >> nth=1', label='Final Fantasy I · NES')),
+    ('Final Fantasy (NES)', lambda page: page.select_option('.sample-row select >> nth=1', label='Final Fantasy I')),
     ('Final Fantasy (GBA)', lambda page: open_file(page, 'dawn-of-souls.sav')),
     ('Final Fantasy III (Famicom)', lambda page: open_file(page, 'ff3-famicom.sav')),
     ('Final Fantasy III (Nintendo DS)', lambda page: open_file(page, 'ff3-ds.sav')),

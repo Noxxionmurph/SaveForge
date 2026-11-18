@@ -18,8 +18,6 @@ export default defineGame<Ff2WscSave>({
     if (found === 'ok') return { confidence: 'certain' };
     return found ? { confidence: 'likely', note: "It looks like a Final Fantasy II save, but it fails the game's save check." } : null;
   },
-  sampleGame: 'Final Fantasy II · WonderSwan',
-  sample: async () => ({ fileName: 'sample-ff-2-wsc.sav', data: (await import('../core/ff2wsc/sample.ts')).buildFf2WscSample() }),
   load: async (data) => new (await import('../core/ff2wsc/save.ts')).Ff2WscSave(data),
   loadEditor: async () => (await import('../ui/editors/ff2nes/index.ts')).mountFf2WscEditor,
 });

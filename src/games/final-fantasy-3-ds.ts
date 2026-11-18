@@ -18,8 +18,6 @@ export default defineGame<Ff3DsSave>({
     if (found === 'ok') return { confidence: 'certain' };
     return found ? { confidence: 'likely', note: "It looks like a Final Fantasy III save, but it fails the game's save check." } : null;
   },
-  sampleGame: 'Final Fantasy III · DS',
-  sample: async () => ({ fileName: 'sample-ff-3-ds.sav', data: (await import('../core/ff3ds/sample.ts')).buildFf3DsSample() }),
   load: async (data) => new (await import('../core/ff3ds/save.ts')).Ff3DsSave(data),
   loadEditor: async () => (await import('../ui/editors/ff3ds/index.ts')).mountFf3DsEditor,
 });
