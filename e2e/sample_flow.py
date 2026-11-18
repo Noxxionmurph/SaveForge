@@ -16,8 +16,11 @@ with sync_playwright() as p:
     page.goto(BASE)
 
     # --- sample save from the landing page
-    buttons = page.locator('.sample-row button')
-    assert [buttons.nth(i).inner_text() for i in range(buttons.count())] == ['Pokémon Yellow', 'Pokémon Crystal', 'Pokémon Emerald', 'Final Fantasy I · NES']
+    selects = page.locator('.sample-row select')
+    assert selects.count() == 2, 'one dropdown per series'
+    opts = lambda i: selects.nth(i).locator('option').all_inner_texts()
+    assert opts(0) == ['Choose a game', 'Pokémon Crystal', 'Pokémon Emerald', 'Pokémon FireRed / LeafGreen', 'Pokémon Gold / Silver', 'Pokémon Ruby / Sapphire', 'Pokémon Yellow'], opts(0)
+    assert len(opts(1)) == 12 and 'Final Fantasy III · DS' in opts(1), opts(1)
     # the first screen names each series and links to its shelf
     chips = page.locator('.works-with .series-chip')
     assert chips.all_inner_texts() == ['Pokémon Red to Emerald', 'Final Fantasy'], chips.all_inner_texts()
@@ -32,7 +35,7 @@ with sync_playwright() as p:
     edits = page.locator('.family-edits').all_inner_texts()
     assert len(edits) == 4 and edits[3].startswith('In Final Fantasy you can edit: ') and edits[1].startswith('In Gold, Silver and Crystal you can edit: Everything from Red, Blue and Yellow'), edits
     assert edits[2].startswith('In Ruby, Sapphire, FireRed, LeafGreen and Emerald you can edit: Everything from the Game Boy games'), edits
-    page.click('.sample-row button >> nth=0')
+    page.select_option('.sample-row select >> nth=0', label='Pokémon Yellow')
     page.wait_for_selector('.tabs')
     assert 'made-up sample' in page.inner_text('.sample-note')
     assert page.inner_text('.file-line').startswith('sample-yellow.sav')

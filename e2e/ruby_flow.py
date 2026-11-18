@@ -54,7 +54,7 @@ with sync_playwright() as p:
 
     # --- the landing page's Emerald sample is the same made-up save
     page.goto(BASE)
-    page.click('.sample-row button:has-text("Emerald")')
+    page.select_option('.sample-row select >> nth=0', label='Pokémon Emerald')
     page.wait_for_selector('.tabs')
     assert page.get_attribute('html', 'data-console') == 'gba'
     assert page.inner_text('.game-name') == 'Pokémon Emerald'

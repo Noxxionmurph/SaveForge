@@ -19,6 +19,8 @@ export default defineGame<Ff1WscSave>({
     if (files.some((i) => fileOk(data, i))) return { confidence: 'certain' };
     return { confidence: 'likely', note: 'It looks like a Final Fantasy (WonderSwan Color) save, but none of its files pass the game’s save check.' };
   },
+  sampleGame: 'Final Fantasy I · WonderSwan',
+  sample: async () => ({ fileName: 'sample-ff-wsc.sav', data: (await import('../core/ff1wsc/sample.ts')).buildFf1WscSample() }),
   load: async (data) => new (await import('../core/ff1wsc/save.ts')).Ff1WscSave(data),
   loadEditor: async () => (await import('../ui/editors/ff1wsc/index.ts')).mountFf1WscEditor,
 });

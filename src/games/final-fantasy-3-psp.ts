@@ -14,6 +14,8 @@ export default defineGame<Ff3PspSave>({
   colors: { 'Final Fantasy III (PSP)': '#2f5d8a' },
   theme: 'psp',
   detect: (data) => (openFf3Psp(data) ? { confidence: 'certain' } : null),
+  sampleGame: 'Final Fantasy III · PSP',
+  sample: async () => ({ fileName: 'sample-ff-3-psp.sav', data: (await import('../core/ff3psp/sample.ts')).buildFf3PspSample() }),
   load: async (data) => new (await import('../core/ff3psp/save.ts')).Ff3PspSave(data),
   loadEditor: async () => (await import('../ui/editors/ff3ds/index.ts')).mountFf3PspEditor,
 });

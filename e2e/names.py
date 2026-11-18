@@ -18,7 +18,7 @@ with sync_playwright() as p:
         page = ctx.new_page()
         page.on('pageerror', lambda e: errors.append(f'pageerror: {e}'))
         page.on('console', lambda m: errors.append(f'console.{m.type}: {m.text}') if m.type == 'error' and 'ERR_TUNNEL' not in m.text else None)
-        page.goto(BASE); page.click('.sample-row button'); page.wait_for_selector('.tabs')
+        page.goto(BASE); page.select_option('.sample-row select >> nth=0', label='Pokémon Yellow'); page.wait_for_selector('.tabs')
         tn = name_input(page, 'Trainer name')
         assert warn_of(page, 'Trainer name') == ''
         tn.fill('Zoë@'); assert warn_of(page, 'Trainer name') == 'The game can’t show “ë” “@”. They are saved as “?”.', warn_of(page, 'Trainer name')

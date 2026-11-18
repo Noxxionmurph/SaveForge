@@ -5,7 +5,7 @@ SP = sys.argv[1]
 errors = []
 
 def open_sample(page):
-    page.goto(BASE); page.click('.sample-row button'); page.wait_for_selector('.tabs')
+    page.goto(BASE); page.select_option('.sample-row select >> nth=0', label='Pokémon Yellow'); page.wait_for_selector('.tabs')
     assert page.locator('.pikachu-card').count() == 0   # the card lives under the party list
     page.click('button.tab:has-text("Party")')
 

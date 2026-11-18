@@ -25,7 +25,7 @@ def mouse_drag(page, src, dst, hold_at_end=0, steps=10):
 
 def open_sample(page):
     page.goto(BASE)
-    page.click('.sample-row button')
+    page.select_option('.sample-row select >> nth=0', label='Pokémon Yellow')
     page.wait_for_selector('.tabs')
     page.click('button.tab:has-text("Boxes")')
     page.wait_for_selector('.box-grid')

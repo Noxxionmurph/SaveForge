@@ -100,14 +100,14 @@ def open_file(page, name):
 
 
 GAMES = [
-    ('Yellow', lambda page: page.click('.sample-row button:has-text("Yellow")')),
-    ('Crystal', lambda page: page.click('.sample-row button:has-text("Crystal")')),
-    ('Emerald', lambda page: page.click('.sample-row button:has-text("Emerald")')),
+    ('Yellow', lambda page: page.select_option('.sample-row select >> nth=0', label='Pokémon Yellow')),
+    ('Crystal', lambda page: page.select_option('.sample-row select >> nth=0', label='Pokémon Crystal')),
+    ('Emerald', lambda page: page.select_option('.sample-row select >> nth=0', label='Pokémon Emerald')),
     ('Red/Blue', lambda page: open_file(page, 'rb.sav')),
     ('Gold', lambda page: open_file(page, 'gold.sav')),
     ('Ruby', lambda page: open_file(page, 'ruby.sav')),
     ('Emerald', lambda page: open_file(page, 'emerald.sav')),
-    ('Final Fantasy (NES)', lambda page: page.click('.sample-row button:has-text("Final Fantasy")')),
+    ('Final Fantasy (NES)', lambda page: page.select_option('.sample-row select >> nth=1', label='Final Fantasy I · NES')),
     ('Final Fantasy (GBA)', lambda page: open_file(page, 'dawn-of-souls.sav')),
     ('Final Fantasy III (Famicom)', lambda page: open_file(page, 'ff3-famicom.sav')),
     ('Final Fantasy III (Nintendo DS)', lambda page: open_file(page, 'ff3-ds.sav')),

@@ -20,6 +20,8 @@ export default defineGame<Ff1GbaSave>({
     if (found === 'ok') return { confidence: 'certain' };
     return found ? { confidence: 'likely', note: 'It looks like a Dawn of Souls save, but none of its files pass the game’s save check.' } : null;
   },
+  sampleGame: 'Final Fantasy I · GBA',
+  sample: async () => ({ fileName: 'sample-ff-gba.sav', data: (await import('../core/ff1gba/sample.ts')).buildFf1GbaSample() }),
   load: async (data) => new (await import('../core/ff1gba/save.ts')).Ff1GbaSave(data),
   loadEditor: async () => (await import('../ui/editors/ff1gba/index.ts')).mountFf1GbaEditor,
 });

@@ -13,6 +13,8 @@ export default defineGame<Ff2GbaSave>({
   icons: { 'Final Fantasy II': 'sprites/ff2/pr/firion.png' },
   theme: 'gba',
   detect: (data) => (detectDawnOfSouls(data, 2) === 'ok' ? { confidence: 'certain' } : null),
+  sampleGame: 'Final Fantasy II · GBA',
+  sample: async () => ({ fileName: 'sample-ff-2-gba.sav', data: (await import('../core/ff2gba/sample.ts')).buildFf2GbaSample() }),
   load: async (data) => new (await import('../core/ff2gba/save.ts')).Ff2GbaSave(data),
   loadEditor: async () => (await import('../ui/editors/ff2gba/index.ts')).mountFf2GbaEditor,
 });
