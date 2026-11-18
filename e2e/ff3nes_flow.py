@@ -48,14 +48,17 @@ with sync_playwright() as p:
     page.locator('label.field:has-text("Gil") input').press('Tab')
     page.focus('label.field:has-text("Place 12") select')  # the bag pickers fill their options when touched
     page.select_option('label.field:has-text("Place 12") select', label='Ribbon')
-    page.click('button.ff-toggle:has-text("Eureka")')
+    page.click('button.ff-toggle:has-text("Eureka:")')
+    page.click('button.ff-toggle:text-is("Horn")')
+    assert page.get_attribute('button.ff-toggle:text-is("Horn")', 'aria-pressed') == 'true'
+    assert page.inner_text('label.field:has-text("Place 10") span.muted') == 'Horn', 'given in the first empty place'
     page.screenshot(path=f'{SP}/ff3nes-items.png', full_page=True)
     page.click('.save-btn')
     page.wait_for_selector('dialog.review-dialog[open]')
     review = page.inner_text('dialog.review-dialog')
     for line in ('Name: Luneth → Kieron', 'Strength: 18 → 60', 'Ninja job level: 1 → 30', 'Right hand: Long Sword → King Sword',
                  'Learned Sleep', 'Learned Ice 2', 'Job: Monk → Black Wizard', 'Headband: 0 → 1', 'Gil: 4,820 → 5,000,000',
-                 'Ribbon: 0 → 1', 'Jobs from crystals: Wind crystal → Eureka crystal'):
+                 'Ribbon: 0 → 1', 'Jobs from crystals: Wind crystal → Eureka crystal', 'Horn: added'):
         assert line in review, (line, review)
     with page.expect_download() as dl:
         page.click('dialog.review-dialog button.primary')
@@ -72,12 +75,12 @@ const c = f.party[0];
 console.log(JSON.stringify({ size: d.length, ok: slotOk(d, 0), name: c.name, str: c.stat('str'), ninja: c.jobLevel(21),
   king: c.gear(0) === ITEMS.indexOf('King Sword'), ice2: f.party[2].knows(ITEMS.indexOf('Ice 2')),
   sleep: f.party[2].knows(ITEMS.indexOf('Sleep')), gil: f.gil, ribbon: f.count(ITEMS.indexOf('Ribbon')), eureka: f.crystal(4),
-  ingus: f.party[3].jobName, kenpo: f.count(ITEMS.indexOf('Kenpo')) }));
+  ingus: f.party[3].jobName, kenpo: f.count(ITEMS.indexOf('Kenpo')), horn: f.hasKeyItem(ITEMS.indexOf('Horn')) }));
 """
 out = json.loads(subprocess.run(['node', '--input-type=module', '-e', check, f'{SP}/ff3nes-edited.sav'], cwd=REPO,
                                 capture_output=True, text=True, check=True).stdout)
 assert out['size'] == 8192 and out['ok'], out
 assert out['name'] == 'Kieron' and out['str'] == 60 and out['ninja'] == 30 and out['king'], out
 assert out['ice2'] and out['sleep'] and out['gil'] == 5000000 and out['ribbon'] == 1 and out['eureka'], out
-assert out['ingus'] == 'Black Wizard' and out['kenpo'] == 1, out
+assert out['ingus'] == 'Black Wizard' and out['kenpo'] == 1 and out['horn'], out
 print('ERRORS:', '; '.join(errors) or 'none')

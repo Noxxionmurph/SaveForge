@@ -1,7 +1,7 @@
 // Final Fantasy III save model, for the Nintendo DS (the three save slots and the Quicksave, see layout.ts) and the PSP
 // (one game a save, see ../ff3psp/save.ts), which keeps the same records in other places. Character fields read and
-// write the bytes directly; the bag and the Fat Chocobo are lists, written back by serialize(), which on the DS also
-// redoes each slot's check value. Offsets were worked out from real saves and checked in the game. On the DS:
+// write the bytes directly; the bag, the key items and the Fat Chocobo are lists, written back by serialize(), which on
+// the DS also redoes each slot's check value. Offsets were worked out from real saves and checked in the game. On the DS:
 //
 //   +0x70 + 0x2EC n  character n (0-3): +0x01 name (13 bytes), +0x0E which of the four heroes, +0x0F level, +0x10 exp,
 //                    +0x18 HP, +0x1C max HP, +0x20 [current, max] MP of spell levels 1-8, +0x30 the current MP again
@@ -98,7 +98,13 @@ for (const [id, name] of ITEMS) INFO.set(id, { name, kind: 'item', type: 0, jobs
 for (const [id, name, type, jobs, bonus] of WEAPONS) INFO.set(id, { name, kind: 'weapon', type, jobs, bonus, level: 0 });
 for (const [id, name, type, jobs, bonus] of ARMOR) INFO.set(id, { name, kind: 'armor', type, jobs, bonus, level: 0 });
 for (const [id, name, type, level, jobs] of SPELLS) INFO.set(id, { name, kind: 'spell', type, jobs, bonus: NO_BONUS, level });
-for (const [id, name] of KEY_ITEMS) INFO.set(id, { name, kind: 'key', type: 0, jobs: 0, bonus: NO_BONUS, level: 0 });
+/** The game names both of Sara's Pendants alike; its descriptions tell them apart. */
+const KEY_NAMES: Record<number, string> = { 5214: "Sara's Pendant (broken)", 5215: "Sara's Pendant (restored)" };
+for (const [id, name] of KEY_ITEMS) INFO.set(id, { name: KEY_NAMES[id] ?? name, kind: 'key', type: 0, jobs: 0, bonus: NO_BONUS, level: 0 });
+/** Key items, in the game's order: the story's, then the cards for mastering each job (job level 99, as real saves
+ * show) and the Metal Card for beating the Iron Giant. */
+export const STORY_ITEMS: readonly number[] = KEY_ITEMS.filter(([, n]) => !n.endsWith(' Card')).map(([id]) => id);
+export const JOB_CARDS: readonly number[] = KEY_ITEMS.filter(([, n]) => n.endsWith(' Card')).map(([id]) => id);
 
 export const SCHOOLS = ['White', 'Black', 'Summon'] as const;
 export const itemName = (id: number) => INFO.get(id)?.name ?? `Item ${id}`;
@@ -342,7 +348,8 @@ export class Ff3DsSlot {
   /** The bag and what the Fat Chocobo keeps, in the game's order; serialize() writes them back if they changed. */
   readonly bag: BagItem[];
   readonly chocobo: BagItem[];
-  readonly keyItems: readonly number[];
+  /** The key items, in the order the game got them. */
+  private readonly keys: BagItem[];
   private readonly was: string;
   constructor(d: Uint8Array, index: number, layout: Ff3Layout = DS_LAYOUT) {
     this.d = d;
@@ -352,9 +359,9 @@ export class Ff3DsSlot {
     this.used = layout.slotOk(d, index);
     this.party = Array.from({ length: 4 }, (_, i) => new Ff3DsChar(d, this.at, i, layout));
     this.bag = this.used ? this.readList(0, BAG_SIZE) : [];
-    this.keyItems = this.used ? this.readList(BAG_SIZE, KEY_SIZE).map((x) => x.id) : [];
+    this.keys = this.used ? this.readList(BAG_SIZE, KEY_SIZE) : [];
     this.chocobo = this.used ? this.readList(BAG_SIZE + KEY_SIZE, CHOCOBO_SIZE) : [];
-    this.was = JSON.stringify([this.bag, this.chocobo]);
+    this.was = JSON.stringify([this.bag, this.keys, this.chocobo]);
   }
   get isQuicksave() { return this.L === DS_LAYOUT && this.index === QUICKSAVE; }
   /** "Slot 1"-"Slot 3" as the DS's Load screen numbers them, or "Quicksave" (what Continue on the title screen loads). */
@@ -393,11 +400,25 @@ export class Ff3DsSlot {
       le.setU16(out, o + 2, list[i] ? clamp(list[i].count, 1, MAX_COUNT) : 0);
     }
   }
-  /** Write the bag and the Fat Chocobo's list into `out`, if either changed. */
+  /** Write the bag, the key items and the Fat Chocobo's list into `out`, if any of them changed. */
   writeLists(out: Uint8Array) {
-    if (JSON.stringify([this.bag, this.chocobo]) === this.was) return;
+    if (JSON.stringify([this.bag, this.keys, this.chocobo]) === this.was) return;
     this.writeList(out, 0, BAG_SIZE, this.bag);
+    this.writeList(out, BAG_SIZE, KEY_SIZE, this.keys);
     this.writeList(out, BAG_SIZE + KEY_SIZE, CHOCOBO_SIZE, this.chocobo);
+  }
+
+  get keyItems(): number[] { return this.keys.map((x) => x.id); }
+  hasKeyItem(id: number) { return this.keys.some((x) => x.id === id); }
+  /** Give or take a key item. One of each, added at the end of the list as the game does. */
+  setKeyItem(id: number, on: boolean): boolean {
+    if (INFO.get(id)?.kind !== 'key') return false;
+    const i = this.keys.findIndex((x) => x.id === id);
+    if (!on) { if (i >= 0) this.keys.splice(i, 1); return true; }
+    if (i >= 0) return true;
+    if (this.keys.length >= KEY_SIZE) return false;
+    this.keys.push({ id, count: 1 });
+    return true;
   }
 
   count(id: number) { return this.bag.filter((x) => x.id === id).reduce((n, x) => n + x.count, 0); }
@@ -491,6 +512,9 @@ export class Ff3DsSave implements EditableSave {
       for (const id of new Set([...sb.chocobo, ...sa.chocobo].map((x) => x.id))) {
         const x = sb.stored(id), y = sa.stored(id);
         if (x !== y) items.push(`Fat Chocobo, ${itemName(id)}: ${x} → ${y}`);
+      }
+      for (const id of [...STORY_ITEMS, ...JOB_CARDS]) {
+        if (sb.hasKeyItem(id) !== sa.hasKeyItem(id)) items.push(`${itemName(id)}: ${sa.hasKeyItem(id) ? 'added' : 'removed'}`);
       }
       JOBS.forEach((n, j) => { if (sb.jobOpen(j) !== sa.jobOpen(j)) items.push(sa.jobOpen(j) ? `Job menu: ${n} added` : `Job menu: ${n} taken out`); });
       add(`${prefix}Items and jobs`, items);

@@ -1,8 +1,8 @@
 // Final Fantasy III (Nintendo DS and PSP) editor UI. Loaded lazily by the shell via the game modules.
 
 import {
-  AILMENTS, BAG_SIZE, CHOCOBO_SIZE, GEAR_SLOTS, JOBS, KO, MAX_COUNT, MAX_EXP, MAX_GIL, MAX_HP, MAX_LEVEL, STAT_KEYS, STAT_LABELS,
-  STORABLE, SPELLS_PER_LEVEL, canEquip, isArrow, isSpell, itemName, spellLevel, spellSchool, spellsOfLevel,
+  AILMENTS, BAG_SIZE, CHOCOBO_SIZE, GEAR_SLOTS, JOBS, JOB_CARDS, KO, MAX_COUNT, MAX_EXP, MAX_GIL, MAX_HP, MAX_LEVEL, STAT_KEYS,
+  STAT_LABELS, STORABLE, STORY_ITEMS, SPELLS_PER_LEVEL, canEquip, isArrow, isSpell, itemName, spellLevel, spellSchool, spellsOfLevel,
   type Ff3DsChar, type Ff3DsSave, type Ff3DsSlot,
 } from '../../../core/ff3ds/save.ts';
 import type { Ff3PspSave } from '../../../core/ff3psp/save.ts';
@@ -210,7 +210,8 @@ const ff3Editor = (gearHint: string): MountEditor<Ff3DsSave> => (container, s, h
     const list = (title: string, items: typeof slot.bag, slots: number) => itemList({
       title, items, slots, maxCount: MAX_COUNT, options: STORE_OPTIONS, nameOf: label, unique: true, markDirty,
     });
-    const keys = slot.keyItems.map(itemName);
+    const keyToggles = (ids: readonly number[]) =>
+      h('div', { class: 'ff-toggles' }, ids.map((id) => toggle(itemName(id), slot.hasKeyItem(id), (on) => slot.setKeyItem(id, on))));
     return h('div', { class: 'stack' },
       h('section', { class: 'card' },
         h('h3', {}, 'Gil'),
@@ -224,10 +225,14 @@ const ff3Editor = (gearHint: string): MountEditor<Ff3DsSave> => (container, s, h
         h('h3', {}, 'Jobs'),
         h('p', { class: 'muted card-note' }, 'What the Job menu offers. The Freelancer is always there.'),
         h('div', { class: 'ff-toggles' }, JOBS.map((n, j) => (j ? toggle(n, slot.jobOpen(j), (on) => slot.setJobOpen(j, on), render) : null)))),
-      keys.length
-        ? h('section', { class: 'card' }, h('h3', {}, 'Key items'), h('p', {}, keys.join(', ')),
-          h('p', { class: 'field-hint' }, 'Key items move the story on, so they can’t be changed here.'))
-        : h('span'));
+      h('section', { class: 'card' },
+        h('h3', {}, 'Key items'),
+        keyToggles(STORY_ITEMS),
+        h('p', { class: 'field-hint' }, 'Key items move the story on when you use or hand them over, so adding one can skip ahead or leave a quest stuck.')),
+      h('section', { class: 'card' },
+        h('h3', {}, 'Job cards'),
+        h('p', { class: 'muted card-note' }, 'A card for each job mastered (job level 99), and the Metal Card for beating the Iron Giant.'),
+        keyToggles(JOB_CARDS)));
   }
 
   render();

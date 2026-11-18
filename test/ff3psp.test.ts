@@ -99,6 +99,7 @@ test('edits are encrypted back and PARAM.SFO gets the new hash', () => {
   slot.setJobOpen(job('Ninja'), true);
   slot.setJobOpen(job('Thief'), false);
   slot.add(id('Elixir'), 99);
+  slot.setKeyItem(5205, true);
   const out = s.serialize();
   const plain = decryptSavedata(entry(out, 'PLAYDATA.BIN'), KEY);
   assert.ok(plausiblePlain(plain));
@@ -112,10 +113,12 @@ test('edits are encrypted back and PARAM.SFO gets the new hash', () => {
   assert.equal(a.party[0].level, 99);
   assert.equal(a.party[1].jobName, 'White Mage');
   assert.equal(a.count(id('Elixir')), 99);
+  assert.ok(a.hasKeyItem(5205));
   const changes = again.describeChanges(new Ff3PspSave(zip)).flatMap((g) => g.lines);
   assert.ok(changes.includes('Name: Luneth → Kieron'));
   assert.ok(changes.includes('Now Poison'));
   assert.ok(changes.includes('Job menu: Ninja added'));
+  assert.ok(changes.includes('Eureka Key: added'));
   assert.notDeepEqual(sfoFileHash(entry(out, 'PARAM.SFO'), 'PLAYDATA.BIN'), sfoFileHash(entry(zip, 'PARAM.SFO'), 'PLAYDATA.BIN'));
 });
 

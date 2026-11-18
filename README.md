@@ -362,8 +362,11 @@ stats as `growth()`, and a slot the game saves reads back unchanged.
   every job's [level, progress] (+0x10 + 2 x job). The game copies the current job's pair between +0x10 and the list
   when the job changes, and works attack, defense and gear bonuses out again when it next checks gear.
 - **Items**: capacity (+0x1B), gil (u24 at +0x1C, up to 9,999,999), the crystals' jobs (+0x21 bits 0-4), and the bag:
-  32 item ids at +0xC0 with counts at +0xE0. The Fat Chocobo keeps a count for every item id at +0x300. Key items are
-  in the bag; they're shown but not changed.
+  32 item ids at +0xC0 with counts at +0xE0. The Fat Chocobo keeps a count for every item id at +0x300.
+- **Key items**: the story's items (Horn, Eye, Time Gear, Eureka Key, the four Fangs, Lute, Sylx Key: 0x9A-0xA3, the
+  ones the Fat Chocobo won't take, 3D/B4C8) sit in the bag, one each, and can be given or taken away; a new one goes in
+  the first empty place, as the game's events do (3B/B6F4). Magic Keys, Carrots and Midget Bread next to them are
+  bought, stacked and stored like any item, so they're ordinary bag items.
 - **Jobs**: stats and max MP follow from job and level (the job's starting numbers plus its level-up table), so a new
   level or job sets them the way the game would. Changing job works like the Job menu, minus the capacity points: the
   old job's level is put by and the new one's comes back, and gear the new job can't use goes to the bag. Jobs are open
@@ -392,6 +395,9 @@ what, the stat, MP and experience tables and each job's battle commands are read
 - **Items**: (u16 item, u16 count) pairs from +0xC28: the bag (384), key items (64) and the Fat Chocobo (384); spells
   can be carried too. Gil at +0x1928, the Job menu at +0x2578 and the jobs it offers from +0x28D9. The lists are written
   back only when they change, since the game leaves empty leftovers in them.
+- **Key items**: one of each, in the order they were got; a new one goes at the end of the list, as in the game's Key
+  Items screen. The story's 17 (the game names two of them Sara's Pendant: the broken one and the restored one), then a
+  card for each job mastered (job level 99, as real saves show) and the Metal Card for beating the Iron Giant.
 - **Jobs**: stats and max MP follow from job and level, and the game works them out again on the Status screen and when
   a battle starts, so the editor shows them rather than letting you type them. Changing job works like the Job menu:
   the old job is remembered, the new job's commands come in, and gear it can't use goes to the bag; the battles of
@@ -412,8 +418,9 @@ checked in PPSSPP (`scripts/psprun.sh`).
   0x20 and "EUREKA data" at 0x28, and no check value of its own (the savedata hash covers the file).
 - **Party**: four records of 0x2F8 bytes from 0xCB0: the name at +1 (25 bytes of UTF-8), then the DS's fields 0x0C
   bytes further on. Empty hands are 0xFFFF and an empty spell place is -999 (the DS uses 0xFF9D and 0).
-- **Items**: the DS's (item, count) lists from 0x1890: the bag (384), key items (64) and the Fat Chocobo (384). Gil at
-  0x25B8, play time in seconds at 0x25BC, the Job menu at 0xD4 and the jobs it offers from 0x435.
+- **Items**: the DS's (item, count) lists from 0x1890: the bag (384), key items (64, the DS's, job cards too) and the
+  Fat Chocobo (384). Gil at 0x25B8, play time in seconds at 0x25BC, the Job menu at 0xD4 and the jobs it offers from
+  0x435.
 - **Names**: up to eight characters. The game takes them from the PSP's own keyboard; the editor writes the DS's set
   (letters, numbers and ! ' ( ) - = ; + : , . / ?, no spaces), which the game's font is sure to have, and shows any
   other name as saved.
@@ -611,17 +618,21 @@ Every screen explains itself in plain words, so keep it that way when you add a 
   bag) loads with every edit showing in the menus; after a job change in the game's own Job menu the stats and MP are
   the ones the editor works out, and a slot the game then saves opens with nothing changed. Only checked with saves
   made in the emulator. Only the English patch's letters are known, so Japanese names show as "?". The map, story
-  flags, key items and guests aren't editable, and attack and defense on the status screen only catch up with new
-  gear after the next battle, as in the game.
+  flags and guests aren't editable, and attack and defense on the status screen only catch up with new gear after the
+  next battle, as in the game. Key items (2026-11-18): a save given the Horn, the Fire Fang, the Lute, Carrots, Magic
+  Keys and Midget Bread by the editor shows them all in the Item menu; the game's own save of it reads back the same,
+  and taking two away again and adding the Earth Fang shows that too.
 
 - Final Fantasy III (Nintendo DS) was checked in the real game (US ROM in DeSmuME, 2026-11-17): a real save opens and
   saves back byte for byte, and an edited copy (an Onion Knight renamed and made a Warrior with a Longsword and a
   Mythril Shield, another at level 50, a spell forgotten, gil, Ribbons, Ninja taken out of the Job menu; in the
   Quicksave a new name, gil and a knocked-out character) loads from LOAD GAME and from CONTINUE with every edit showing
   in the menus, and the stats and MP the Status screen works out are the editor's. Each ailment was checked with its
-  cure item. Only checked with one real save, and only the US version is recognised. The map, story, key items and
-  Mognet letters aren't editable, attack and defense catch up with new gear after the next battle, and job levels can
-  be set but their progress towards the next one is left as it is.
+  cure item. Only checked with one real save, and only the US version is recognised. The map, story and Mognet
+  letters aren't editable, attack and defense catch up with new gear after the next battle, and job levels can be set
+  but their progress towards the next one is left as it is. Key items (2026-11-18): the real save's Quicksave given the
+  Nepto Eye, the Wheel of Time and the Metal Card and without the Black Belt Card shows exactly that list on the Key
+  Items screen, and the game's own Quicksave of it reads back with nothing changed.
 
 - Final Fantasy III (PSP) was checked in the real game (the US release in PPSSPP's headless build, `scripts/psprun.sh`,
   2026-11-17): three real saves decrypt, open and save back byte for byte, and the editor's PARAM.SFO hash for
@@ -631,8 +642,9 @@ Every screen explains itself in plain words, so keep it that way when you add a 
   Equipment, Magic and Status screens, which work attack and defense out again straight away; a save the game then
   wrote opens in the editor with them intact.
   PPSSPP doesn't check PARAM.SFO, so a real PSP's check of the redone SFO hashes is untested, and only the US release
-  is recognised. The map, story and key items aren't editable, and job levels can be set but their progress towards
-  the next one is left as it is.
+  is recognised. The map and story aren't editable, and job levels can be set but their progress towards the next one
+  is left as it is. Key items (2026-11-18): a real save given the Nepto Eye and the Metal Card and without Noah's Lute
+  shows exactly that list on the Key Items screen.
 
 - Final Fantasy II (WonderSwan Color) was checked in the real game (English patch T-Eng 0.10 in Mednafen's WonderSwan
   core, 2026-11-06): a save made there opens, and edited copies (renamed Firion and Maria, 999 and 777 HP, 99 Strength,

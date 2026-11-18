@@ -5,7 +5,8 @@ import { unwrapSave } from '../src/core/container.ts';
 import { LENGTH, SAVE_SIZE, SLOT_SPACING, detectFf3Ds, slotBase, slotOk, writeChecksum } from '../src/core/ff3ds/layout.ts';
 import { buildFf3DsSample } from '../src/core/ff3ds/sample.ts';
 import {
-  AILMENTS, BAG_SIZE, Ff3DsSave, JOBS, KO, MAX_GIL, STAT_KEYS, canEquip, expFor, growth, itemName, levelFor, pairs, spellLevel, spellsOfLevel,
+  AILMENTS, BAG_SIZE, Ff3DsSave, JOBS, JOB_CARDS, KO, MAX_GIL, STAT_KEYS, STORY_ITEMS, canEquip, expFor, growth, itemName, levelFor,
+  pairs, spellLevel, spellsOfLevel,
 } from '../src/core/ff3ds/save.ts';
 import { ARMOR, ITEMS, SPELLS, WEAPONS } from '../src/core/ff3ds/tables.ts';
 import { asSaved } from '../src/core/ff3ds/text.ts';
@@ -219,6 +220,30 @@ test('the bag: stacks of 99, written back only when it changed, empty places dro
   assert.deepEqual(again.keyItems.map(itemName), ['Folding Canoe'], 'key items stay');
   for (let i = 0; i < BAG_SIZE + 10; i++) slot.add(ALL[i % ALL.length][0]);
   assert.ok(slot.bag.length <= BAG_SIZE);
+});
+
+test('key items: one of each, added at the end of their list as the game does, and written back with it', () => {
+  assert.equal(STORY_ITEMS.length, 17);
+  assert.deepEqual([JOB_CARDS[0], JOB_CARDS.at(-1)].map(itemName), ['Freelancer Card', 'Metal Card']);
+  assert.deepEqual([itemName(5214), itemName(5215)], ["Sara's Pendant (broken)", "Sara's Pendant (restored)"]);
+  const s = new Ff3DsSave(buildFf3DsSample());
+  const slot = s.usedSlots[0];
+  assert.ok(slot.setKeyItem(5201, true));
+  assert.ok(slot.setKeyItem(5221, true));
+  assert.ok(slot.setKeyItem(5201, true), 'already there');
+  assert.equal(slot.setKeyItem(id('Potion'), true), false, 'not a key item');
+  assert.ok(slot.setKeyItem(5212, false));
+  assert.ok(slot.hasKeyItem(5221));
+  const out = s.serialize();
+  assert.ok(slotOk(out, 0));
+  const keys = slotBase(0) + 0xc28 + BAG_SIZE * 4;
+  assert.deepEqual([...out.subarray(keys, keys + 12)], [0x51, 0x14, 1, 0, 0x65, 0x14, 1, 0, 0xff, 0xff, 0, 0]);
+  const again = new Ff3DsSave(out);
+  assert.deepEqual(again.usedSlots[0].keyItems.map(itemName), ['Nepto Eye', 'Monk Card']);
+  const changes = again.describeChanges(new Ff3DsSave(buildFf3DsSample())).flatMap((g) => g.lines);
+  for (const line of ['Nepto Eye: added', 'Monk Card: added', 'Folding Canoe: removed']) assert.ok(changes.includes(line), line);
+  for (const k of [...STORY_ITEMS, ...JOB_CARDS]) assert.ok(slot.setKeyItem(k, true));
+  assert.equal(slot.keyItems.length, 41, 'all of them fit');
 });
 
 test('the Quicksave opens with the slots, and a slot that fails the check is left out', () => {
