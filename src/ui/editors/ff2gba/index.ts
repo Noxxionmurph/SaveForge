@@ -1,7 +1,7 @@
 // Final Fantasy II (Dawn of Souls, GBA) editor UI. Loaded lazily by the shell via the game module.
 
 import {
-  BAG_SIZE, EMPTY_HAND, GEAR_SLOTS, MAX_HP, MAX_ITEM, MAX_MP, MAX_SKILL, MAX_STAT, NAME_LENGTH,
+  BAG_SIZE, EMPTY_HAND, GEAR_SLOTS, KEY_TERMS, MAX_HP, MAX_ITEM, MAX_MP, MAX_SKILL, MAX_STAT, NAME_LENGTH,
   SPELL_SLOTS, STAT_KEYS, STAT_LABELS, WEAPON_SKILLS, asSaved, formatPlayTime,
   type Ff2GbaChar, type Ff2GbaFile, type Ff2GbaSave,
 } from '../../../core/ff2gba/save.ts';
@@ -9,7 +9,7 @@ import type { MountEditor } from '../../../core/types.ts';
 import { clear, field, h, numberInput, selectInput, textInput } from '../../dom.ts';
 import { ff2Portrait, ff2PspPortrait } from '../../sprites.ts';
 import { tabBar, tabPanel } from '../../tabs.ts';
-import { ffHpBar, ffMpBar } from '../ff/menu.ts';
+import { ffHpBar, ffMpBar, ffToggle } from '../ff/menu.ts';
 
 type Tab = 'party' | 'items' | 'gear';
 const TABS: { id: Tab; label: string }[] = [
@@ -150,7 +150,17 @@ export const makeFf2Editor = (portrait: (who: string) => HTMLImageElement): Moun
       keyItems.length
         ? h('section', { class: 'card' }, h('h3', {}, 'Key items'), h('p', {}, keyItems.map((x) => ITEMS[x.id]).join(', ')),
           h('p', { class: 'field-hint' }, 'Key items move the story on, so they can’t be changed here.'))
-        : h('span'));
+        : h('span'),
+      keyTermsCard());
+  }
+
+  function keyTermsCard(): Node {
+    const terms = file.keyTerms;
+    if (!terms) return h('span');
+    return h('section', { class: 'card' },
+      h('h3', {}, 'Key terms'),
+      h('div', { class: 'ff-toggles' }, KEY_TERMS.map((n, k) => ffToggle(n, terms.knows(k + 1), (on) => { terms.set(k + 1, on); markDirty(); }))),
+      h('p', { class: 'field-hint' }, 'Asking people about key terms moves the story on, so learning one early can skip ahead or leave a quest stuck.'));
   }
 
   function gearTab(): Node {

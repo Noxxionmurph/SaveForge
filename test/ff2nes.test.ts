@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { SAVE_SIZE, detectFf2Nes, slotBase, slotOk, slotSum } from '../src/core/ff2nes/layout.ts';
 import { buildFf2NesSample } from '../src/core/ff2nes/sample.ts';
-import { EMPTY_HAND, Ff2NesSave, ITEMS, SPELLS, SPELL_SLOTS, WEAPON_SKILLS } from '../src/core/ff2nes/save.ts';
+import { EMPTY_HAND, Ff2NesSave, ITEMS, KEY_TERMS, SPELLS, SPELL_SLOTS, WEAPON_SKILLS } from '../src/core/ff2nes/save.ts';
 import { asSaved } from '../src/core/ff2nes/text.ts';
 import { detectGames, openSave } from '../src/core/registry.ts';
 
@@ -71,4 +71,23 @@ test('the fourth place is empty when nobody travels with the heroes', () => {
   d[slotBase(0) + 0x200 + 3 * 0x40 + 0x35] = 0x80;
   d[slotBase(0) + 0x2ff] = 0; d[slotBase(0) + 0x2ff] = slotSum(d, slotBase(0)) ^ 0xff;
   assert.deepEqual(new Ff2NesSave(d).usedSlots[0].party.map((c) => c.name), ['Firion', 'Maria', 'Guy']);
+});
+
+test('key terms: a new one goes first, a forgotten one closes up, stored as 0xF0 + its number', () => {
+  const s = new Ff2NesSave(buildFf2NesSample());
+  const slot = s.usedSlots[0];
+  const at = slotBase(0) + 0x80;
+  assert.deepEqual(slot.keyTerms.learned.map((k) => KEY_TERMS[k - 1]), ['Mythril', 'Wild Rose']);
+  slot.keyTerms.set(KEY_TERMS.indexOf('Dreadnought') + 1, true);
+  slot.keyTerms.set(KEY_TERMS.indexOf('Wild Rose') + 1, false);
+  slot.keyTerms.set(KEY_TERMS.indexOf('Mythril') + 1, true); // already known: stays where it is
+  const out = s.serialize();
+  assert.ok(slotOk(out, 0));
+  assert.deepEqual([...out.subarray(at, at + 4)], [0xf3, 0xf2, 0, 0]);
+  const changes = new Ff2NesSave(out).describeChanges(new Ff2NesSave(buildFf2NesSample())).flatMap((g) => g.lines);
+  assert.ok(changes.includes('Dreadnought: learned') && changes.includes('Wild Rose: forgotten'), changes.join('\n'));
+  KEY_TERMS.forEach((_, k) => slot.keyTerms.set(k + 1, true));
+  assert.equal(slot.keyTerms.learned.length, 15);
+  assert.equal(slot.keyTerms.learned[0], 15);
+  assert.equal(s.serialize()[at + 15], 0, 'the 16th place stays empty');
 });

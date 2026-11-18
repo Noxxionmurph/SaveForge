@@ -5,7 +5,7 @@ import { unwrapSave } from '../src/core/container.ts';
 import { FF2, SRAM_SIZE, checksum, detectDawnOfSouls, fileOk, storedChecksum } from '../src/core/ff1gba/layout.ts';
 import { buildFf1GbaSample } from '../src/core/ff1gba/sample.ts';
 import { buildFf2GbaSample } from '../src/core/ff2gba/sample.ts';
-import { EMPTY_HAND, Ff2GbaSave, SPELL_SLOTS, asSaved } from '../src/core/ff2gba/save.ts';
+import { EMPTY_HAND, Ff2GbaSave, KEY_TERMS, SPELL_SLOTS, asSaved } from '../src/core/ff2gba/save.ts';
 import { ITEMS, SPELLS } from '../src/core/ff2gba/tables.ts';
 import { detectGames, openSave } from '../src/core/registry.ts';
 
@@ -105,6 +105,20 @@ test('names, and the diff', () => {
   const lines = after.describeChanges(before).flatMap((g) => [g.title, ...g.lines]);
   assert.ok(lines.includes('Axe skill: 6 → 9'), lines.join('\n'));
   assert.ok(lines.includes('Learned Haste (level 1)'));
+});
+
+test('key terms: a new one goes first, a forgotten one closes up, and the count follows', () => {
+  const s = new Ff2GbaSave(buildFf2GbaSample());
+  const f = s.usedFiles[0];
+  assert.deepEqual(f.keyTerms!.learned.map((k) => KEY_TERMS[k - 1]), ['Mythril', 'Wild Rose']);
+  f.keyTerms!.set(KEY_TERMS.indexOf('Sunfire') + 1, true);
+  f.keyTerms!.set(KEY_TERMS.indexOf('Mythril') + 1, false);
+  const out = s.serialize();
+  assert.ok(fileOk(out, FF2, 0));
+  assert.deepEqual([...out.subarray(FF2.base + 0x6cc, FF2.base + 0x6cf)], [7, 1, 0]);
+  assert.equal(out[FF2.base + 0x6ff], 2);
+  const changes = new Ff2GbaSave(out).describeChanges(new Ff2GbaSave(buildFf2GbaSample())).flatMap((g) => g.lines);
+  assert.ok(changes.includes('Sunfire: learned') && changes.includes('Mythril: forgotten'), changes.join('\n'));
 });
 
 // Real saves are never committed. DOS_SAVE=<file> runs this on one (a .sav, or a .sps from a phone).

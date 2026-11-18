@@ -38,12 +38,19 @@ with sync_playwright() as p:
     page.locator('label.field:has-text("Gil") input').fill('5000000')
     page.locator('label.field:has-text("Gil") input').press('Tab')
     page.select_option('label.field:has-text("Place 9") select', label='Masamune')
+    # key terms: learn Dreadnought, forget Wild Rose
+    page.click('.ff-toggle:text-is("Dreadnought")')
+    page.click('.ff-toggle:text-is("Wild Rose")')
+    assert page.get_attribute('.ff-toggle:text-is("Dreadnought")', 'aria-pressed') == 'true'
+    assert page.get_attribute('.ff-toggle:text-is("Mythril")', 'aria-pressed') == 'true'
+    assert page.get_attribute('.ff-toggle:text-is("Wild Rose")', 'aria-pressed') == 'false'
     page.screenshot(path=f'{SP}/ff2nes-items.png', full_page=True)
     page.click('.save-btn')
     page.wait_for_selector('dialog.review-dialog[open]')
     review = page.inner_text('dialog.review-dialog')
     for line in ('Name: Firion → Kieron', 'Strength: 22 → 60', 'Sword skill: 5 → 12', 'Right hand: Mythril Sword → Excalibur',
-                 'Learned Ultima (level 1)', 'Forgot Blizzard', 'Gil: 18,350 → 5,000,000', 'Masamune: 0 → 1'):
+                 'Learned Ultima (level 1)', 'Forgot Blizzard', 'Gil: 18,350 → 5,000,000', 'Masamune: 0 → 1',
+                 'Dreadnought: learned', 'Wild Rose: forgotten'):
         assert line in review, (line, review)
     with page.expect_download() as dl:
         page.click('dialog.review-dialog button.primary')
@@ -59,11 +66,13 @@ const f = new Ff2NesSave(d).slots[0];
 const c = f.party[0];
 console.log(JSON.stringify({ size: d.length, ok: slotOk(d, 0), name: c.name, str: c.stat('str'), sword: c.skill(3).level,
   excalibur: c.gear(0) === ITEMS.indexOf('Excalibur'), ultima: c.knows(SPELLS.indexOf('Ultima') + 1),
-  blizzard: f.party[1].knows(SPELLS.indexOf('Blizzard') + 1), gil: f.gil, masamune: f.count(ITEMS.indexOf('Masamune')) }));
+  blizzard: f.party[1].knows(SPELLS.indexOf('Blizzard') + 1), gil: f.gil, masamune: f.count(ITEMS.indexOf('Masamune')),
+  terms: f.keyTerms.learned }));
 """
 out = json.loads(subprocess.run(['node', '--input-type=module', '-e', check, f'{SP}/ff2nes-edited.sav'], cwd=REPO,
                                 capture_output=True, text=True, check=True).stdout)
 assert out['size'] == 8192 and out['ok'], out
 assert out['name'] == 'Kieron' and out['str'] == 60 and out['sword'] == 12 and out['excalibur'] and out['ultima'], out
 assert not out['blizzard'] and out['gil'] == 5000000 and out['masamune'] == 1, out
+assert out['terms'] == [3, 2], out   # Dreadnought first, then Mythril
 print('ERRORS:', '; '.join(errors) or 'none')

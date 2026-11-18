@@ -36,6 +36,17 @@ export function statusPicker(statuses: readonly { value: number; label: string }
   return h('div', { class: 'ff-toggles' }, buttons);
 }
 
+/** An on/off button, lit up as a game window when it's on. `set` gets the new state. */
+export function ffToggle(label: string, on: boolean, set: (on: boolean) => void): HTMLButtonElement {
+  const btn = h('button', { class: 'ff-toggle', 'aria-pressed': String(on) }, label) as HTMLButtonElement;
+  btn.addEventListener('click', () => {
+    const next = btn.getAttribute('aria-pressed') !== 'true';
+    btn.setAttribute('aria-pressed', String(next));
+    set(next);
+  });
+  return btn;
+}
+
 /** Every class with its sprite: the character's class has the menu cursor, and tapping another changes to it. */
 export function classBoard(classes: readonly { id: number; name: string }[], current: number, sprite: (id: number) => Node | null,
   pick: (id: number) => void): HTMLElement {

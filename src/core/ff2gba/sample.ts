@@ -62,6 +62,7 @@ export function buildFf2GbaSample(): Uint8Array {
   v.setUint32(s + 0x4a8, 3_250, true);
   v.setUint32(s + 0x4ac, 2 * 3600 + 7 * 60, true);
   BAG.forEach(([name, n], i) => { d[s + 0x4b4 + i] = item(name); d[s + 0x54a + i] = n; });
+  d[s + 0x6cc] = 2; d[s + 0x6cd] = 1; d[s + 0x6ff] = 2; // key terms: Mythril, learned after Wild Rose
   writeChecksum(d, s, FF2.size);
   return d;
 }

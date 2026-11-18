@@ -31,6 +31,7 @@ with sync_playwright() as p:
     page.select_option('label.field:has-text("Learn a spell") select', label='Revive')
     page.screenshot(path=f'{SP}/ff2psp-party.png', full_page=True)
     page.click('button.tab:has-text("Items")')
+    assert page.locator('h3:text-is("Key terms")').count() == 0   # the PSP's extra terms aren't named yet
     page.locator('label.field:has-text("Gil") input').fill('9999999')
     page.locator('label.field:has-text("Gil") input').press('Tab')
     page.locator('label.field:has-text("Elixir") input').fill('50')
