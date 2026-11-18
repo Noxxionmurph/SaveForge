@@ -12,13 +12,13 @@ export default defineGame<PrSave>({
   shelf: 'final-fantasy',
   tile: 'Final Fantasy III', // listed on the Famicom tile
   platform: 'Steam · Pixel Remaster',
-  fileHint: `Open a save slot from ${FOLDER}\\ (in the folder of numbers there): the files with long scrambled names.`,
+  fileHint: `Open a save slot from ${FOLDER}\\ (in the folder of numbers there; if OneDrive backs up your PC, Documents is in OneDrive): the files with long scrambled names.`,
   colors: { 'Final Fantasy III (Pixel Remaster)': '#24609e' },
   theme: 'pr',
   keepFileName: true,
   saveSteps: [
     'Close the game.',
-    `Open ${FOLDER}\\ and the folder of numbers in it.`,
+    `Open ${FOLDER}\\ (Documents may be in OneDrive) and the folder of numbers in it.`,
     'Copy your old file somewhere safe, then put this one in its place. Its name must stay exactly the same, with no extension.',
     'Start the game. If Steam asks which save to keep, pick the one on this PC.',
   ],

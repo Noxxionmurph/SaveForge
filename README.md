@@ -534,10 +534,13 @@ what and the Job menu's order come from the games' own master data (CSV tables i
 `scripts/gen-ffpr-data.py` (UnityPy) into `data-ff1.ts`, `data-ff2.ts` and `data-ff3.ts`.
 
 - **Opening**: one save slot, from `Documents\My Games\FINAL FANTASY PR\Steam\<numbers>\` (`FINAL FANTASY II PR`,
-  `FINAL FANTASY III PR`): the files with long scrambled names, which are the same for everyone. Save gives the file back
+  `FINAL FANTASY III PR`; on a PC whose Documents folder is backed up by OneDrive it's under `OneDrive\Documents`): the
+  files with long scrambled names, which are the same for everyone. Each slot's JSON starts with its number (`"id"`: 1-20
+  are the files, 21 the autosave, 22 the quick save); the folder also holds a list of which slots are in use, the
+  settings and a file shared by all slots (bestiary, scenario flags), which aren't opened. Save gives the file back
   under exactly that name (`keepFileName` on the module), and the saved dialog says where it goes (`saveSteps`).
 - **Format** (`crypto.ts`): an optional UTF-8 BOM, then Base64 of Rijndael with a 256-bit block and key (CBC, zero padding)
-  over raw deflate of UTF-8 JSON. Key and IV are PBKDF2-SHA1 of the games' fixed password and salt (as found by the
+  over raw deflate of UTF-8 JSON, then CR LF (kept as the file had it). Key and IV are PBKDF2-SHA1 of the games' fixed password and salt (as found by the
   open-source Pixel Remaster save editors in CREDITS.md). `deflate.ts` writes the deflate (fixed Huffman codes), so files
   come out about the size the game makes them. Which game a slot is from is told by what its characters carry (`file.ts`).
 - **JSON** (`json.ts`): the save's inner objects are JSON strings inside JSON strings, several levels deep, and the

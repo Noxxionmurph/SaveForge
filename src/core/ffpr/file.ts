@@ -10,6 +10,8 @@ export type PrGame = 'ff1' | 'ff2' | 'ff3' | 'ff4' | 'ff5' | 'ff6';
 export interface PrOpened {
   json: string;
   bom: boolean;
+  /** What followed the Base64 (CR LF in game-written files), written back the same. */
+  tail: string;
   game: PrGame | null;
 }
 
@@ -21,8 +23,8 @@ export function openPr(data: Uint8Array): PrOpened | null {
   if (cache.has(data)) return cache.get(data)!;
   let out: PrOpened | null = null;
   try {
-    const { json, bom } = openPrFile(data);
-    if (json.startsWith('{"id":') && json.includes('"userData":"')) out = { json, bom, game: whichGame(new Doc(json)) };
+    const { json, bom, tail } = openPrFile(data);
+    if (json.startsWith('{"id":') && json.includes('"userData":"')) out = { json, bom, tail, game: whichGame(new Doc(json)) };
   } catch {
     out = null;
   }

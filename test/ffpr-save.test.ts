@@ -182,7 +182,11 @@ test('real Pixel Remaster slots open in the editor and keep what wasn’t edited
     opened++;
     const s = new PrSave(data, d);
     const json = jsonOf(data);
-    assert.equal(jsonOf(s.serialize()), json);
+    const out = s.serialize();
+    assert.equal(jsonOf(out), json);
+    // Same wrapper as the game wrote: BOM in front, the same line ending after.
+    assert.deepEqual([...out.subarray(0, 3)], [...data.subarray(0, 3)]);
+    assert.deepEqual([...out.subarray(-2)], [...data.subarray(-2)]);
     s.gil = 4321;
     assert.equal(jsonOf(s.serialize()).replace(/\\"owendGil\\":\d+,/, ''), json.replace(/\\"owendGil\\":\d+,/, ''));
   }

@@ -154,18 +154,20 @@ function cbcEncrypt(data: Uint8Array): Uint8Array {
 
 const B64 = /^[A-Za-z0-9+/]+={0,2}$/;
 
-/** Base64 bytes of a Pixel Remaster save (BOM and trailing whitespace allowed), or null if it isn't that shape. */
-export function base64Body(file: Uint8Array): { bom: boolean; body: Uint8Array } | null {
+/** Base64 bytes of a Pixel Remaster save (BOM and trailing whitespace allowed), or null if it isn't that shape. `tail` is
+ * the whitespace after the Base64 (the games end every file with CR LF). */
+export function base64Body(file: Uint8Array): { bom: boolean; body: Uint8Array; tail: string } | null {
   const bom = file.length >= 3 && file[0] === 0xef && file[1] === 0xbb && file[2] === 0xbf;
   let end = file.length;
   while (end > 0 && (file[end - 1] === 0x0a || file[end - 1] === 0x0d || file[end - 1] === 0x20)) end--;
   const body = file.subarray(bom ? 3 : 0, end);
   if (body.length < 64) return null;
+  const tail = new TextDecoder('latin1').decode(file.subarray(end));
   for (let i = 0; i < Math.min(body.length, 256); i++) {
     const c = body[i];
     if (!((c >= 0x41 && c <= 0x5a) || (c >= 0x61 && c <= 0x7a) || (c >= 0x30 && c <= 0x39) || c === 0x2b || c === 0x2f)) return null;
   }
-  return { bom, body };
+  return { bom, body, tail };
 }
 
 function fromBase64(text: string): Uint8Array {
@@ -182,20 +184,22 @@ function toBase64(data: Uint8Array): string {
   return btoa(bin);
 }
 
-/** The JSON text inside a Pixel Remaster save file. Throws if it doesn't decrypt and inflate. */
-export function openPrFile(file: Uint8Array): { json: string; bom: boolean } {
+/** The JSON text inside a Pixel Remaster save file, and the BOM and line ending around it. Throws if it doesn't decrypt
+ * and inflate. */
+export function openPrFile(file: Uint8Array): { json: string; bom: boolean; tail: string } {
   const b = base64Body(file);
   if (!b) throw new Error('not a Pixel Remaster save');
   const sealed = fromBase64(new TextDecoder('latin1').decode(b.body));
   if (sealed.length % BLOCK) throw new Error('not whole cipher blocks');
   const packed = cbcDecrypt(sealed);
   const json = new TextDecoder('utf-8', { fatal: true }).decode(inflate(packed));
-  return { json, bom: b.bom };
+  return { json, bom: b.bom, tail: b.tail };
 }
 
-/** A Pixel Remaster save file holding `json`, in the same wrapper the game writes. */
-export function sealPrFile(json: string, bom: boolean): Uint8Array {
-  const text = toBase64(cbcEncrypt(deflateRaw(new TextEncoder().encode(json))));
+/** A Pixel Remaster save file holding `json`, in the same wrapper the game writes (BOM, Base64, then `tail`, which the
+ * games write as CR LF). */
+export function sealPrFile(json: string, bom: boolean, tail = '\r\n'): Uint8Array {
+  const text = toBase64(cbcEncrypt(deflateRaw(new TextEncoder().encode(json)))) + tail;
   const body = new TextEncoder().encode(text);
   if (!bom) return body;
   const out = new Uint8Array(body.length + 3);

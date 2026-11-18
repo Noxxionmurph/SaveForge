@@ -425,6 +425,7 @@ export class PrSave implements EditableSave {
   readonly data: PrData;
   readonly doc: Doc;
   readonly bom: boolean;
+  readonly tail: string;
   readonly chars: PrChar[];
   /** The party's four places, in order; null for an empty one. */
   readonly party: (PrChar | null)[];
@@ -444,6 +445,7 @@ export class PrSave implements EditableSave {
     }
     this.data = data;
     this.bom = opened.bom;
+    this.tail = opened.tail;
     this.doc = new Doc(opened.json);
     this.user = this.doc.open(this.doc.root, 'userData');
     this.koId = data.conditions.find(([, n]) => n === 'KO')?.[0] ?? -1;
@@ -556,7 +558,7 @@ export class PrSave implements EditableSave {
 
   serialize(): Uint8Array {
     for (const l of this.lists) l.flush();
-    return sealPrFile(this.doc.text(), this.bom);
+    return sealPrFile(this.doc.text(), this.bom, this.tail);
   }
 
   summary(): SummaryLine[] {
