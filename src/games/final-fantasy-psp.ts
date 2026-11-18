@@ -17,8 +17,6 @@ export default defineGame<Ff1PspSave>({
     const opened = openFf1Psp(data);
     return opened ? { confidence: 'certain' } : null;
   },
-  sampleGame: 'Final Fantasy I · PSP',
-  sample: async () => ({ fileName: 'sample-ff-psp.sav', data: (await import('../core/ff1psp/sample.ts')).buildFf1PspSample() }),
   load: async (data) => new (await import('../core/ff1psp/save.ts')).Ff1PspSave(data),
   loadEditor: async () => (await import('../ui/editors/ff1psp/index.ts')).mountFf1PspEditor,
 });

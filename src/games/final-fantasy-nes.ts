@@ -9,7 +9,6 @@ export default defineGame<Ff1NesSave>({
   icons: { 'Final Fantasy': 'sprites/ff1/pr/warrior.png' }, // the Pixel Remaster's Warrior, on the tile every port shares
   // Every Final Fantasy version shares one row and this one "you can edit" line.
   shelf: 'final-fantasy',
-  sampleGame: 'Final Fantasy I · NES',
   platform: 'NES · English',
   editable: 'Your party’s names, stats, gear and spells, plus classes and levels in I, weapon skills, key terms and guests in II and job levels in III; gil, items and key items.',
   fileHint: 'Final Fantasy (NES) saves are 8,192 bytes (8 KB).',
@@ -20,6 +19,7 @@ export default defineGame<Ff1NesSave>({
     if (found === 'ok') return { confidence: 'certain' };
     return found ? { confidence: 'likely', note: "It looks like a Final Fantasy save, but it fails the game's save check." } : null;
   },
+  sampleGame: 'Final Fantasy I',
   sample: async () => ({ fileName: 'sample-final-fantasy.sav', data: (await import('../core/ff1nes/sample.ts')).buildFf1NesSample() }),
   load: async (data) => new (await import('../core/ff1nes/save.ts')).Ff1NesSave(data),
   loadEditor: async () => (await import('../ui/editors/ff1nes/index.ts')).mountFf1NesEditor,
