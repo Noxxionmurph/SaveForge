@@ -495,9 +495,12 @@ for what the PSP added come from the game's BOOT.BIN.
   the text "ファイナルファンタジーⅡsave" (Shift-JIS) and a 16-bit checksum at +0x20 worked out as Dawn of Souls does it
   (the bytes from +0x24 on, plus 0xF40). The Soul of Rebirth files after them aren't opened yet.
 - **Characters**: nine records of 0x7E bytes from file + 0x22, laid out like Dawn of Souls' (Leon is the ninth); the
-  fourth place is named at +0x4A2. Picking who is there isn't offered yet: it hasn't been checked in the game. Gil at +0x498 (up to 9,999,999), bag ids at +0x4A4 and counts at +0x53A.
-- **Key terms**: 48 places at +0x6FC with how many there are at +0x74F, like Dawn of Souls' list, but the PSP has 45
-  terms and the names of the 30 it added aren't known yet, so they aren't editable.
+  fourth place is +0x4A2, the record (3-8) of who is there or 0x0F for nobody, as a new game saves it. Until Leon joins
+  his record holds no name; the one typed for him at New Game waits at +0x750, and picking him copies it in. Gil at
+  +0x498 (up to 9,999,999), bag ids at +0x4A4 and counts at +0x53A.
+- **Key terms**: 48 places at +0x6FC, most recent first, with how many there are at +0x74F, like Dawn of Souls' list.
+  The PSP has 45 terms: Dawn of Souls' 15 and 30 more, the words that break the Arcane Labyrinth's seals (names from
+  `mesdata_US` in the disc's `ff2_data.bin`).
 - **New items**: the Destroy and Revive tomes and spells, and the Soul of Rebirth weapons (Ragnarok, Artemis Bow,
   Gigantaxe, Staff of Light, Dragon Claws, Gungnir, Dancing Dagger, Abel's Lance, Longinus).
 - The party window shows each character's Pixel Remaster battle sprite, as every Final Fantasy I-III page does (SaveForge-assets).
@@ -518,6 +521,9 @@ FM_NAME_SEL in the disc's ff1psp.dpk; `scripts/gen-ff1psp-data.mjs` writes them 
   fallen, the five stats and magic level; gear in five slots and spells (three per level), marked when the class can't
   equip or learn them.
 - **Items**: gil, consumables, weapons, armor and the 36 key items, per save file.
+- **Orbs**: one story flag each (Fire bit 3 and Earth bit 1 of +0x6FE, Water bit 5 of +0x6FF, Wind bit 2 of +0x700:
+  Dawn of Souls' bits, 0x1E bytes before the end of the key items as there). The load screen and the menu both draw the
+  Orbs from them, and the game keeps no other copy.
 
 ## Layout
 
@@ -693,8 +699,10 @@ Every screen explains itself in plain words, so keep it that way when you add a 
 
 - Final Fantasy II (PSP): a real save decrypts, opens and encrypts back to the same SAVEDATA.SAV. In the real game (US
   disc in PPSSPP's headless build, 2026-11-06) an edited file (Firion renamed, his HP, 9,999,999 gil) shows the edits on
-  the load screen. The headless build wouldn't load any file past that screen, the real one included, so the menus
-  weren't checked. The game shows guests (Minwu, Scott and so on) by their own names whatever the save holds, so only
+  the load screen. Files wouldn't load past that screen then; on 2026-11-18 they did, and a new game saved in the Rebel
+  Hideout was used to check the menus: with the fourth member set to Leon, Josef or nobody the load screen and the menu
+  show that party, all 45 key terms show in the game's Key Terms menu, and the game's own save afterwards keeps the
+  guest, the terms and their count. The game shows guests (Minwu, Scott and so on) by their own names whatever the save holds, so only
   the four heroes can be renamed. The copy of that save we have carries PARAM.SFO hashes that don't match its own
   contents, so whether a real PSP accepts the redone ones is untested; Soul of Rebirth files aren't editable.
 
@@ -704,7 +712,9 @@ Every screen explains itself in plain words, so keep it that way when you add a 
   and a save the game then wrote opens in the editor with them intact. PPSSPP doesn't check PARAM.SFO, so a real PSP's
   check of the redone SFO hashes is still untested. Level and Exp aren't kept in step (the Exp table isn't
   known yet, and the game levels up after the next battle), the per-level growth numbers are left alone, Japanese names
-  show as "?", and only the US release is recognised.
+  show as "?", and only the US release is recognised. The Orbs (2026-11-18): copies of a real save with two Orbs cleared
+  in each file show those two dark on the load screen and in the menu, the game's own save afterwards keeps them so, and
+  Orbs the editor lit again in that saved file show lit.
 
 - Final Fantasy (NES) was checked in the real game (US ROM, which matches the disassembly byte for byte, in the cynes
   emulator, 2026-11-04): a save the game wrote opens and saves back byte for byte; an edited copy (name, level 20, HP,

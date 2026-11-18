@@ -25,14 +25,21 @@ with sync_playwright() as p:
     names = page.locator('.ff-member .ff-name').all_inner_texts()
     assert names == ['Firion', 'Maria', 'Guy', 'Leon'], names
     assert page.locator('.ff-member img.job-sprite.prj[src*="ff2/pr/jobs/"]').count() == 4
-    assert page.locator('.ff-guests').count() == 0   # picking the fourth member isn't checked on the PSP yet
     # Leon: a PSP-only weapon and spell
     page.click('.ff-member >> nth=3')
     page.select_option('label.field:has-text("Right hand") select', label='Longinus')
     page.select_option('label.field:has-text("Learn a spell") select', label='Revive')
+    # then Gordon takes his place
+    assert page.locator('.ff-guests .ff-class-tile').count() == 7
+    page.click('.ff-guests .ff-class-tile:has-text("Gordon")')
+    names = page.locator('.ff-member .ff-name').all_inner_texts()
+    assert names == ['Firion', 'Maria', 'Guy', 'Gordon'], names
     page.screenshot(path=f'{SP}/ff2psp-party.png', full_page=True)
     page.click('button.tab:has-text("Items")')
-    assert page.locator('h3:text-is("Key terms")').count() == 0   # the PSP's extra terms aren't named yet
+    assert page.locator('.card h4:text-is("Arcane Labyrinth")').count() == 1
+    assert page.locator('.card:has(h3:text-is("Key terms")) .ff-toggle').count() == 45
+    page.click('.ff-toggle:text-is("Mirror")')   # one of the Arcane Labyrinth's words
+    page.click('.ff-toggle:text-is("Mask")')
     page.locator('label.field:has-text("Gil") input').fill('9999999')
     page.locator('label.field:has-text("Gil") input').press('Tab')
     page.locator('label.field:has-text("Elixir") input').fill('50')
@@ -40,7 +47,8 @@ with sync_playwright() as p:
     page.click('.save-btn')
     page.wait_for_selector('dialog.review-dialog[open]')
     review = page.inner_text('dialog.review-dialog')
-    for line in ('Right hand: Ragnarok → Longinus', 'Learned Revive (level 1)', 'Gil: 486,320 → 9,999,999', 'Elixir: 3 → 50'):
+    for line in ('Right hand: Ragnarok → Longinus', 'Learned Revive (level 1)', 'Fourth member: Leon → Gordon',
+                 'Gil: 486,320 → 9,999,999', 'Elixir: 3 → 50', 'Mirror: learned', 'Mask: forgotten'):
         assert line in review, (line, review)
     with page.expect_download() as dl:
         page.click('dialog.review-dialog button.primary')
@@ -55,16 +63,19 @@ import { readZip } from './src/core/unzip.ts';
 const d = new Uint8Array(readFileSync(process.argv[1]));
 const s = new Ff2PspSave(d);
 const f = s.usedFiles[0];
-const leon = f.party[3];
+const leon = f.characters[8];
 const zip = readZip(d);
 const sav = zip.find((e) => e.name.endsWith('SAVEDATA.SAV')).data, sfo = zip.find((e) => e.name.endsWith('PARAM.SFO')).data;
 const plain = new Ff2PspSave(sav).data;
 console.log(JSON.stringify({ wrapper: s.wrapper, ok: PSP_FORMAT.fileOk(plain, 0), longinus: leon.gear(0) === ITEMS.indexOf('Longinus'),
   revive: leon.knows(SPELLS.indexOf('Revive') + 1), gil: f.gil, elixir: f.count(ITEMS.indexOf('Elixir')),
+  guest: plain[0x30 + 0x4a2], fourth: f.party[3]?.name, terms: f.keyTerms.learned, count: plain[0x30 + 0x74f],
   sfoHash: Buffer.from(sfoFileHash(sfo, 'SAVEDATA.SAV')).toString('hex') }));
 """
 out = json.loads(subprocess.run(['node', '--input-type=module', '-e', check, f'{SP}/ff2psp-edited.zip'], cwd=REPO,
                                 capture_output=True, text=True, check=True).stdout)
 assert out['wrapper'] == 'folder' and out['ok'], out
 assert out['longinus'] and out['revive'] and out['gil'] == 9999999 and out['elixir'] == 50, out
+assert out['guest'] == 5 and out['fourth'] == 'Gordon', out
+assert out['terms'] == [17, 15, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1] and out['count'] == 15, out   # Mirror first, Mask gone
 print('ERRORS:', '; '.join(errors) or 'none')

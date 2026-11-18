@@ -170,9 +170,13 @@ export const makeFf2Editor = (portrait: (who: string) => HTMLImageElement): Moun
   function keyTermsCard(): Node {
     const terms = file.keyTerms;
     if (!terms) return h('span');
+    const toggles = (from: number, to: number) => h('div', { class: 'ff-toggles' }, terms.names.slice(from, to).map((n, k) =>
+      ffToggle(n, terms.knows(from + k + 1), (on) => { terms.set(from + k + 1, on); markDirty(); })));
     return h('section', { class: 'card' },
       h('h3', {}, 'Key terms'),
-      h('div', { class: 'ff-toggles' }, KEY_TERMS.map((n, k) => ffToggle(n, terms.knows(k + 1), (on) => { terms.set(k + 1, on); markDirty(); }))),
+      toggles(0, KEY_TERMS.length),
+      // The PSP's extra terms are the words that break the Arcane Labyrinth's seals.
+      terms.names.length > KEY_TERMS.length && [h('h4', {}, 'Arcane Labyrinth'), toggles(KEY_TERMS.length, terms.names.length)],
       h('p', { class: 'field-hint' }, 'Asking people about key terms moves the story on, so learning one early can skip ahead or leave a quest stuck.'));
   }
 

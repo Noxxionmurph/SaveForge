@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { PLAIN_SIZE, SAVE_BIN_SIZE, openFf1Psp, plausiblePlain } from '../src/core/ff1psp/container.ts';
 import { buildFf1PspPlain, buildFf1PspSample, buildSfo } from '../src/core/ff1psp/sample.ts';
-import { Ff1PspSave, asSaved, canEquipArmor, canEquipWeapon, canLearn, spellLevel } from '../src/core/ff1psp/save.ts';
+import { Ff1PspSave, ORB_NAMES, asSaved, canEquipArmor, canEquipWeapon, canLearn, spellLevel } from '../src/core/ff1psp/save.ts';
 import { ARMOR, SPELLS, WEAPONS } from '../src/core/ff1psp/tables.ts';
 import { decryptSavedata, savedataHash } from '../src/core/psp/savedata.ts';
 import { sfoFileHash, sfoString, updateSfoHashes } from '../src/core/psp/sfo.ts';
@@ -144,6 +144,25 @@ test('diff names what changed', () => {
   assert.ok(groups[0].lines.includes('Level: 24 → 30'));
   assert.ok(groups[0].lines.includes('Weapon: Flame Sword → Excalibur'));
   assert.ok(groups[1].lines.includes('Gil: 18,420 → 1'));
+});
+
+test('orbs: one story flag each, the same bits as Dawn of Souls (checked in the game)', () => {
+  const s = new Ff1PspSave(buildFf1PspPlain());
+  const f = s.files[0];
+  const at = 4 + 0x6fe;
+  s.data.fill(0xff, at, at + 3);
+  for (let i = 0; i < 4; i++) f.setOrb(i, false);
+  assert.deepEqual([...s.data.subarray(at, at + 3)], [0xf5, 0xdf, 0xfb]);
+  f.setOrb(ORB_NAMES.indexOf('Fire'), true);
+  f.setOrb(ORB_NAMES.indexOf('Water'), true);
+  assert.deepEqual([...s.data.subarray(at, at + 3)], [0xfd, 0xff, 0xfb]);
+  const again = new Ff1PspSave(s.serialize()).files[0];
+  assert.deepEqual(ORB_NAMES.map((_, i) => again.orbLit(i)), [true, false, false, true]);
+
+  const before = new Ff1PspSave(buildFf1PspPlain());
+  const lit = new Ff1PspSave(buildFf1PspPlain());
+  lit.files[0].setOrb(ORB_NAMES.indexOf('Wind'), true);
+  assert.deepEqual(lit.describeChanges(before), [{ title: 'Orbs', lines: ['Wind Orb: lit'] }]);
 });
 
 test('zip reader handles deflated entries', () => {

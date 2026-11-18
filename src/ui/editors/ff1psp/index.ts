@@ -2,7 +2,7 @@
 
 import {
   CATEGORY_NAMES, CLASS_NAMES, GEAR_SLOTS, MAX_EXP, MAX_GIL, MAX_HP, MAX_ITEM, MAX_LEVEL, MAX_MAGIC_LEVEL, MAX_MP, MAX_STAT, NAME_LENGTH,
-  SPELLS_PER_LEVEL, STAT_KEYS, STAT_LABELS, armorFor, asSaved, canLearn, formatPlayTime,
+  ORB_NAMES, SPELLS_PER_LEVEL, STAT_KEYS, STAT_LABELS, armorFor, asSaved, canLearn, formatPlayTime,
   type Category, type Ff1PspChar, type Ff1PspFile, type Ff1PspSave,
 } from '../../../core/ff1psp/save.ts';
 import { ARMOR, KEY_ITEMS, SPELLS, WEAPONS } from '../../../core/ff1psp/tables.ts';
@@ -163,7 +163,11 @@ export const mountFf1PspEditor: MountEditor<Ff1PspSave> = (container, s, host) =
       h('section', { class: 'card' },
         h('h3', {}, 'Key items'),
         h('div', { class: 'ff-toggles' }, KEY_ITEMS.map((n, i) => toggle(n, file.hasKeyItem(i + 1), (on) => file.setKeyItem(i + 1, on)))),
-        h('p', { class: 'field-hint' }, 'Key items move the story on when you use or hand them over, so adding one can skip ahead or leave a quest stuck.')));
+        h('p', { class: 'field-hint' }, 'Key items move the story on when you use or hand them over, so adding one can skip ahead or leave a quest stuck.')),
+      h('section', { class: 'card' },
+        h('h3', {}, 'Orbs'),
+        h('div', { class: 'ff-toggles' }, ORB_NAMES.map((n, i) => toggle(`${n} Orb`, file.orbLit(i), (on) => file.setOrb(i, on)))),
+        h('p', { class: 'field-hint' }, 'Lit Orbs are what open the way to the end of the game.')));
   }
 
   function gearTab(): Node {

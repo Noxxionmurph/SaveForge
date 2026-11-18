@@ -36,6 +36,13 @@ const CH = {
 };
 const SPELL_SLOTS = 24;
 
+/** The four Orbs in the order the menu and the load screen show them. */
+export const ORB_NAMES = ['Fire', 'Earth', 'Wind', 'Water'] as const;
+/** Each Orb's story flag as [offset, bit], in ORB_NAMES order: Dawn of Souls' bits, 0x1E bytes before the end of the key
+ * items as there. The load screen and the menu both draw the Orbs from these, and the game keeps no other copy (checked in
+ * PPSSPP: files with two Orbs cleared show those two dark, and the game's own save afterwards keeps them so). */
+const ORB_FLAGS: readonly (readonly [number, number])[] = [[0x6fe, 0x08], [0x6fe, 0x02], [0x700, 0x04], [0x6ff, 0x20]];
+
 export const STAT_KEYS = ['str', 'agi', 'int', 'sta', 'luck'] as const;
 export type StatKey = typeof STAT_KEYS[number];
 export const STAT_LABELS: Record<StatKey, string> = { str: 'Strength', agi: 'Agility', int: 'Intellect', sta: 'Stamina', luck: 'Luck' };
@@ -207,6 +214,16 @@ export class Ff1PspFile {
     records.slice(0, SLOT.itemCount).forEach((r, i) => this.d.set(r, at + i * 3));
   }
 
+  /** Orb `i` (see ORB_NAMES), lit or dark. */
+  orbLit(i: number) {
+    const [o, bit] = ORB_FLAGS[i];
+    return (this.d[this.s + o] & bit) !== 0;
+  }
+  setOrb(i: number, on: boolean) {
+    const [o, bit] = ORB_FLAGS[i];
+    this.d[this.s + o] = on ? this.d[this.s + o] | bit : this.d[this.s + o] & ~bit;
+  }
+
   /** Key items: one bit each, five bytes counting down from id 1 (bit 7 of the last byte). */
   hasKeyItem(id: number) {
     const at = this.s + SLOT.keyItems - ((id - 1) >> 3);
@@ -308,6 +325,7 @@ function describeChanges(b: Ff1PspSave, a: Ff1PspSave): ChangeGroup[] {
       if (fb.hasKeyItem(i + 1) !== fa.hasKeyItem(i + 1)) items.push(`${name}: ${fa.hasKeyItem(i + 1) ? 'added' : 'removed'}`);
     });
     add(`${prefix}Items`, items);
+    add(`${prefix}Orbs`, ORB_NAMES.flatMap((n, i) => fb.orbLit(i) === fa.orbLit(i) ? [] : [`${n} Orb: ${fa.orbLit(i) ? 'lit' : 'dark'}`]));
   }
   return groups;
 }

@@ -338,8 +338,8 @@ export class Ff2GbaSave implements EditableSave {
       const fb = b.files[fa.number - 1];
       const prefix = several ? `File ${fa.number}: ` : '';
       if (fb.guest !== fa.guest) add(`${prefix}Party`, [`Fourth member: ${guestName(fb.guest)} → ${guestName(fa.guest)}`]);
-      fa.party.forEach((ca) => {
-        const i = ca.index;
+      // Every record, not just the party's: someone edited and then swapped out keeps the edits.
+      fa.characters.forEach((ca, i) => {
         const cb = fb.characters[i];
         const lines: string[] = [];
         const diff = (label: string, x: string | number, y: string | number) => {
@@ -371,7 +371,7 @@ export class Ff2GbaSave implements EditableSave {
       add(`${prefix}Items`, items);
       const [ka, kb] = [fa.keyTerms, fb.keyTerms];
       if (ka && kb) {
-        add(`${prefix}Key terms`, KEY_TERMS.flatMap((n, k) => (ka.knows(k + 1) === kb.knows(k + 1) ? []
+        add(`${prefix}Key terms`, ka.names.flatMap((n, k) => (ka.knows(k + 1) === kb.knows(k + 1) ? []
           : [`${n}: ${ka.knows(k + 1) ? 'learned' : 'forgotten'}`])));
       }
     }

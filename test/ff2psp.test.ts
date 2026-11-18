@@ -57,8 +57,9 @@ test('edits are encrypted back, the file checksum redone and PARAM.SFO gets the 
   assert.equal(a.gil, MAX_GIL);
   assert.equal(a.count(item('Elixir')), 99);
   assert.equal(a.count(item('Destroy Tome')), 1);
-  // Leon's record is the ninth; editing him leaves the eighth (Ricard's place) alone.
-  assert.equal(plain[FILE_BASE + PSP_FORMAT.chars + 7 * PSP_FORMAT.charStride + 2], 0);
+  // Leon's record is the ninth; editing him leaves the eighth (Ricard's) alone.
+  const ricard = FILE_BASE + PSP_FORMAT.chars + 7 * PSP_FORMAT.charStride;
+  assert.deepEqual(plain.subarray(ricard, ricard + PSP_FORMAT.charStride), buildFf2PspPlain().subarray(ricard, ricard + PSP_FORMAT.charStride));
   const sfo = entry(out, 'PARAM.SFO');
   assert.notDeepEqual(sfoFileHash(sfo, 'SAVEDATA.SAV'), sfoFileHash(entry(buildFf2PspSample(), 'PARAM.SFO'), 'SAVEDATA.SAV'));
   assert.deepEqual(updateSfoHashes(sfo, 'SAVEDATA.SAV', sfoFileHash(sfo, 'SAVEDATA.SAV')!), sfo);
@@ -100,13 +101,63 @@ test('the PSP-only gear and spells have names and places', () => {
   assert.deepEqual(SPELLS.slice(-2), ['Destroy', 'Revive']);
 });
 
-test('the fourth member shows but stays as the save has it (not checked on the PSP yet)', () => {
-  const s = new Ff2PspSave(buildFf2PspSample());
+test('the fourth member: +0x4A2 names the guest, 0x0F nobody, and Leon gets his typed name (checked in the game)', () => {
+  const s = new Ff2PspSave(buildFf2PspPlain());
+  const before = new Ff2PspSave(buildFf2PspPlain());
   const f = s.usedFiles[0];
-  const before = f.guest;
-  assert.ok(!f.canPickGuest);
-  f.setGuest(before === 4 ? 5 : 4);
-  assert.equal(f.guest, before);
+  const at = FILE_BASE;
+  assert.ok(f.canPickGuest);
+  assert.equal(f.guest, 8);
+  f.setGuest(5);
+  assert.equal(s.data[at + 0x4a2], 5);
+  assert.deepEqual(f.party.map((c) => c.index), [0, 1, 2, 5]);
+  assert.deepEqual(s.describeChanges(before), [{ title: 'Party', lines: ['Fourth member: Leon → Gordon'] }]);
+  f.setGuest(null);
+  assert.equal(s.data[at + 0x4a2], 0x0f);
+  assert.equal(f.party.length, 3);
+  // Before Leon joins, his record holds no name; picking him copies in the one typed for him (+0x750), ending it.
+  const name = at + 0x22 + 8 * 0x7e + 4;
+  for (let i = 0; i < 16; i += 2) s.data.set([0xff, 0x80], name + i);
+  f.setGuest(8);
+  assert.equal(f.characters[8].name, 'Leon');
+  assert.deepEqual([...s.data.subarray(name + 8, name + 13)], [0, 0, 0, 0, 0]);
+  f.setGuest(9);
+  assert.equal(f.guest, 8);
+  const again = new Ff2PspSave(s.serialize());
+  assert.ok(PSP_FORMAT.fileOk(again.data, 0));
+  assert.equal(again.usedFiles[0].guest, 8);
+});
+
+test('edits to someone swapped out of the fourth place are still listed', () => {
+  const before = new Ff2PspSave(buildFf2PspPlain());
+  const s = new Ff2PspSave(buildFf2PspPlain());
+  const f = s.usedFiles[0];
+  f.party[3].setStat('str', 99);
+  f.setGuest(5);
+  const groups = s.describeChanges(before);
+  assert.deepEqual(groups.map((g) => g.title), ['Party', 'Leon']);
+  assert.deepEqual(groups[1].lines, ['Strength: 56 → 99']);
+});
+
+test('key terms: 48 places at +0x6FC, the PSP\'s 45 names and the count at +0x74F (checked in the game)', () => {
+  const s = new Ff2PspSave(buildFf2PspPlain());
+  const before = new Ff2PspSave(buildFf2PspPlain());
+  const terms = s.usedFiles[0].keyTerms!;
+  const at = FILE_BASE + 0x6fc;
+  assert.equal(terms.names.length, 45);
+  assert.deepEqual([terms.names[0], terms.names[14], terms.names[15], terms.names[44]], ['Wild Rose', 'Ekmet Teloess', 'Authority', 'Guardian']);
+  assert.deepEqual(terms.learned, [15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]);
+  terms.set(17, true);
+  terms.set(14, false);
+  assert.deepEqual([...s.data.subarray(at, at + 3)], [17, 15, 13]);
+  assert.equal(s.data[FILE_BASE + 0x74f], 15);
+  assert.deepEqual(s.describeChanges(before), [{ title: 'Key terms', lines: ['Mask: forgotten', 'Mirror: learned'] }]);
+  for (let id = 1; id <= 45; id++) terms.set(id, true);
+  assert.equal(terms.learned.length, 45);
+  assert.equal(s.data[FILE_BASE + 0x74f], 45);
+  assert.deepEqual([...s.data.subarray(at + 45, at + 48)], [0, 0, 0]);
+  assert.equal(s.data[at + 48], s.data[FILE_BASE + 0x72c]);   // nothing written past the 48 places
+  assert.ok(PSP_FORMAT.fileOk(new Ff2PspSave(s.serialize()).data, 0));
 });
 
 function sfoWithDir(sfo: Uint8Array, dir: string): Uint8Array {
