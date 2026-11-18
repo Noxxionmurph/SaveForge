@@ -33,6 +33,11 @@ with sync_playwright() as p:
     page.select_option('label.field:has-text("Learn a spell") select', label='Ultima')
     page.click('.ff-member >> nth=1')
     page.click('button[aria-label="Forget Blizzard"]')
+    # the fourth member: nobody is along; Gordon joins with his own record
+    assert page.get_attribute('.ff-guests .ff-class-tile:has-text("Nobody")', 'aria-pressed') == 'true'
+    page.click('.ff-guests .ff-class-tile:has-text("Gordon")')
+    assert page.locator('.ff-member').count() == 4
+    assert page.locator('.ff-member').all_inner_texts()[3].startswith('Gordon')
     page.screenshot(path=f'{SP}/ff2wsc-party.png', full_page=True)
     page.click('button.tab:has-text("Items")')
     page.locator('label.field:has-text("Gil") input').fill('5000000')
@@ -50,7 +55,7 @@ with sync_playwright() as p:
     review = page.inner_text('dialog.review-dialog')
     for line in ('Name: Firion → Kieron', 'Strength: 22 → 60', 'Sword skill: 5 → 12', 'Right hand: Mythril Sword → Excalibur',
                  'Learned Ultima (level 1)', 'Forgot Blizzard', 'Gil: 18,350 → 5,000,000', 'Masamune: 0 → 1',
-                 'Dreadnought: learned', 'Wild Rose: forgotten'):
+                 'Dreadnought: learned', 'Wild Rose: forgotten', 'Fourth member: Nobody → Gordon'):
         assert line in review, (line, review)
     with page.expect_download() as dl:
         page.click('dialog.review-dialog button.primary')
@@ -69,7 +74,7 @@ const c = f.party[0];
 console.log(JSON.stringify({ size: d.length, ok: slotOk(d, 0), name: c.name, str: c.stat('str'), sword: c.skill(s.format.weaponSkills.indexOf('Sword')).level,
   excalibur: c.gear(0) === ITEMS.indexOf('Excalibur'), ultima: c.knows(SPELLS.indexOf('Ultima') + 1),
   blizzard: f.party[1].knows(SPELLS.indexOf('Blizzard') + 1), gil: f.gil, masamune: f.count(ITEMS.indexOf('Masamune')),
-  terms: f.keyTerms.learned }));
+  terms: f.keyTerms.learned, guest: f.guest, byte: d[0x20 + 5], fourth: f.party[3]?.name }));
 """
 out = json.loads(subprocess.run(['node', '--input-type=module', '-e', check, f'{SP}/ff2wsc-edited.sav'], cwd=REPO,
                                 capture_output=True, text=True, check=True).stdout)
@@ -77,4 +82,5 @@ assert out['size'] == 32768 and out['ok'], out
 assert out['name'] == 'Kieron' and out['str'] == 60 and out['sword'] == 12 and out['excalibur'] and out['ultima'], out
 assert not out['blizzard'] and out['gil'] == 5000000 and out['masamune'] == 1, out
 assert out['terms'] == [3, 2], out   # Dreadnought first, then Mythril
+assert out['guest'] == 5 and out['byte'] == 5 and out['fourth'] == 'Gordon', out
 print('ERRORS:', '; '.join(errors) or 'none')

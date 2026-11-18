@@ -314,9 +314,13 @@ tables straight out of its data banks into `tables.ts`.
 `src/core/ff2gba/` (the file layout is shared, in `src/core/ff1gba/layout.ts`). Item and spell names come from the ROM:
 `scripts/gen-ff2gba-data.mjs <rom>`.
 
-- **Characters**: eight records of 0x80 bytes from file + 0x22 (Firion, Maria, Guy, then Minwu, Josef, Gordon, Leila
-  and Ricard). The party is the first three and the record named at file + 0x4B2 (the fourth place).
-- **Party**: name, HP / MP, the six stats (the record also keeps them with gear bonuses; that copy moves with them),
+- **Characters**: nine records of 0x80 bytes from file + 0x22 (Firion, Maria, Guy, then Minwu, Josef, Gordon, Leila,
+  Ricard and Leon), filled in from the start. The party is the first three and the record named at file + 0x4B2 (the
+  fourth place: 3-8, or 0x0F when nobody is along, which is what the game's own save writes).
+- **Fourth member**: the Party tab picks who travels in the fourth place, or nobody. Leon's record holds no name until
+  he joins, so picking him copies in the name typed for him at the start (file + 0x700).
+- **Party**: name (up to six full-width letters and a zero byte to end it, which after a sixth letter goes at +0x10;
+  the rest of the space holds leftovers), HP / MP, the six stats (the record also keeps them with gear bonuses; that copy moves with them),
   the eight weapon skills (unarmed, knife, sword, staff, axe, spear, bow, shield: level 1-16), 16 spell places (spell and
   level 1-16), and gear in both hands, head, body and arms (an empty hand is the "Hands" item, 0x30).
 - **Items**: gil (+0x4A8), and the bag: 150 item ids at +0x4B4 and their counts at +0x54A. Key items are in the bag
@@ -348,6 +352,11 @@ and were checked by loading edited saves in the game (Neo Demiforce's English pa
   at +0x1A/+0x1B (item k is bit k); they're shown but not changed.
 - **Key terms**: 16 places at +0x80, each 0xF0 plus the term's number (the same 15 as Dawn of Souls, in the same order),
   the most recent first and zeros after. Learning one moves the others down a place (0E/9597).
+- **Fourth member**: when someone joins, the game (00/9C0C) copies that guest's record from the ROM (pointers at
+  00/9C45: Minwu, Josef, Gordon, Leila, Ricard, Leon) over the fourth record, bytes 0x00-0x3F to +0x1C0 and 0x40-0x75 to
+  +0x2C0, and gives Leon the name typed for him at the start, kept at +0x276; a guest leaving sets +0x2F5 to 0x80. The
+  Party tab does the same with those records (`guests.ts`, made by `scripts/gen-ff2nes-guests.mjs <rom>`), and a guest
+  swapped out and back in comes back as they were. The patch draws Richard's name with five squeezed tiles.
 - The party window shows each character's Pixel Remaster battle sprite, as every Final Fantasy I-III page does (SaveForge-assets).
 
 ## Final Fantasy III (Famicom)
@@ -441,7 +450,9 @@ writing values into a save and reading them back in the game's menus.
 - **Format** (`layout.ts`): 32 KB of SRAM. The text `Final Fantasy2 6` at 0x10, eight save slots of 0x66C bytes from
   0x20, and the quick save the menu's QckSv makes at 0x3380. Slot + 2 holds a u16 sum of the slot's words from +6 to
   the end, and slot + 4 is 1 when the slot is used; with a wrong sum the game won't offer the slot.
-- **Party**: nine records of 0x74 bytes from slot + 6, one per character (the first three are Firion, Maria, Guy). Id
+- **Party**: nine records of 0x74 bytes from slot + 6, one per character (the first three are Firion, Maria, Guy), all
+  filled in from the start; slot + 5 names whose record is in the fourth place (3-8, or 0x0F for nobody; it's outside
+  the sum), and the Party tab picks it. Id
   (low four bits), name (+1, six letters: a-z 0x00-0x19, A-Z 0xA1-0xBA, 0xFF after a short name), HP / MP (+8), the six
   stats (+0x10; the copy with gear bonuses at +0x20 moves with them), gear (+0x19 right hand, left hand, head, body,
   arms; 0x30 is an empty hand), 16 spell places (+0x30, spells 1-40 in Dawn of Souls order), and [progress, level]
@@ -484,7 +495,7 @@ for what the PSP added come from the game's BOOT.BIN.
   the text "ファイナルファンタジーⅡsave" (Shift-JIS) and a 16-bit checksum at +0x20 worked out as Dawn of Souls does it
   (the bytes from +0x24 on, plus 0xF40). The Soul of Rebirth files after them aren't opened yet.
 - **Characters**: nine records of 0x7E bytes from file + 0x22, laid out like Dawn of Souls' (Leon is the ninth); the
-  fourth place is named at +0x4A2. Gil at +0x498 (up to 9,999,999), bag ids at +0x4A4 and counts at +0x53A.
+  fourth place is named at +0x4A2. Picking who is there isn't offered yet: it hasn't been checked in the game. Gil at +0x498 (up to 9,999,999), bag ids at +0x4A4 and counts at +0x53A.
 - **Key terms**: 48 places at +0x6FC with how many there are at +0x74F, like Dawn of Souls' list, but the PSP has 45
   terms and the names of the 30 it added aren't known yet, so they aren't editable.
 - **New items**: the Destroy and Revive tomes and spells, and the Soul of Rebirth weapons (Ragnarok, Artemis Bow,
@@ -615,9 +626,11 @@ Every screen explains itself in plain words, so keep it that way when you add a 
   build. The Orbs (2026-11-18): Earth and Wind lit in a file the game had just saved show on its load screen and in
   the menu, and saving again changes nothing else. Final Fantasy II was checked the same way with a real save (a renamed Firion with 9,999 HP, 99 Strength, sword
   skill 16 and Excalibur, Fire at 16, Ultima learned in place of Toad, Maria's Ribbon, Josef's MP, gil, Elixirs and a
-  Holy Tome all show in its menus). Its fourth party member and the record of who has left aren't editable, and
-  progress towards the next skill or spell level is left as it is. Key terms (2026-11-18): a copy of the real save given
-  Mask and without Dreadnought shows exactly that list, most recent first, in the Key Terms menu.
+  Holy Tome all show in its menus). The record of who has left isn't editable, and progress towards the next skill or
+  spell level is left as it is. Key terms (2026-11-18): a copy of the real save given Mask and without Dreadnought shows
+  exactly that list, most recent first, in the Key Terms menu. Fourth member (2026-11-18): copies of the real save given
+  Leon (under the name typed for him), Gordon or nobody show exactly that party in the menu. Before then a six-letter
+  name could show leftovers after it in the game, because the zero that ends it wasn't written.
 
 - Final Fantasy II (Famicom) was checked in the real game (Neo Demiforce's English patch 1.0 in cynes, 2026-11-06): a
   save made there opens, and an edited copy (renamed Firion and Maria, 777 HP, new stats, weapon skills 2-9, Fire and
@@ -625,7 +638,9 @@ Every screen explains itself in plain words, so keep it that way when you add a 
   every edit showing in the menus. Only the English patch's letters are known, so Japanese names show as "?"; key
   items and the record of who has left aren't editable. Key terms (2026-11-18): a slot the editor gave Wild Rose,
   Dreadnought and Mask loads with them in place, and the game's Say list shows them, most recent first (the patch
-  calls Dreadnought "Warship").
+  calls Dreadnought "Warship"). Fourth member (2026-11-18): slots the editor gave Josef, Richard or Leon (under the name
+  typed for him) load with them in the menu, an emptied fourth place loads with three, and the game's own save
+  afterwards keeps Josef.
 
 - Final Fantasy III (Famicom) was checked in the real game (Japanese ROM with an English patch, in cynes, 2026-11-16):
   an edited copy (names with ' and ! and the squeezed letters, stats, MP, spells, gear, arrows, gil, capacity, the
@@ -663,9 +678,10 @@ Every screen explains itself in plain words, so keep it that way when you add a 
 - Final Fantasy II (WonderSwan Color) was checked in the real game (English patch T-Eng 0.10 in Mednafen's WonderSwan
   core, 2026-11-06): a save made there opens, and edited copies (renamed Firion and Maria, 999 and 777 HP, 99 Strength,
   sword skill 9, Fire at 5, a Mythril Sword, 9,999,999 and 123,456 gil, Elixirs, Potions and a Ribbon in the bag) load
-  with the edits showing in the menus. Only checked with saves made in the emulator. The fourth party member, key items
-  and the map aren't editable. Key terms (2026-11-18): a save given Dreadnought, Mask and Ekmet Teloess and without Wild
-  Rose shows exactly that list in the Wrd menu, and the game's own quick save afterwards keeps it.
+  with the edits showing in the menus. Only checked with saves made in the emulator. Key items and the map aren't
+  editable. Key terms (2026-11-18): a save given Dreadnought, Mask and Ekmet Teloess and without Wild Rose shows exactly
+  that list in the Wrd menu, and the game's own quick save afterwards keeps it. Fourth member (2026-11-18): a save given
+  Leila or Ricard shows them in the menu, and one with nobody shows the three heroes.
 
 - Final Fantasy (WonderSwan Color) was checked in the real game (Japanese ROM in Mednafen's WonderSwan core,
   2026-11-06): a save made there opens, and an edited copy (a renamed character promoted to Knight at level 50 with

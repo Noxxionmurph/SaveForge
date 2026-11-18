@@ -1,15 +1,15 @@
 // Final Fantasy II (Famicom) editor UI. Loaded lazily by the shell via the game module.
 
 import {
-  EMPTY_HAND, GEAR_CHOICES, GEAR_SLOTS, GUEST_NAMES, ITEMS, KEY_TERMS, KIND, MAX_GIL, MAX_HP, MAX_MP, MAX_SKILL, MAX_STAT,
-  SPELLS, SPELL_SLOTS, STAT_KEYS, STAT_LABELS,
+  EMPTY_HAND, GEAR_CHOICES, GEAR_SLOTS, GUESTS, GUEST_NAMES, ITEMS, KEY_TERMS, KIND, MAX_GIL, MAX_HP, MAX_MP, MAX_SKILL, MAX_STAT,
+  PORTRAITS, SPELLS, SPELL_SLOTS, STAT_KEYS, STAT_LABELS,
   type Ff2NesChar, type Ff2NesSave, type Ff2NesSlot,
 } from '../../../core/ff2nes/save.ts';
 import type { MountEditor } from '../../../core/types.ts';
 import { clear, field, h, numberInput, selectInput, textInput } from '../../dom.ts';
 import { ff2NesPortrait, ff2WscPortrait } from '../../sprites.ts';
 import { tabBar, tabPanel } from '../../tabs.ts';
-import { ffHpBar, ffMpBar, ffToggle } from '../ff/menu.ts';
+import { ffHpBar, ffMpBar, ffToggle, guestBoard } from '../ff/menu.ts';
 
 type Tab = 'party' | 'items';
 const TABS: { id: Tab; label: string }[] = [
@@ -77,7 +77,20 @@ const makeEditor = (portrait: (who: string) => HTMLImageElement): MountEditor<Ff
     const win = partyWindow(() => { win.paint(); drawSheet(); });
     const drawSheet = () => { clear(sheet); sheet.append(...characterSheet(slot.party[who], win.paint)); };
     drawSheet();
-    return h('div', { class: 'stack' }, win.node, sheet);
+    return h('div', { class: 'stack' }, win.node, guestCard(), sheet);
+  }
+
+  /** Who is in the fourth place. Picking someone shows their sheet. */
+  function guestCard(): Node {
+    return h('section', { class: 'card' },
+      h('h3', {}, 'Fourth member'),
+      guestBoard(GUESTS.map((id) => ({ id, name: GUEST_NAMES[id], sprite: portrait(PORTRAITS[id]) })), slot.guest, (id) => {
+        slot.setGuest(id);
+        who = id === null ? Math.min(who, 2) : 3;
+        markDirty();
+        render();
+      }),
+      h('p', { class: 'field-hint' }, 'The story swaps guests as it goes, so whoever joins next takes this place.'));
   }
 
   function characterSheet(c: Ff2NesChar, repaint: () => void): Node[] {

@@ -7,12 +7,14 @@
 
 import { clamp } from '../bytes.ts';
 import { KEY_TERMS, KeyTermList, type KeyTermFormat } from '../ff2gba/keyterms.ts';
+import { GUESTS, GUEST_NAMES, guestName, isGuest } from '../ff2gba/people.ts';
 import { ITEMS as GBA_ITEMS, SPELLS } from '../ff2gba/tables.ts';
 import type { ChangeGroup, EditableSave, SummaryLine } from '../types.ts';
+import { GUEST_RECORDS } from './guests.ts';
 import { SLOT_COUNT, slotBase, slotOk, writeChecksum } from './layout.ts';
 import { NAME_LENGTH, asSaved, decodeName, encodeName } from './text.ts';
 
-export { KEY_TERMS, SPELLS };
+export { GUESTS, GUEST_NAMES, KEY_TERMS, SPELLS };
 export const MAX_GIL = 9_999_999;
 export const MAX_HP = 9_999;
 export const MAX_MP = 999;
@@ -27,7 +29,6 @@ export const ITEMS: readonly string[] = GBA_ITEMS.map((n, id) => (id >= 0xc0 || 
 
 /** Who each character id is, for the portraits: the three heroes, then the people who join for a while. */
 export const PORTRAITS = ['firion', 'maria', 'guy', 'minwu', 'josef', 'gordon', 'leila', 'ricard', 'leon'] as const;
-export const GUEST_NAMES = ['Firion', 'Maria', 'Guy', 'Minwu', 'Josef', 'Gordon', 'Leila', 'Ricard', 'Leon'] as const;
 /** In the order the save keeps them (and the status screen shows them, top to bottom, left to right). */
 export const WEAPON_SKILLS = ['Unarmed', 'Shield', 'Knife', 'Sword', 'Staff', 'Spear', 'Axe', 'Bow'] as const;
 export const STAT_KEYS = ['str', 'agi', 'sta', 'int', 'spi', 'mag'] as const;
@@ -59,12 +60,18 @@ export interface Ff2SlotFormat {
   slotAt(n: number): number;
   slotOk(d: Uint8Array, n: number): boolean;
   writeChecksum(d: Uint8Array, at: number): void;
-  /** How many character records the editor shows (the party places). */
+  /** How many character records the slot has. */
   charCount: number;
   /** A character's record, and the part with the skill and spell levels (the Famicom version splits them). */
   charAt(slotAt: number, i: number): [number, number];
   /** Is record `i` in the party? */
-  present(d: Uint8Array, o: number, o2: number, i: number): boolean;
+  present(d: Uint8Array, slotAt: number, i: number): boolean;
+  /**
+   * How the fourth place works. 'refill': one record for whoever is there, which the game fills in from the guest's
+   * own record in the ROM (GUEST_RECORDS) as they join (the Famicom game, 00/9C0C). 'pick': a record per character
+   * and a byte at `at` naming who is in the fourth place, `none` for nobody (the WonderSwan Color).
+   */
+  guest: { kind: 'refill' } | { kind: 'pick'; at: number; none: number };
   ch: { id: number; name: number; hp: number; maxHp: number; mp: number; maxMp: number; stats: number; worn: number; spells: number;
     right: number; left: number; head: number; body: number; arms: number };
   ch2: { skills: number; spellLevels: number };
@@ -83,11 +90,17 @@ export interface Ff2SlotFormat {
   name: { length: number; decode(b: Uint8Array): string; encode(t: string): Uint8Array; asSaved(t: string): string };
 }
 
+/** Byte 0x35 of a Famicom record's second part: 0x80 while the fourth place is empty, 0x01 when someone is in it. */
+const EMPTY_FLAG = 0x35;
+const hexBytes = (s: string) => Uint8Array.from(s.match(/../g) ?? [], (x) => parseInt(x, 16));
+
 export const NES_FORMAT: Ff2SlotFormat = {
   slotCount: SLOT_COUNT, slotAt: slotBase, slotOk, writeChecksum,
   charCount: 4,
   charAt: (at, i) => [at + 0x100 + i * 0x40, at + 0x200 + i * 0x40],
-  present: (d, _o, o2, i) => i < 3 || !(d[o2 + 0x35] & 0x80),
+  // The top bit of byte 0x35 of the second part says the fourth place is empty (the game sets 0x80 there as a guest leaves).
+  present: (d, at, i) => i < 3 || !(d[at + 0x200 + i * 0x40 + EMPTY_FLAG] & 0x80),
+  guest: { kind: 'refill' },
   ch: { id: 0x00, name: 0x02, hp: 0x08, maxHp: 0x0a, mp: 0x0c, maxMp: 0x0e, stats: 0x10, worn: 0x20, spells: 0x30,
     head: 0x19, body: 0x1a, arms: 0x1b, right: 0x1c, left: 0x1d },
   ch2: { skills: 0x00, spellLevels: 0x10 },
@@ -109,6 +122,7 @@ export interface Spell { slot: number; id: number; level: number; exp: number }
 
 export class Ff2NesChar {
   private readonly d: Uint8Array;
+  private readonly slotAt: number;
   private readonly o: number;
   private readonly o2: number;
   private readonly f: Ff2SlotFormat;
@@ -117,13 +131,14 @@ export class Ff2NesChar {
     this.d = d;
     this.f = f;
     this.index = index;
+    this.slotAt = slotAt;
     [this.o, this.o2] = f.charAt(slotAt, index);
   }
   /** Character id 0-8 (Firion ... Leon). */
   get who() { return this.d[this.o + this.f.ch.id] & 0x0f; }
   get portrait() { return PORTRAITS[this.who] ?? 'firion'; }
   /** The fourth place is empty when no one is travelling with the heroes. */
-  get present() { return this.f.present(this.d, this.o, this.o2, this.index); }
+  get present() { return this.f.present(this.d, this.slotAt, this.index); }
 
   get name() { return this.f.name.decode(this.d.subarray(this.o + this.f.ch.name, this.o + this.f.ch.name + this.f.name.length)); }
   set name(text: string) {
@@ -215,6 +230,9 @@ export class Ff2NesSlot {
   readonly characters: Ff2NesChar[];
   /** The key terms learned (see ../ff2gba/keyterms.ts). */
   readonly keyTerms: KeyTermList;
+  /** On the Famicom: the records of guests put out of the fourth place here, so putting one back brings them back as
+   * they were. */
+  private readonly left = new Map<number, { part1: Uint8Array; part2: Uint8Array }>();
   constructor(d: Uint8Array, index: number, f: Ff2SlotFormat = NES_FORMAT) {
     this.d = d;
     this.f = f;
@@ -225,6 +243,27 @@ export class Ff2NesSlot {
     this.keyTerms = new KeyTermList(d, this.at, f.keyTerms);
   }
   get party(): Ff2NesChar[] { return this.characters.filter((c) => c.present); }
+
+  /** Who travels with the heroes in the fourth place: a character id 3-8 (Minwu ... Leon), or null for nobody. */
+  get guest(): number | null { return this.characters.slice(3).find((c) => c.present)?.who ?? null; }
+  /** Put a guest (3-8) in the fourth place, or nobody (null), as the game does. */
+  setGuest(id: number | null) {
+    const now = this.guest;
+    if ((id !== null && !isGuest(id)) || id === now) return;
+    const g = this.f.guest;
+    if (g.kind === 'pick') { this.d[this.at + g.at] = id ?? g.none; return; }
+    // The Famicom game has one record for the fourth place.
+    const [o, o2] = this.f.charAt(this.at, 3);
+    if (now !== null) this.left.set(now, { part1: this.d.slice(o, o + 0x40), part2: this.d.slice(o2, o2 + EMPTY_FLAG + 1) });
+    if (id === null) { this.d[o2 + EMPTY_FLAG] = 0x80; return; }
+    const kept = this.left.get(id);
+    if (kept) { this.d.set(kept.part1, o); this.d.set(kept.part2, o2); return; }
+    const r = hexBytes(GUEST_RECORDS[id - 3]);
+    this.d.set(r.subarray(0, 0x40), o);
+    this.d.set(r.subarray(0x40), o2);
+    // Leon joins under the name typed for him at the start, which the game keeps in Maria's second part.
+    if (id === 8) this.d.copyWithin(o + this.f.ch.name, this.at + 0x276, this.at + 0x276 + this.f.name.length);
+  }
   get gil() { return readLe(this.d, this.at + this.f.gil, this.f.gilBytes); }
   set gil(v: number) { writeLe(this.d, this.at + this.f.gil, this.f.gilBytes, clamp(v, 0, MAX_GIL)); }
 
@@ -284,8 +323,11 @@ export class Ff2NesSave implements EditableSave {
     for (const sa of this.usedSlots) {
       const sb = b.slots[sa.number - 1];
       const prefix = several ? `Slot ${sa.number}: ` : '';
+      if (sb.guest !== sa.guest) add(`${prefix}Party`, [`Fourth member: ${guestName(sb.guest)} → ${guestName(sa.guest)}`]);
+      // On the Famicom a new guest's record was filled in afresh, so there's nothing to compare it with.
+      const refilled = this.format.guest.kind === 'refill' && sb.guest !== sa.guest;
       sa.characters.forEach((ca, i) => {
-        if (!ca.present) return;
+        if (!ca.present || (refilled && i === 3)) return;
         const cb = sb.characters[i];
         const lines: string[] = [];
         const diff = (label: string, x: string | number, y: string | number) => {

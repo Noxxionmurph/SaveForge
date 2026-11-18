@@ -1,7 +1,7 @@
 // Final Fantasy II (Dawn of Souls, GBA) editor UI. Loaded lazily by the shell via the game module.
 
 import {
-  BAG_SIZE, EMPTY_HAND, GEAR_SLOTS, KEY_TERMS, MAX_HP, MAX_ITEM, MAX_MP, MAX_SKILL, MAX_STAT, NAME_LENGTH,
+  BAG_SIZE, EMPTY_HAND, GEAR_SLOTS, GUESTS, GUEST_NAMES, KEY_TERMS, MAX_HP, MAX_ITEM, MAX_MP, MAX_SKILL, MAX_STAT, NAME_LENGTH,
   SPELL_SLOTS, STAT_KEYS, STAT_LABELS, WEAPON_SKILLS, asSaved, formatPlayTime,
   type Ff2GbaChar, type Ff2GbaFile, type Ff2GbaSave,
 } from '../../../core/ff2gba/save.ts';
@@ -9,7 +9,7 @@ import type { MountEditor } from '../../../core/types.ts';
 import { clear, field, h, numberInput, selectInput, textInput } from '../../dom.ts';
 import { ff2Portrait, ff2PspPortrait } from '../../sprites.ts';
 import { tabBar, tabPanel } from '../../tabs.ts';
-import { ffHpBar, ffMpBar, ffToggle } from '../ff/menu.ts';
+import { ffHpBar, ffMpBar, ffToggle, guestBoard } from '../ff/menu.ts';
 
 type Tab = 'party' | 'items' | 'gear';
 const TABS: { id: Tab; label: string }[] = [
@@ -68,7 +68,20 @@ export const makeFf2Editor = (portrait: (who: string) => HTMLImageElement): Moun
     const win = partyWindow(() => { win.paint(); drawSheet(); });
     const drawSheet = () => { clear(sheet); sheet.append(...characterSheet(file.party[who], win.paint)); };
     drawSheet();
-    return h('div', { class: 'stack' }, win.node, sheet);
+    return h('div', { class: 'stack' }, win.node, file.canPickGuest ? guestCard() : null, sheet);
+  }
+
+  /** Who is in the fourth place. Picking someone shows their sheet. */
+  function guestCard(): Node {
+    return h('section', { class: 'card' },
+      h('h3', {}, 'Fourth member'),
+      guestBoard(GUESTS.map((id) => ({ id, name: GUEST_NAMES[id], sprite: portrait(s.format.portraits[id]) })), file.guest, (id) => {
+        file.setGuest(id);
+        who = id === null ? Math.min(who, 2) : 3;
+        markDirty();
+        render();
+      }),
+      h('p', { class: 'field-hint' }, 'The story swaps guests as it goes, so whoever joins next takes this place.'));
   }
 
   function characterSheet(c: Ff2GbaChar, repaint: () => void): Node[] {

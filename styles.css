@@ -1338,6 +1338,11 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
 .ff-class-tile:hover { border-color: color-mix(in srgb, var(--lcd-ink) 35%, transparent); }
 .ff-class-tile.now { color: var(--lcd-ink); border-color: var(--lcd-ink); background: rgb(255 255 255 / 0.1); }
 .ff-class-tile.now::before { content: '▸'; position: absolute; left: 5px; top: 6px; }
+/* The fourth member board (Final Fantasy II): nobody and the six guests, four to a row on a phone and all seven in one
+   row on a wider screen. Nobody is an empty frame the size of a sprite. */
+.ff-classes.ff-guests { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+@media (min-width: 640px) { .ff-classes.ff-guests { grid-template-columns: repeat(7, minmax(0, 1fr)); } }
+.ff-nobody { display: block; box-sizing: border-box; border: 2px dashed currentColor; border-radius: 4px; opacity: 0.5; }
 
 
 /* ---- UX review pass ---- */

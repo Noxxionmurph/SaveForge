@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, readFileSync } from 'node:fs';
 import { unwrapSave } from '../src/core/container.ts';
-import { FF2, SRAM_SIZE, checksum, detectDawnOfSouls, fileOk, storedChecksum } from '../src/core/ff1gba/layout.ts';
+import { FF2, SRAM_SIZE, checksum, detectDawnOfSouls, fileOk, storedChecksum, writeChecksum } from '../src/core/ff1gba/layout.ts';
 import { buildFf1GbaSample } from '../src/core/ff1gba/sample.ts';
 import { buildFf2GbaSample } from '../src/core/ff2gba/sample.ts';
 import { EMPTY_HAND, Ff2GbaSave, KEY_TERMS, SPELL_SLOTS, asSaved } from '../src/core/ff2gba/save.ts';
@@ -105,6 +105,40 @@ test('names, and the diff', () => {
   const lines = after.describeChanges(before).flatMap((g) => [g.title, ...g.lines]);
   assert.ok(lines.includes('Axe skill: 6 → 9'), lines.join('\n'));
   assert.ok(lines.includes('Learned Haste (level 1)'));
+});
+
+test('the fourth member: the guest byte names a record, 0x0F nobody, and Leon gets the name typed for him', () => {
+  const s = new Ff2GbaSave(buildFf2GbaSample());
+  const f = s.usedFiles[0];
+  assert.equal(f.guest, 3);
+  assert.ok(f.canPickGuest);
+  f.setGuest(8);
+  assert.deepEqual(f.party.map((c) => c.name), ['Firion', 'Maria', 'Guy', 'Leon']);
+  assert.equal(f.party[3].portrait, 'leon');
+  f.setGuest(null);
+  const out = s.serialize();
+  assert.equal(out[FF2.base + 0x4b2], 0x0f);
+  assert.ok(fileOk(out, FF2, 0));
+  assert.equal(new Ff2GbaSave(out).usedFiles[0].party.length, 3);
+  f.setGuest(8);
+  const lines = new Ff2GbaSave(s.serialize()).describeChanges(new Ff2GbaSave(buildFf2GbaSample())).flatMap((g) => g.lines);
+  assert.deepEqual(lines, ['Fourth member: Minwu → Leon']);
+});
+
+test('a six-letter name gets the zero that ends it, over whatever was left after the old name', () => {
+  const d = buildFf2GbaSample();
+  const file = FF2.base, leon = file + 0x22 + 8 * 0x80, maria = file + 0x22 + 0x80;
+  for (let i = 0; i < 16; i += 2) d.set([0xff, 0x80], leon + 4 + i); // Leon's record before he joins, as real saves have it
+  d.set([0x82, 0x6b, 0x82, 0x85, 0x82, 0x8f, 0x82, 0x8e, 0x82, 0x88, 0x82, 0x81, 0, 0x82], file + 0x700); // "Leonha"
+  d[maria + 0x10] = 0x66; // left over from a longer name
+  writeChecksum(d, file, FF2.size);
+  const s = new Ff2GbaSave(d);
+  const f = s.usedFiles[0];
+  f.setGuest(8);
+  assert.equal(f.party[3].name, 'Leonha');
+  assert.equal(s.data[leon + 0x10], 0);
+  f.characters[1].name = 'Abcdef';
+  assert.equal(s.data[maria + 0x10], 0);
 });
 
 test('key terms: a new one goes first, a forgotten one closes up, and the count follows', () => {

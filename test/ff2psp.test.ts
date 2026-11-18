@@ -100,6 +100,15 @@ test('the PSP-only gear and spells have names and places', () => {
   assert.deepEqual(SPELLS.slice(-2), ['Destroy', 'Revive']);
 });
 
+test('the fourth member shows but stays as the save has it (not checked on the PSP yet)', () => {
+  const s = new Ff2PspSave(buildFf2PspSample());
+  const f = s.usedFiles[0];
+  const before = f.guest;
+  assert.ok(!f.canPickGuest);
+  f.setGuest(before === 4 ? 5 : 4);
+  assert.equal(f.guest, before);
+});
+
 function sfoWithDir(sfo: Uint8Array, dir: string): Uint8Array {
   const out = sfo.slice();
   const at = Buffer.from(out).indexOf('ULUS1026300');

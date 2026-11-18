@@ -80,7 +80,7 @@ These rules cover every series' art. The fixed box sizes below are Pokémon's; a
 
 Use the shared pieces before writing new ones: `ui/tabs.ts`, `itemList.ts`, `monMenu.ts`, `monDialog.ts`, `hpBar.ts`, `gameChoice.ts` (OPTION-style choice and step rows), `typeChip.ts` and `dexTab.ts`.
 - **LCD panel** (`.lcd`): for anything the game itself shows. Ink and dim tokens only, in the pixel font.
-- **Final Fantasy pages**: `main.ts` tags the editor with its series (`data-family`). On a Final Fantasy page every card is one of the console's menu windows, so the whole page reads like the game's menu: the pixel font, fields as darker wells, outlined buttons, and toggles bright when on and greyed when off. Notes and hints stay in the body font. `editors/ff/menu.ts` has the shared pieces: the party's HP and MP bars, the job board (FF3), the class board (FF1) and the status buttons.
+- **Final Fantasy pages**: `main.ts` tags the editor with its series (`data-family`). On a Final Fantasy page every card is one of the console's menu windows, so the whole page reads like the game's menu: the pixel font, fields as darker wells, outlined buttons, and toggles bright when on and greyed when off. Notes and hints stay in the body font. `editors/ff/menu.ts` has the shared pieces: the party's HP and MP bars, the job board (FF3), the class board (FF1), the fourth member board (FF2: nobody and the six guests, the same tiles as the class board) and the status buttons.
 - **Tabs**: a ▸ cursor marks the active tab, like the in-game menu.
 - **Pokémon window**: Esc and × both discard, Save commits.
 - **Tiles**: a game-colour stripe, the name, the platform, and the icon at `--px2`.
