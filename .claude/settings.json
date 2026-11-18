@@ -5,6 +5,8 @@
       "Bash(gh api -X PUT repos/Noxxionmurph/SaveHub/pulls/*/merge *)",
       "Bash(gh api -X PUT repos/Noxxionmurph/SaveForge/pulls/*/merge *)",
       "Bash(gh pr merge *)"
+      "Bash(git commit *)",
+      "Bash(git push *)"
     ]
   }
 }
