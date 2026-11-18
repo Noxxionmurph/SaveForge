@@ -71,9 +71,16 @@ function huffman(lengths: ArrayLike<number>): Huffman {
   return { counts, symbols };
 }
 
-/** Inflate raw deflate data. `size` is the expected output length. */
-export function inflate(src: Uint8Array, size: number): Uint8Array {
-  const out = new Uint8Array(size);
+/** Inflate raw deflate data. `size` is the expected output length; leave it out when unknown and the output grows. */
+export function inflate(src: Uint8Array, size?: number): Uint8Array {
+  const grow = size === undefined;
+  let out = new Uint8Array(size ?? Math.max(1024, src.length * 8));
+  const room = (n: number) => {
+    if (!grow || pos + n <= out.length) return;
+    const bigger = new Uint8Array(Math.max(out.length * 2, pos + n));
+    bigger.set(out);
+    out = bigger;
+  };
   let pos = 0, bitBuf = 0, bitCnt = 0, at = 0;
   const bits = (n: number) => {
     while (bitCnt < n) {
@@ -109,6 +116,7 @@ export function inflate(src: Uint8Array, size: number): Uint8Array {
       bitBuf = 0; bitCnt = 0;
       const len = src[at] | (src[at + 1] << 8);
       at += 4;
+      room(len);
       out.set(src.subarray(at, at + len), pos);
       at += len;
       pos += len;
@@ -137,6 +145,7 @@ export function inflate(src: Uint8Array, size: number): Uint8Array {
     } else if (type !== 1) throw new Error('bad deflate block');
     for (;;) {
       const sym = decode(lit);
+      room(258);
       if (sym < 256) out[pos++] = sym;
       else if (sym === 256) break;
       else {
@@ -147,5 +156,5 @@ export function inflate(src: Uint8Array, size: number): Uint8Array {
       }
     }
   }
-  return out;
+  return grow ? out.slice(0, pos) : out;
 }
