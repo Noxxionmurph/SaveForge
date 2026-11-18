@@ -42,6 +42,8 @@ with sync_playwright() as p:
     page.locator('label.field:has-text("Gil") input').fill('500000')
     page.locator('label.field:has-text("Gil") input').press('Tab')
     page.click('.ff-toggle:text-is("Levistone")')
+    page.click('.ff-toggle:text-is("Earth Orb")')
+    assert page.get_attribute('.ff-toggle:text-is("Earth Orb")', 'aria-pressed') == 'true'
     page.click('button.tab:has-text("Weapons and armor")')
     page.locator('label.field:has-text("Ribbon") input').fill('4')
     page.locator('label.field:has-text("Ribbon") input').press('Tab')
@@ -51,7 +53,7 @@ with sync_playwright() as p:
     page.wait_for_selector('dialog.review-dialog[open]')
     review = page.inner_text('dialog.review-dialog')
     for line in ('Name: Brom → Kieron', 'Level: 24 → 40', 'Ailment: None → Poison', 'Weapon: Flame Sword → Excalibur',
-                 'Forgot Fire', 'Learned Focus', 'Gil: 18,420 → 500,000', 'Levistone: added', 'Ribbon: 0 → 4'):
+                 'Forgot Fire', 'Learned Focus', 'Gil: 18,420 → 500,000', 'Levistone: added', 'Earth Orb: lit', 'Ribbon: 0 → 4'):
         assert line in review, (line, review)
     with page.expect_download() as dl:
         page.click('dialog.review-dialog button.primary')
@@ -61,18 +63,19 @@ with sync_playwright() as p:
 check = """
 import { readFileSync } from 'node:fs';
 import { FF1, fileOk } from './src/core/ff1gba/layout.ts';
-import { Ff1GbaSave } from './src/core/ff1gba/save.ts';
+import { Ff1GbaSave, ORB_NAMES } from './src/core/ff1gba/save.ts';
 import { ARMOR, WEAPONS } from './src/core/ff1gba/tables.ts';
 const d = new Uint8Array(readFileSync(process.argv[1]));
 const f = new Ff1GbaSave(d).files[0];
 console.log(JSON.stringify({ size: d.length, ok: fileOk(d, FF1, 0), name: f.party[0].name, level: f.party[0].level,
   ailment: f.party[0].ailment, excalibur: f.party[0].gear(0) === WEAPONS.indexOf('Excalibur') + 1, gil: f.gil,
-  levistone: f.hasKeyItem(11), ribbon: f.count('armor', ARMOR.indexOf('Ribbon') + 1), spells: f.party[3].spells }));
+  levistone: f.hasKeyItem(11), orbs: ORB_NAMES.filter((_, i) => f.orbLit(i)), ribbon: f.count('armor', ARMOR.indexOf('Ribbon') + 1), spells: f.party[3].spells }));
 """
 out = json.loads(subprocess.run(['node', '--input-type=module', '-e', check, f'{SP}/ff1gba-edited.sav'], cwd=REPO,
                                 capture_output=True, text=True, check=True).stdout)
 assert out['size'] == 32768 and out['ok'], out
 assert out['name'] == 'Kieron' and out['level'] == 40 and out['ailment'] == 4 and out['excalibur'] and out['gil'] == 500000, out
+assert out['orbs'] == ['Earth'], out
 assert out['levistone'] and out['ribbon'] == 4, out
 assert 35 in out['spells'] and 33 not in out['spells'], out   # Focus in, Fire out
 print('ERRORS:', '; '.join(errors) or 'none')

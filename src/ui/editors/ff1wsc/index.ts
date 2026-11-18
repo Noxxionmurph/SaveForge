@@ -1,7 +1,7 @@
 // Final Fantasy (WonderSwan Color, Japan) editor UI. Loaded lazily by the shell via the game module.
 
 import {
-  AILMENTS, CATEGORY_NAMES, CLASSES, GEAR_ORDER, GEAR_SLOTS, MAX_EXP, MAX_GIL, MAX_HP, MAX_ITEM, MAX_LEVEL, MAX_MP, MAX_STAT,
+  AILMENTS, CATEGORY_NAMES, CLASSES, GEAR_ORDER, GEAR_SLOTS, MAX_EXP, MAX_GIL, MAX_HP, MAX_ITEM, MAX_LEVEL, MAX_MP, MAX_STAT, ORB_NAMES,
   NAME_LENGTH, SPELLS_PER_LEVEL, STAT_KEYS, STAT_LABELS, armorFor, asSaved, canLearn, className, formatPlayTime,
   type Category, type Ff1WscChar, type Ff1WscFile, type Ff1WscSave,
 } from '../../../core/ff1wsc/save.ts';
@@ -168,7 +168,11 @@ export const mountFf1WscEditor: MountEditor<Ff1WscSave> = (container, s, host) =
       h('section', { class: 'card' },
         h('h3', {}, 'Key items'),
         h('div', { class: 'ff-toggles' }, KEY_ITEMS.map((n, i) => toggle(n, file.hasKeyItem(i + 1), (on) => file.setKeyItem(i + 1, on)))),
-        h('p', { class: 'field-hint' }, 'Key items move the story on when you use or hand them over, so adding one can skip ahead or leave a quest stuck.')));
+        h('p', { class: 'field-hint' }, 'Key items move the story on when you use or hand them over, so adding one can skip ahead or leave a quest stuck.')),
+      h('section', { class: 'card' },
+        h('h3', {}, 'Orbs'),
+        h('div', { class: 'ff-toggles' }, ORB_NAMES.map((n, i) => toggle(`${n} Orb`, file.orbLit(i), (on) => file.setOrb(i, on)))),
+        h('p', { class: 'field-hint' }, 'Lit Orbs are what open the way to the end of the game.')));
   }
 
   function gearTab(): Node {

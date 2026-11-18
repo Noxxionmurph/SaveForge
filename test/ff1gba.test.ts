@@ -4,7 +4,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { unwrapSave } from '../src/core/container.ts';
 import { FF1, SRAM_SIZE, checksum, detectDawnOfSouls, fileOk, storedChecksum, writeChecksum } from '../src/core/ff1gba/layout.ts';
 import { buildFf1GbaSample } from '../src/core/ff1gba/sample.ts';
-import { Ff1GbaSave, asSaved, canLearn, spellLevel } from '../src/core/ff1gba/save.ts';
+import { Ff1GbaSave, ORB_NAMES, asSaved, canLearn, spellLevel } from '../src/core/ff1gba/save.ts';
 import { ARMOR, ARMOR_SLOT, KEY_ITEMS, SPELLS, WEAPONS } from '../src/core/ff1gba/tables.ts';
 import { detectGames, openSave } from '../src/core/registry.ts';
 
@@ -62,6 +62,23 @@ test('key items: id 1 is the top bit of +0x747, counting down (checked in the ga
   assert.equal(s.data[at + 0x747], 0x80);
   assert.equal(s.data[at + 0x745], 0x80);
   assert.equal(s.data[at + 0x743], 0x10);
+});
+
+test('orbs: one story flag each, the same bits as the WonderSwan game (checked in the game)', () => {
+  const s = new Ff1GbaSave(buildFf1GbaSample());
+  const f = s.files[0];
+  const at = f.at;
+  for (let i = 0; i < 4; i++) f.setOrb(i, false);
+  const before = [...s.data.subarray(at + 0x72a, at + 0x72d)];
+  f.setOrb(ORB_NAMES.indexOf('Fire'), true);
+  f.setOrb(ORB_NAMES.indexOf('Water'), true);
+  const out = s.serialize();
+  assert.ok(fileOk(out, FF1, 0));
+  assert.equal(out[at + 0x72a], before[0] | 0x08);
+  assert.equal(out[at + 0x72b], before[1] | 0x20);
+  assert.equal(out[at + 0x72c], before[2]);
+  const again = new Ff1GbaSave(out).files[0];
+  assert.deepEqual(ORB_NAMES.map((_, i) => again.orbLit(i)), [true, false, false, true]);
 });
 
 test('the bag keeps the fourth byte of every cell', () => {

@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { FILE_SIZE, QUICK_SAVE, SRAM_SIZE, checksum, fileBase, fileOk, storedChecksum } from '../src/core/ff1wsc/layout.ts';
 import { buildFf1WscSample } from '../src/core/ff1wsc/sample.ts';
-import { CLASSES, Ff1WscSave, asSaved, canLearn, decodeName } from '../src/core/ff1wsc/save.ts';
+import { CLASSES, Ff1WscSave, ORB_NAMES, asSaved, canLearn, decodeName } from '../src/core/ff1wsc/save.ts';
 import { ARMOR, ARMOR_SLOT, CONSUMABLES, KEY_ITEMS, SPELLS, WEAPONS } from '../src/core/ff1wsc/tables.ts';
 import { detectGames, openSave } from '../src/core/registry.ts';
 
@@ -67,6 +67,30 @@ test('edits land where the game reads them, and redo the checksum', () => {
   // key items stay a gap-free list
   const keys = [...out.subarray(0x30 + 0x73, 0x30 + 0x93)];
   assert.ok(keys.indexOf(0) === -1 || keys.slice(keys.indexOf(0)).every((v) => v === 0));
+});
+
+test('orbs: a story flag each, copied into the byte the menu draws from', () => {
+  const s = new Ff1WscSave(buildFf1WscSample());
+  const f = s.files[0];
+  assert.deepEqual(ORB_NAMES.map((_, i) => f.orbLit(i)), [false, false, false, false]);
+  f.setOrb(ORB_NAMES.indexOf('Fire'), true);
+  f.setOrb(ORB_NAMES.indexOf('Water'), true);
+  let out = s.serialize();
+  assert.ok(fileOk(out, 0));
+  const at = 0x30;
+  assert.equal(out[at + 0x30], 0x08); // Fire's flag
+  assert.equal(out[at + 0x31], 0x20); // Water's flag
+  assert.equal(out[at + 0x32], 0x00);
+  assert.equal(out[at + 0x14b], 0b1001);
+  const again = new Ff1WscSave(out);
+  assert.deepEqual(ORB_NAMES.map((_, i) => again.files[0].orbLit(i)), [true, false, false, true]);
+  again.files[0].setOrb(ORB_NAMES.indexOf('Fire'), false);
+  again.files[0].setOrb(ORB_NAMES.indexOf('Earth'), true);
+  out = again.serialize();
+  assert.equal(out[at + 0x30], 0x02); // Earth's flag, Fire's cleared
+  assert.equal(out[at + 0x14b], 0b1010);
+  assert.deepEqual(again.describeChanges(new Ff1WscSave(buildFf1WscSample())).find((g) => g.title === 'Orbs')?.lines,
+    ['Earth Orb: lit', 'Water Orb: lit']);
 });
 
 test('bag: removing an item closes the gap', () => {
