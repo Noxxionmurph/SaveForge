@@ -33,6 +33,13 @@ with sync_playwright() as p:
     page.select_option('label.field:has-text("Learn a spell") select', label='Ultima')
     page.click('.ff-member >> nth=1')
     page.click('button[aria-label="Forget Blizzard"]')
+    # the fourth member: Josef joins in Minwu's place, and his sheet opens
+    assert page.get_attribute('.ff-guests .ff-class-tile:has-text("Minwu")', 'aria-pressed') == 'true'
+    assert page.locator('.ff-guests img.job-sprite.prj').count() == 6
+    page.click('.ff-guests .ff-class-tile:has-text("Josef")')
+    assert page.get_attribute('.ff-guests .ff-class-tile:has-text("Josef")', 'aria-pressed') == 'true'
+    assert page.locator('.ff-member').all_inner_texts()[3].startswith('Josef')
+    assert page.input_value('input[aria-label="Name"]') == 'Josef'
     page.screenshot(path=f'{SP}/ff2nes-party.png', full_page=True)
     page.click('button.tab:has-text("Items")')
     page.locator('label.field:has-text("Gil") input').fill('5000000')
@@ -50,7 +57,7 @@ with sync_playwright() as p:
     review = page.inner_text('dialog.review-dialog')
     for line in ('Name: Firion → Kieron', 'Strength: 22 → 60', 'Sword skill: 5 → 12', 'Right hand: Mythril Sword → Excalibur',
                  'Learned Ultima (level 1)', 'Forgot Blizzard', 'Gil: 18,350 → 5,000,000', 'Masamune: 0 → 1',
-                 'Dreadnought: learned', 'Wild Rose: forgotten'):
+                 'Dreadnought: learned', 'Wild Rose: forgotten', 'Fourth member: Minwu → Josef'):
         assert line in review, (line, review)
     with page.expect_download() as dl:
         page.click('dialog.review-dialog button.primary')
@@ -67,7 +74,7 @@ const c = f.party[0];
 console.log(JSON.stringify({ size: d.length, ok: slotOk(d, 0), name: c.name, str: c.stat('str'), sword: c.skill(3).level,
   excalibur: c.gear(0) === ITEMS.indexOf('Excalibur'), ultima: c.knows(SPELLS.indexOf('Ultima') + 1),
   blizzard: f.party[1].knows(SPELLS.indexOf('Blizzard') + 1), gil: f.gil, masamune: f.count(ITEMS.indexOf('Masamune')),
-  terms: f.keyTerms.learned }));
+  terms: f.keyTerms.learned, guest: f.guest, fourth: f.party[3]?.name }));
 """
 out = json.loads(subprocess.run(['node', '--input-type=module', '-e', check, f'{SP}/ff2nes-edited.sav'], cwd=REPO,
                                 capture_output=True, text=True, check=True).stdout)
@@ -75,4 +82,5 @@ assert out['size'] == 8192 and out['ok'], out
 assert out['name'] == 'Kieron' and out['str'] == 60 and out['sword'] == 12 and out['excalibur'] and out['ultima'], out
 assert not out['blizzard'] and out['gil'] == 5000000 and out['masamune'] == 1, out
 assert out['terms'] == [3, 2], out   # Dreadnought first, then Mythril
+assert out['guest'] == 4 and out['fourth'] == 'Josef', out
 print('ERRORS:', '; '.join(errors) or 'none')

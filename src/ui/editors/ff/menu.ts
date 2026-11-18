@@ -47,14 +47,25 @@ export function ffToggle(label: string, on: boolean, set: (on: boolean) => void)
   return btn;
 }
 
-/** Every class with its sprite: the character's class has the menu cursor, and tapping another changes to it. */
-export function classBoard(classes: readonly { id: number; name: string }[], current: number, sprite: (id: number) => Node | null,
-  pick: (id: number) => void): HTMLElement {
-  return h('div', { class: 'ff-classes', role: 'group', 'aria-label': 'Class' }, classes.map((k) => h('button', {
-    class: k.id === current ? 'ff-class-tile now' : 'ff-class-tile', 'aria-pressed': String(k.id === current),
-    onclick: () => { if (k.id !== current) pick(k.id); },
-  }, sprite(k.id), h('span', {}, k.name))));
+/** A board of tiles, each a sprite over a name: the current one has the menu cursor, and tapping another picks it. */
+function tileBoard<T>(label: string, cls: string, tiles: readonly { id: T; name: string; sprite: Node | null }[], current: T,
+  pick: (id: T) => void): HTMLElement {
+  return h('div', { class: cls, role: 'group', 'aria-label': label }, tiles.map((t) => h('button', {
+    class: t.id === current ? 'ff-class-tile now' : 'ff-class-tile', 'aria-pressed': String(t.id === current),
+    onclick: () => { if (t.id !== current) pick(t.id); },
+  }, t.sprite, h('span', {}, t.name))));
 }
+
+/** Every class with its sprite: the character's class has the menu cursor, and tapping another changes to it. */
+export const classBoard = (classes: readonly { id: number; name: string }[], current: number, sprite: (id: number) => Node | null,
+  pick: (id: number) => void): HTMLElement =>
+  tileBoard('Class', 'ff-classes', classes.map((k) => ({ ...k, sprite: sprite(k.id) })), current, pick);
+
+/** Who travels with the heroes in the fourth place (Final Fantasy II): nobody, or one of the guests with their sprite. */
+export const guestBoard = (guests: readonly { id: number; name: string; sprite: Node | null }[], current: number | null,
+  pick: (id: number | null) => void): HTMLElement =>
+  tileBoard<number | null>('Fourth member', 'ff-classes ff-guests',
+    [{ id: null, name: 'Nobody', sprite: h('span', { class: 'job-sprite prj ff-nobody', 'aria-hidden': 'true' }) }, ...guests], current, pick);
 
 export interface JobTile {
   name: string;

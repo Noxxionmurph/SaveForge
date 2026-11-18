@@ -8,9 +8,10 @@ import { clamp } from '../bytes.ts';
 import { FF2, FILE_COUNT, fileBase, fileOk, writeChecksum } from '../ff1gba/layout.ts';
 import type { ChangeGroup, EditableSave, SummaryLine } from '../types.ts';
 import { KEY_TERMS, KeyTermList, type KeyTermFormat } from './keyterms.ts';
+import { GUESTS, GUEST_NAMES, guestName, isGuest } from './people.ts';
 import { ITEMS, SPELLS } from './tables.ts';
 
-export { KEY_TERMS };
+export { GUESTS, GUEST_NAMES, KEY_TERMS };
 export const MAX_GIL = 999_999;
 export const MAX_HP = 9_999;
 export const MAX_MP = 999;
@@ -23,7 +24,7 @@ export const BAG_SIZE = 150;
 export const EMPTY_HAND = 0x30;
 
 /** Who each character record is, for the portraits: the three heroes, then the people who join for a while. */
-export const PORTRAITS = ['firion', 'maria', 'guy', 'minwu', 'josef', 'gordon', 'leila', 'ricard'] as const;
+export const PORTRAITS = ['firion', 'maria', 'guy', 'minwu', 'josef', 'gordon', 'leila', 'ricard', 'leon'] as const;
 export const WEAPON_SKILLS = ['Unarmed', 'Knife', 'Sword', 'Staff', 'Axe', 'Spear', 'Bow', 'Shield'] as const;
 export const STAT_KEYS = ['str', 'agi', 'sta', 'int', 'spi', 'mag'] as const;
 export type StatKey = typeof STAT_KEYS[number];
@@ -56,9 +57,13 @@ export interface Ff2Format {
   fileAt(index: number): number;
   fileOk(d: Uint8Array, index: number): boolean;
   writeChecksum(d: Uint8Array, at: number): void;
-  /** Offsets inside a file. */
+  /** Offsets inside a file. A record per character (the guests' are filled in from the start), and `guest` names
+   * whose record is in the fourth place. */
   chars: number; charStride: number; charCount: number;
   guest: number; steps: number; gil: number; playTime: number; bagIds: number; bagCounts: number;
+  /** Changing the fourth party member: what nobody is saved as, and where Leon's name waits until he joins (the name
+   * screen at the start names him too). Null where that isn't known yet. */
+  guestPick: { none: number; leonName: number } | null;
   /** The key terms (see keyterms.ts); null where they aren't known yet. */
   keyTerms: KeyTermFormat | null;
   maxGil: number;
@@ -77,7 +82,9 @@ export const GBA_FORMAT: Ff2Format = {
   fileAt: (i) => fileBase(FF2, i),
   fileOk: (d, i) => fileOk(d, FF2, i),
   writeChecksum: (d, at) => writeChecksum(d, at, FF2.size),
-  chars: 0x22, charStride: 0x80, charCount: 8, guest: 0x4b2, steps: 0x4a4, gil: 0x4a8, playTime: 0x4ac, bagIds: 0x4b4, bagCounts: 0x54a,
+  chars: 0x22, charStride: 0x80, charCount: 9, guest: 0x4b2, steps: 0x4a4, gil: 0x4a8, playTime: 0x4ac, bagIds: 0x4b4, bagCounts: 0x54a,
+  // The game's own save writes 0x0F when nobody is along. Leon's record has no name until he joins.
+  guestPick: { none: 0x0f, leonName: 0x700 },
   keyTerms: { at: 0x6cc, add: 0, count: 0x6ff },
   maxGil: MAX_GIL, items: ITEMS, spells: SPELLS, kind: KIND, gearChoices: GEAR_CHOICES, portraits: PORTRAITS,
 };
@@ -86,6 +93,9 @@ const CH = {
   id: 0x02, name: 0x04, hp: 0x14, maxHp: 0x16, mp: 0x18, maxMp: 0x1a, stats: 0x1c, gear: 0x25, worn: 0x2c,
   spells: 0x3c, skills: 0x4c, spellLevels: 0x5c,
 };
+
+/** A name is six letters and a zero byte to end it (after the sixth letter too; the space after that holds leftovers). */
+const NAME_END = NAME_LENGTH * 2 + 1;
 
 const u16 = (d: Uint8Array, o: number) => d[o] | (d[o + 1] << 8);
 const setU16 = (d: Uint8Array, o: number, v: number) => { d[o] = v & 0xff; d[o + 1] = (v >> 8) & 0xff; };
@@ -134,7 +144,7 @@ export class Ff2GbaChar {
     const clean = asSaved(text);
     if (clean === this.name) return;
     const at = this.o + CH.name;
-    this.d.fill(0, at, at + NAME_LENGTH * 2);
+    this.d.fill(0, at, at + NAME_END);
     [...clean].forEach((c, i) => { const v = ENCODE.get(c)!; this.d[at + i * 2] = v >> 8; this.d[at + i * 2 + 1] = v & 0xff; });
   }
   get hp() { return u16(this.d, this.o + CH.hp); }
@@ -230,8 +240,26 @@ export class Ff2GbaFile {
   }
   /** Firion, Maria and Guy, and whoever is travelling with them in the fourth place (if anyone). */
   get party(): Ff2GbaChar[] {
-    const guest = this.d[this.at + this.f.guest];
-    return guest >= 3 && guest < this.f.charCount ? [...this.characters.slice(0, 3), this.characters[guest]] : this.characters.slice(0, 3);
+    const guest = this.guest;
+    return guest === null ? this.characters.slice(0, 3) : [...this.characters.slice(0, 3), this.characters[guest]];
+  }
+  /** Who is in the fourth place: the character id (and record) 3-8, Minwu ... Leon, or null for nobody. */
+  get guest(): number | null {
+    const g = this.d[this.at + this.f.guest];
+    return isGuest(g) && g < this.f.charCount ? g : null;
+  }
+  get canPickGuest() { return this.f.guestPick !== null; }
+  /** Put a guest (3-8) in the fourth place, or nobody (null). */
+  setGuest(id: number | null) {
+    const pick = this.f.guestPick;
+    if (!pick || id === this.guest || (id !== null && (!isGuest(id) || id >= this.f.charCount))) return;
+    this.d[this.at + this.f.guest] = id ?? pick.none;
+    if (id !== 8) return;
+    // Leon: his record has no name until he joins, when it gets the one typed for him at the start.
+    const from = this.at + pick.leonName, to = this.at + this.f.chars + 8 * this.f.charStride + CH.name;
+    if (!this.d[from]) return;
+    this.d.fill(0, to, to + NAME_END);
+    for (let i = 0; i < NAME_LENGTH * 2 && this.d[from + i]; i += 2) this.d.copyWithin(to + i, from + i, from + i + 2);
   }
   get gil() { return u32(this.d, this.at + this.f.gil); }
   set gil(v: number) { setU32(this.d, this.at + this.f.gil, clamp(v, 0, this.f.maxGil)); }
@@ -309,13 +337,17 @@ export class Ff2GbaSave implements EditableSave {
     for (const fa of this.usedFiles) {
       const fb = b.files[fa.number - 1];
       const prefix = several ? `File ${fa.number}: ` : '';
-      fa.characters.forEach((ca, i) => {
+      if (fb.guest !== fa.guest) add(`${prefix}Party`, [`Fourth member: ${guestName(fb.guest)} → ${guestName(fa.guest)}`]);
+      fa.party.forEach((ca) => {
+        const i = ca.index;
         const cb = fb.characters[i];
         const lines: string[] = [];
         const diff = (label: string, x: string | number, y: string | number) => {
           if (x !== y) lines.push(`${label}: ${typeof x === 'number' ? x.toLocaleString('en-US') : x} → ${typeof y === 'number' ? y.toLocaleString('en-US') : y}`);
         };
-        diff('Name', cb.name, ca.name);
+        // Leon's record holds no name until he joins, when it gets his.
+        const leonJoined = i === 8 && fb.guest !== 8;
+        if (!leonJoined) diff('Name', cb.name, ca.name);
         diff('HP', `${cb.hp}/${cb.maxHp}`, `${ca.hp}/${ca.maxHp}`);
         diff('MP', `${cb.mp}/${cb.maxMp}`, `${ca.mp}/${ca.maxMp}`);
         for (const k of STAT_KEYS) diff(STAT_LABELS[k], cb.stat(k), ca.stat(k));

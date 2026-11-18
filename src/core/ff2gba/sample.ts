@@ -19,7 +19,8 @@ interface Member {
   name: string; hp: number; mp: number; stats: [number, number, number, number, number, number];
   skills: number[]; gear: [string, string, string, string, string]; spells: [string, number][];
 }
-// Firion, Maria, Guy and Minwu early on, after Fynn falls.
+// Firion, Maria, Guy and Minwu early on, after Fynn falls, then the other guests' records, which the game fills in from
+// the start. Leon's has no name until he joins: the one typed for him at the start waits at + 0x700.
 const PARTY: Member[] = [
   { name: 'Firion', hp: 412, mp: 38, stats: [24, 18, 21, 12, 10, 11], skills: [1, 2, 5, 1, 1, 2, 1, 4],
     gear: ['Mythril Sword', 'Bronze Shield', 'Leather Cap', 'Leather Armor', 'Leather Gloves'], spells: [['Fire', 3], ['Cure', 2]] },
@@ -29,6 +30,16 @@ const PARTY: Member[] = [
     gear: ['Battle Axe', 'Bronze Shield', 'Bronze Helm', 'Bronze Armor', 'Bronze Gloves'], spells: [['Thunder', 1]] },
   { name: 'Minwu', hp: 240, mp: 120, stats: [12, 16, 14, 16, 30, 26], skills: [1, 1, 1, 6, 1, 1, 1, 1],
     gear: ['Mage\'s Staff', 'Hands', '', 'White Robe', ''], spells: [['Cure', 6], ['Life', 3], ['Esuna', 2], ['Barrier', 2]] },
+  { name: 'Josef', hp: 1581, mp: 5, stats: [30, 24, 30, 10, 10, 10], skills: [4, 1, 1, 1, 1, 1, 1, 1],
+    gear: ['Hands', 'Hands', '', 'Leather Armor', 'Leather Gloves'], spells: [] },
+  { name: 'Gordon', hp: 128, mp: 5, stats: [22, 22, 22, 22, 22, 22], skills: [1, 1, 3, 1, 1, 1, 1, 1],
+    gear: ['Longsword', 'Hands', '', 'Bronze Armor', 'Bronze Gloves'], spells: [] },
+  { name: 'Leila', hp: 248, mp: 20, stats: [18, 26, 18, 16, 10, 10], skills: [1, 3, 1, 1, 1, 1, 1, 1],
+    gear: ['Dagger', 'Hands', '', 'Leather Armor', ''], spells: [['Fire', 2]] },
+  { name: 'Ricard', hp: 549, mp: 5, stats: [40, 26, 32, 16, 26, 5], skills: [1, 1, 1, 1, 1, 6, 1, 1],
+    gear: ['Mythril Spear', 'Bronze Shield', 'Bronze Helm', 'Bronze Armor', 'Bronze Gloves'], spells: [] },
+  { name: '', hp: 1098, mp: 5, stats: [53, 45, 46, 36, 16, 32], skills: [1, 1, 5, 1, 7, 1, 1, 1],
+    gear: ['Mythril Sword', 'Bronze Shield', 'Bronze Helm', 'Bronze Armor', 'Bronze Gloves'], spells: [] },
 ];
 const BAG: [string, number][] = [
   ['Potion', 18], ['Antidote', 6], ['Gold Needle', 3], ['Phoenix Down', 2], ['Ether', 2], ['Cottage', 1],
@@ -58,6 +69,7 @@ export function buildFf2GbaSample(): Uint8Array {
     m.skills.forEach((lv, k) => { d[r + 0x4c + k * 2 + 1] = lv; });
   });
   d[s + 0x4b2] = 3;
+  [...'Leon'].forEach((c, k) => v.setUint16(s + 0x700 + k * 2, fullWidth(c), false));
   v.setUint32(s + 0x4a4, 4_210, true);
   v.setUint32(s + 0x4a8, 3_250, true);
   v.setUint32(s + 0x4ac, 2 * 3600 + 7 * 60, true);

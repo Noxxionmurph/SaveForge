@@ -73,6 +73,35 @@ test('the fourth place is empty when nobody travels with the heroes', () => {
   assert.deepEqual(new Ff2NesSave(d).usedSlots[0].party.map((c) => c.name), ['Firion', 'Maria', 'Guy']);
 });
 
+test('the fourth member: a guest joins as the game has them join, and one put back returns as they were', () => {
+  const s = new Ff2NesSave(buildFf2NesSample());
+  const slot = s.usedSlots[0];
+  const at = slotBase(0);
+  assert.equal(slot.guest, 3);
+  slot.party[3].setStat('str', 50); // Minwu
+  const past = [...s.data.subarray(at + 0x2f6, at + 0x300)];
+  slot.setGuest(4); // Josef joins
+  assert.deepEqual(slot.party.map((c) => [c.who, c.name]), [[0, 'Firion'], [1, 'Maria'], [2, 'Guy'], [4, 'Josef']]);
+  assert.equal(slot.party[3].maxHp, 235); // as the game's own record for him has it
+  assert.equal(slot.party[3].skill(0).level, 2);
+  assert.deepEqual([...s.data.subarray(at + 0x2f6, at + 0x300)], past, 'nothing after the record changes');
+  slot.setGuest(null);
+  assert.equal(slot.guest, null);
+  assert.equal(s.data[at + 0x2f5], 0x80);
+  assert.equal(slot.party.length, 3);
+  slot.setGuest(3); // Minwu again, as he was
+  assert.equal(slot.party[3].stat('str'), 50);
+  slot.setGuest(8); // Leon, under the name typed for him at the start
+  assert.equal(slot.party[3].name, 'Leon');
+  assert.equal(slot.party[3].portrait, 'leon');
+  const out = s.serialize();
+  assert.ok(slotOk(out, 0));
+  const groups = new Ff2NesSave(out).describeChanges(new Ff2NesSave(buildFf2NesSample()));
+  assert.deepEqual(groups, [{ title: 'Party', lines: ['Fourth member: Minwu → Leon'] }]);
+  slot.setGuest(9);
+  assert.equal(slot.guest, 8, 'only Minwu to Leon can join');
+});
+
 test('key terms: a new one goes first, a forgotten one closes up, stored as 0xF0 + its number', () => {
   const s = new Ff2NesSave(buildFf2NesSample());
   const slot = s.usedSlots[0];

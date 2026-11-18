@@ -37,6 +37,10 @@ with sync_playwright() as p:
     # Maria forgets Blizzard
     page.click('.ff-member >> nth=1')
     page.click('button[aria-label="Forget Blizzard"]')
+    # the fourth member: Leon joins in Minwu's place, under the name typed for him at the start
+    page.click('.ff-guests .ff-class-tile:has-text("Leon")')
+    assert page.locator('.ff-member').all_inner_texts()[3].startswith('Leon')
+    assert page.locator('.ff-member img[src*="ff2/pr/jobs/leon"]').count() == 1
     page.screenshot(path=f'{SP}/ff2gba-party.png', full_page=True)
     page.click('button.tab:has-text("Items")')
     page.locator('label.field:has-text("Gil") input').fill('500000')
@@ -57,7 +61,7 @@ with sync_playwright() as p:
     review = page.inner_text('dialog.review-dialog')
     for line in ('Name: Firion → Kieron', 'Strength: 24 → 60', 'Sword skill: 5 → 12', 'Right hand: Mythril Sword → Excalibur',
                  'Fire: level 3 → 9', 'Learned Ultima (level 1)', 'Forgot Blizzard', 'Gil: 3,250 → 500,000', 'Elixir: 0 → 7', 'Holy Tome: 0 → 1',
-                 'Dreadnought: learned', 'Wild Rose: forgotten'):
+                 'Dreadnought: learned', 'Wild Rose: forgotten', 'Fourth member: Minwu → Leon'):
         assert line in review, (line, review)
     with page.expect_download() as dl:
         page.click('dialog.review-dialog button.primary')
@@ -75,7 +79,7 @@ const c = f.party[0];
 console.log(JSON.stringify({ size: d.length, ok: fileOk(d, FF2, 0), name: c.name, str: c.stat('str'), sword: c.skill(2).level,
   excalibur: c.gear(0) === ITEMS.indexOf('Excalibur'), ultima: c.knows(SPELLS.indexOf('Ultima') + 1),
   blizzard: f.party[1].knows(SPELLS.indexOf('Blizzard') + 1), gil: f.gil, elixir: f.count(ITEMS.indexOf('Elixir')),
-  terms: f.keyTerms.learned, count: d[FF2.base + 0x6ff] }));
+  terms: f.keyTerms.learned, count: d[FF2.base + 0x6ff], guest: d[FF2.base + 0x4b2], fourth: f.party[3]?.name }));
 """
 out = json.loads(subprocess.run(['node', '--input-type=module', '-e', check, f'{SP}/ff2gba-edited.sav'], cwd=REPO,
                                 capture_output=True, text=True, check=True).stdout)
@@ -83,4 +87,5 @@ assert out['size'] == 32768 and out['ok'], out
 assert out['name'] == 'Kieron' and out['str'] == 60 and out['sword'] == 12 and out['excalibur'] and out['ultima'], out
 assert not out['blizzard'] and out['gil'] == 500000 and out['elixir'] == 7, out
 assert out['terms'] == [3, 2] and out['count'] == 2, out   # Dreadnought first, then Mythril
+assert out['guest'] == 8 and out['fourth'] == 'Leon', out
 print('ERRORS:', '; '.join(errors) or 'none')

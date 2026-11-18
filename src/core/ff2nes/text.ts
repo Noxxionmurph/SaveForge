@@ -14,9 +14,18 @@ for (const [b, c] of DECODE) if (/[A-Za-z]/.test(c)) ENCODE.set(c, b);
 
 export const NAME_LENGTH = 6;
 
+/** Tiles the patch draws a name with that hold more than one letter each: Richard's (the game's own record for him,
+ * which the editor copies in when he joins; the game shows "Richard"). */
+const SQUEEZED: readonly (readonly [readonly number[], string])[] = [[[0xe8, 0xe9, 0xea, 0xeb, 0xec], 'Richar']];
+
 /** A name as the game shows it, without its padding. A tile that isn't a letter or digit shows as "?". */
 export function decodeName(bytes: Uint8Array): string {
-  return Array.from(bytes, (b) => DECODE.get(b) ?? '?').join('').trimEnd();
+  let out = '';
+  for (let i = 0; i < bytes.length; i++) {
+    const run = SQUEEZED.find(([tiles]) => tiles.every((t, k) => bytes[i + k] === t));
+    if (run) { out += run[1]; i += run[0].length - 1; } else out += DECODE.get(bytes[i]) ?? '?';
+  }
+  return out.trimEnd();
 }
 
 /** Six tiles for `text`, keeping only the letters the name screen has. */

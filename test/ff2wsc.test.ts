@@ -70,6 +70,24 @@ test('edits read back and the slot checksum is redone', () => {
   assert.ok(changes.includes('Gil: 18,350 → 9,999,999'));
 });
 
+test('the fourth member: slot + 5 names whose record is in the fourth place, 0x0F nobody', () => {
+  const s = new Ff2WscSave(buildFf2WscSample());
+  const slot = s.usedSlots[0];
+  assert.equal(slot.guest, null);
+  slot.setGuest(5);
+  assert.deepEqual(slot.party.map((c) => c.name), ['Firion', 'Maria', 'Guy', 'Gordon']);
+  assert.equal(slot.party[3].portrait, 'gordon');
+  slot.party[3].setStat('str', 40);
+  const out = s.serialize();
+  assert.equal(out[slotBase(0) + 5], 5);
+  assert.ok(slotOk(out, 0));
+  const lines = new Ff2WscSave(out).describeChanges(new Ff2WscSave(buildFf2WscSample())).flatMap((g) => [g.title, ...g.lines]);
+  assert.ok(lines.includes('Fourth member: Nobody → Gordon') && lines.includes('Strength: 22 → 40'), lines.join('\n'));
+  slot.setGuest(null);
+  assert.equal(s.serialize()[slotBase(0) + 5], 0x0f);
+  assert.equal(slot.party.length, 3);
+});
+
 test('key terms: a new one goes first, a forgotten one closes up, and the count follows', () => {
   const s = new Ff2WscSave(buildFf2WscSample());
   const slot = s.usedSlots[0];
