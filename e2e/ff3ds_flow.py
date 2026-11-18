@@ -68,13 +68,16 @@ with sync_playwright() as p:
     page.fill('.pick-search', 'ribbon'); page.keyboard.press('Enter')
     page.wait_for_function("document.querySelectorAll('section.card:has(h3) .item-row').length >= 11")
     page.click('button.ff-toggle:text-is("Ninja")')
+    page.click('button.ff-toggle:text-is("Nepto Eye")')
+    page.click('button.ff-toggle:text-is("Monk Card")')
     page.screenshot(path=f'{SP}/ff3ds-items.png', full_page=True)
     page.click('.save-btn')
     page.wait_for_selector('dialog.review-dialog[open]')
     review = page.inner_text('dialog.review-dialog')
     for line in ('Name: Luneth → Kieron', 'Level: 12 → 20', 'Ninja job level: 1 → 30', 'Right hand: Longsword → Bow',
                  'Left hand: Leather Shield → None', 'Learned Sight', 'Now Poison', 'HP: 104/104 → 40/104', 'Job: Monk → Black Mage', 'Kenpo Gi: 0 → 1',
-                 'Bronze Knuckles: 0 → 2', 'Gil: 4,820 → 5,000,000', 'Ribbon: 0 → 1', 'Job menu: Ninja added'):
+                 'Bronze Knuckles: 0 → 2', 'Gil: 4,820 → 5,000,000', 'Ribbon: 0 → 1', 'Job menu: Ninja added', 'Nepto Eye: added',
+                 'Monk Card: added'):
         assert line in review, (line, review)
     with page.expect_download() as dl:
         page.click('dialog.review-dialog button.primary')
@@ -94,7 +97,8 @@ const c = f.party[0];
 const count = (n) => f.bag.filter((x) => itemName(x.id) === n).reduce((a, x) => a + x.count, 0);
 console.log(JSON.stringify({ size: raw.length, format: u.format, ok: slotOk(u.data, 0), name: c.name, level: c.level, ninja: c.jobLevel(22),
   right: itemName(c.gear(0)), left: c.gear(1), sight: f.party[2].knows(4003), gil: f.gil, ribbon: count('Ribbon'),
-  ninjaOpen: f.jobOpen(22), refia: [f.party[2].hp, f.party[2].status], ingus: f.party[3].jobName, kenpo: count('Kenpo Gi'), knuckles: count('Bronze Knuckles') }));
+  ninjaOpen: f.jobOpen(22), refia: [f.party[2].hp, f.party[2].status], ingus: f.party[3].jobName, kenpo: count('Kenpo Gi'), knuckles: count('Bronze Knuckles'),
+  keys: f.keyItems.map(itemName) }));
 """
 out = json.loads(subprocess.run(['node', '--input-type=module', '-e', check, f'{SP}/ff3ds-edited.dsv'], cwd=REPO,
                                 capture_output=True, text=True, check=True).stdout)
@@ -102,4 +106,5 @@ assert out['size'] == 65536 + 122 and out['format'] == 'DeSmuME' and out['ok'], 
 assert out['name'] == 'Kieron' and out['level'] == 20 and out['ninja'] == 30 and out['right'] == 'Bow' and out['left'] == 0, out
 assert out['sight'] and out['gil'] == 5000000 and out['ribbon'] == 1 and out['ninjaOpen'] and out['refia'] == [40, 0x40], out
 assert out['ingus'] == 'Black Mage' and out['kenpo'] == 1 and out['knuckles'] == 2, out
+assert out['keys'] == ['Folding Canoe', 'Nepto Eye', 'Monk Card'], out
 print('ERRORS:', '; '.join(errors) or 'none')

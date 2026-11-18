@@ -95,7 +95,9 @@ export const KIND = {
   head: range(0x62, 0x71),
   body: range(0x72, 0x8a),
   arms: range(0x8b, 0x97),
-  key: range(0x98, 0xa4),
+  /** The story's key items, which the Fat Chocobo won't take (3D/B4C8). Magic Keys, Carrots and Midget Bread (0x98,
+   * 0x99, 0xA4) sit next to them but are bought, stacked and stored like any item. */
+  key: range(0x9a, 0xa3),
   item: range(0xa6, 0xc7),
   spell: range(0xc8, 0xff),
 } as const;
@@ -332,7 +334,7 @@ export class Ff3Slot {
   get bag(): { id: number; qty: number }[] { return Array.from({ length: BAG_SIZE }, (_, i) => ({ id: this.id(i), qty: this.qty(i) })); }
   count(id: number) { return this.bag.filter((x) => x.id === id).reduce((n, x) => n + x.qty, 0); }
   get free() { return this.bag.filter((x) => !x.id).length; }
-  /** Can the editor put `id` in the bag? Key items move the story on, so no. */
+  /** Can `id` go in a bag place with a count? Key items come one at a time, through setKeyItem(). */
   static bagItem(id: number) { return !!ITEMS[id] && !KIND.key.includes(id); }
   setAt(i: number, id: number, qty: number) {
     if (id && !Ff3Slot.bagItem(id)) return;
@@ -346,6 +348,22 @@ export class Ff3Slot {
     if (i < 0) i = this.bag.findIndex((x) => !x.id);
     if (i < 0) return false;
     this.setAt(i, id, this.qty(i) + qty);
+    return true;
+  }
+  hasKeyItem(id: number) { return this.bag.some((x) => x.id === id); }
+  /** Give a key item the way the game's events do (3B/B6F4: one, in the first empty place), or take it out of the bag.
+   * False when there's no room. */
+  setKeyItem(id: number, on: boolean): boolean {
+    if (!KIND.key.includes(id)) return false;
+    if (on && this.hasKeyItem(id)) return true;
+    if (on) {
+      const i = this.bag.findIndex((x) => !x.id);
+      if (i < 0) return false;
+      this.d[this.at + 0xc0 + i] = id;
+      this.d[this.at + 0xe0 + i] = 1;
+      return true;
+    }
+    this.bag.forEach((x, i) => { if (x.id === id) { this.d[this.at + 0xc0 + i] = 0; this.d[this.at + 0xe0 + i] = 0; } });
     return true;
   }
 
@@ -414,7 +432,8 @@ export class Ff3NesSave implements EditableSave {
       const ids = new Set([...sa.bag, ...sb.bag].map((x) => x.id).filter(Boolean));
       for (const id of ids) {
         const x = sb.count(id), y = sa.count(id);
-        if (x !== y) items.push(`${itemName(id)}: ${x} → ${y}`);
+        if (KIND.key.includes(id)) { if (!x !== !y) items.push(`${itemName(id)}: ${y ? 'added' : 'removed'}`); }
+        else if (x !== y) items.push(`${itemName(id)}: ${x} → ${y}`);
       }
       for (let id = 1; id < 256; id++) {
         if (sb.stored(id) !== sa.stored(id)) items.push(`Fat Chocobo, ${itemName(id)}: ${sb.stored(id)} → ${sa.stored(id)}`);

@@ -223,7 +223,6 @@ export const mountFf3NesEditor: MountEditor<Ff3NesSave> = (container, s, host) =
         field('Count', numberInput(qty, id ? 1 : 0, id ? MAX_COUNT : 0, (v) => { slot.setAt(i, id, v); markDirty(); }, { disabled: !id })),
       ];
     }).flat();
-    const keys = slot.bag.filter((x) => KIND.key.includes(x.id)).map((x) => itemName(x.id));
     const stored = slot.storedIds.map((id) => field(itemName(id), numberInput(slot.stored(id), 0, MAX_COUNT, (v) => { slot.setStored(id, v); markDirty(); if (!v) render(); })));
     const storeOptions = [{ value: 0, label: 'Give the Fat Chocobo…' }, ...BAG_OPTIONS.filter((o) => o.value && !slot.stored(o.value))];
     return h('div', { class: 'stack' },
@@ -251,10 +250,15 @@ export const mountFf3NesEditor: MountEditor<Ff3NesSave> = (container, s, host) =
         h('p', { class: 'muted card-note' }, 'Each crystal adds jobs to the Job menu, in this order.'),
         h('div', { class: 'ff-toggles' }, CRYSTALS.map((cr, n) => toggle(`${cr.name}: ${cr.jobs.map((j) => JOBS[j]).join(', ')}`,
           slot.crystal(n), (on) => slot.setCrystal(n, on), render)))),
-      keys.length
-        ? h('section', { class: 'card' }, h('h3', {}, 'Key items'), h('p', {}, keys.join(', ')),
-          h('p', { class: 'field-hint' }, 'Key items move the story on, so they can’t be changed here.'))
-        : h('span'),
+      h('section', { class: 'card' },
+        h('h3', {}, 'Key items'),
+        h('div', { class: 'ff-toggles' }, KIND.key.map((id) => {
+          const on = slot.hasKeyItem(id);
+          const btn = toggle(itemName(id), on, (yes) => slot.setKeyItem(id, yes), render);
+          if (!on && !slot.free) btn.disabled = true;
+          return btn;
+        })),
+        h('p', { class: 'field-hint' }, 'Key items move the story on when you use or hand them over, so adding one can skip ahead or leave a quest stuck. Each takes a place in the bag.')),
       slot.guest ? h('p', { class: 'muted' }, `Travelling with ${slot.guest}.`) : h('span'));
   }
 

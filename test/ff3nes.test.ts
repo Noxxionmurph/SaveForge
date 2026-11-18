@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { SAVE_SIZE, detectFf3Nes, slotBase, slotOk, slotSum } from '../src/core/ff3nes/layout.ts';
 import { buildFf3NesSample } from '../src/core/ff3nes/sample.ts';
 import {
-  Ff3NesSave, ITEMS, JOBS, MAX_GIL, QUIVER, canEquip, expFor, growth, levelFor, minLevel, spellLevel, spellsOfLevel,
+  Ff3NesSave, ITEMS, JOBS, KIND, MAX_GIL, QUIVER, canEquip, expFor, growth, levelFor, minLevel, spellLevel, spellsOfLevel,
 } from '../src/core/ff3nes/save.ts';
 import { asSaved } from '../src/core/ff3nes/text.ts';
 import { buildFf1NesSample } from '../src/core/ff1nes/sample.ts';
@@ -198,7 +198,9 @@ test('edits read back and serialize() makes the slot add up to $FF again', () =>
   assert.equal(slot.count(ITEMS.indexOf('Elixir')), 99);
   assert.ok(slot.add(ITEMS.indexOf('Potion'), 50));
   assert.equal(slot.count(ITEMS.indexOf('Potion')), 64, 'stacks onto the Potions already there');
-  assert.equal(slot.add(ITEMS.indexOf('Magic Key')), false, 'key items are not added to the bag');
+  assert.ok(slot.add(ITEMS.indexOf('Magic Key'), 2));
+  assert.equal(slot.count(ITEMS.indexOf('Magic Key')), 3, 'Magic Keys are bought and stacked like any item');
+  assert.equal(slot.add(ITEMS.indexOf('Horn')), false, 'key items come one at a time, through setKeyItem()');
   slot.setStored(ITEMS.indexOf('Ribbon'), 4);
   slot.setCrystal(4, true);
   assert.ok(slot.jobsOpen.includes(JOBS.indexOf('Ninja')));
@@ -214,4 +216,39 @@ test('edits read back and serialize() makes the slot add up to $FF again', () =>
   assert.ok(changes.includes('Jobs from crystals: Wind crystal → Eureka crystal'));
   assert.ok(changes.includes('Right hand: Long Sword → King Sword'));
   assert.ok(changes.includes('Ninja job level: 1 → 40'));
+});
+
+test('key items: the ones the Fat Chocobo won’t take (3D/B4C8), given one each in the first empty place (3B/B6F4)', () => {
+  assert.deepEqual(KIND.key.map((id) => ITEMS[id]),
+    ['Horn', 'Eye', 'Time Gear', 'EurekaKey', 'Wind Fang', 'Fire Fang', 'WaterFang', 'EarthFang', 'Lute', 'Sylx Key']);
+  const s = new Ff3NesSave(buildFf3NesSample());
+  const slot = s.usedSlots[0];
+  const horn = ITEMS.indexOf('Horn'), eye = ITEMS.indexOf('Eye');
+  const first = slot.bag.findIndex((x) => !x.id);
+  assert.ok(slot.setKeyItem(horn, true));
+  assert.ok(slot.setKeyItem(horn, true));
+  assert.deepEqual(slot.bag.flatMap((x, i) => (x.id === horn ? [[i, x.qty]] : [])), [[first, 1]], 'one Horn, once');
+  assert.ok(slot.setKeyItem(eye, true));
+  assert.equal(slot.id(first + 1), eye);
+  assert.equal(slot.setKeyItem(ITEMS.indexOf('Potion'), true), false, 'not a key item');
+  slot.setStored(horn, 1);
+  assert.equal(slot.stored(horn), 0, 'the Fat Chocobo won’t take it');
+  slot.setStored(ITEMS.indexOf('Carrot'), 3);
+  assert.equal(slot.stored(ITEMS.indexOf('Carrot')), 3, 'but he takes Carrots');
+  assert.ok(slot.setKeyItem(horn, false));
+  assert.equal(slot.id(first), 0);
+  assert.equal(slot.qty(first), 0);
+  for (let i = 0; i < 32; i++) if (!slot.id(i)) slot.setAt(i, ITEMS.indexOf('Elixir'), 1);
+  assert.equal(slot.setKeyItem(horn, true), false, 'no room in the bag');
+
+  const out = s.serialize();
+  assert.equal(slotSum(out, slotBase(0)), 0xff);
+  const again = new Ff3NesSave(out).usedSlots[0];
+  assert.ok(again.hasKeyItem(eye));
+  assert.ok(!again.hasKeyItem(horn));
+  const changes = new Ff3NesSave(out).describeChanges(new Ff3NesSave(buildFf3NesSample())).flatMap((g) => g.lines);
+  assert.ok(changes.includes('Eye: added'));
+  assert.ok(!changes.some((l) => l.startsWith('Horn')));
+  const back = new Ff3NesSave(buildFf3NesSample()).describeChanges(new Ff3NesSave(out)).flatMap((g) => g.lines);
+  assert.ok(back.includes('Eye: removed'));
 });

@@ -8,13 +8,14 @@ keeps its own copy of the save under ~/.config/desmume/: delete it when you're d
 
 Commands, separated by ';':  wN (run N frames) | p KEY [hold] [after] (KEY: a b x y l r start select up down left
 right) | s NAME (out/NAME.png, both screens) | m ADDR LEN (print bytes, hex address) | poke ADDR VAL (hex) |
-export PATH (the save as the game holds it now, in DeSmuME's .dsv wrapper).
+export PATH.sav (the save as the game holds it now, raw; DeSmuME writes nothing for other endings).
 
 What the checks used (US ROM): the title menu needs 'w700; p a 6 250; p a; w120'. With a Quicksave it offers CONTINUE
 first ('p a 6 150; p a 6 60; p a 6 500' loads it), and LOAD GAME is two downs; without one the cursor starts on LOAD
 GAME. The slot list starts on Slot 3. In the field, X opens the menu (Item, Magic, Equipment, Status, Formation, Job...).
 The party records sit at 020993D8 + 2EC n in RAM, laid out as in the save; +43 holds the ailments. In the Item menu
-the first A picks an item up to move it and a second A on it uses it."""
+the first A picks an item up to move it and a second A on it uses it; B moves up to Use, Sort and Key Items. Quicksave is
+seven downs in the menu, then left (the question starts on No) and A."""
 import os
 import sys
 from desmume.emulator import DeSmuME
