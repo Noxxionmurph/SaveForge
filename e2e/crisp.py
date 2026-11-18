@@ -26,7 +26,7 @@ def run(p, size, ratio):
     page.on('pageerror', lambda e: errors.append(f'pageerror: {e}'))
     page.on('console', lambda m: errors.append(f'console.{m.type}: {m.text}') if m.type == 'error' and 'ERR_TUNNEL' not in m.text else None)
     page.goto(BASE)
-    page.click('.sample-row button'); page.wait_for_selector('.tabs')
+    page.select_option('.sample-row select >> nth=0', label='Pokémon Yellow'); page.wait_for_selector('.tabs')
     page.wait_for_function("() => [...document.querySelectorAll('.tcard-badges .badge-icon')].every((i) => i.complete)")
     tag = f"{size['width']}px @{ratio}x"
     out = page.evaluate(SCALES)
@@ -73,7 +73,7 @@ def follows_zoom(p):
     b = p.chromium.launch()
     ctx = b.new_context(viewport={'width': 900, 'height': 700}, device_scale_factor=1)
     page = ctx.new_page()
-    page.goto(BASE); page.click('.sample-row button'); page.wait_for_selector('.tabs')
+    page.goto(BASE); page.select_option('.sample-row select >> nth=0', label='Pokémon Yellow'); page.wait_for_selector('.tabs')
     cdp = ctx.new_cdp_session(page)
     for ratio in (1.5, 2, 1):
         # zooming keeps the window and changes the CSS size of the page, so the width follows the ratio too

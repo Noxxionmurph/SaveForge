@@ -23,6 +23,8 @@ export default defineGame<Gen3Save>({
     names: GAMES,
     note: "Ruby and Sapphire saves are identical inside, so the file can't say which one yours is. Your choice only changes the name shown here; the editor works the same either way.",
   }),
+  sampleGame: 'Pokémon Ruby / Sapphire',
+  sample: async () => ({ fileName: 'sample-gen3.sav', data: (await import('../core/gen3/sample.ts')).buildSampleSave('rs') }),
   load: async (data) => new (await import('../core/gen3/save.ts')).Gen3Save(data, 'rs'),
   loadEditor: async () => (await import('../ui/editors/gen3/index.ts')).mountGen3Editor,
 });

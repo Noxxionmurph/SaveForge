@@ -44,7 +44,7 @@ with sync_playwright() as p:
                 assert c >= least, f'{console}/{scheme}: {fg} on {bg} is {c:.2f}, needs {least}'
                 worst = c if worst is None else min(worst, c)
             # the screen windows really use the theme's screen colour
-            page.click('.sample-row button'); page.wait_for_selector('.tcard-top')
+            page.select_option('.sample-row select >> nth=0', label='Pokémon Yellow'); page.wait_for_selector('.tcard-top')
             got = page.evaluate("getComputedStyle(document.querySelector('.lcd')).backgroundColor")
             want = page.evaluate("t => { const e = document.createElement('i'); e.style.color = t; document.body.append(e); const c = getComputedStyle(e).color; e.remove(); return c; }", tokens['--lcd'])
             assert got == want, (console, scheme, got, want)
@@ -58,7 +58,7 @@ with sync_playwright() as p:
     assert page.evaluate('document.documentElement.dataset.console') is None
     page.evaluate("import('./games/pokemon-gen1.js').then((m) => { m.default.theme = 'gbc'; })")
     page.wait_for_timeout(300)
-    page.click('.sample-row button'); page.wait_for_selector('.tabs')
+    page.select_option('.sample-row select >> nth=0', label='Pokémon Yellow'); page.wait_for_selector('.tabs')
     assert page.evaluate('document.documentElement.dataset.console') == 'gbc', 'the game\'s theme is applied'
     page.click('text=Close file'); page.wait_for_selector('.slot')
     assert page.evaluate('document.documentElement.dataset.console') is None, 'closing goes back to the Game Boy'

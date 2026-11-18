@@ -19,6 +19,7 @@ export default defineGame<Gen3Save>({
   theme: 'gba',
   detect: (data) => (detectGen3(data) === 'emerald' ? { confidence: 'certain' } : null),
   load: async (data) => new (await import('../core/gen3/save.ts')).Gen3Save(data, 'emerald'),
+  sampleGame: 'Pokémon Emerald',
   sample: async () => ({ fileName: 'sample-emerald.sav', data: (await import('../core/gen3/sample.ts')).buildSampleSave('emerald') }),
   loadEditor: async () => (await import('../ui/editors/gen3/index.ts')).mountGen3Editor,
 });

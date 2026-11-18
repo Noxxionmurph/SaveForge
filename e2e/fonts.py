@@ -58,7 +58,7 @@ with sync_playwright() as p:
         assert g['differ'] > 0.12, (weight, 'the 5 and the S look alike again', g)
         assert max(g['ligatures']) < 0.5, (weight, 'a ligature is back', g)
     page.screenshot(path=f'{SP}/fonts-landing.png', full_page=False)
-    page.click('.sample-row button'); page.wait_for_selector('.tabs')
+    page.select_option('.sample-row select >> nth=0', label='Pokémon Yellow'); page.wait_for_selector('.tabs')
     # the monospace face is for typing into: number fields
     assert page.evaluate("getComputedStyle(document.querySelector('input[type=number]')).fontFamily").startswith('"JetBrains Mono"')
     page.wait_for_timeout(500)

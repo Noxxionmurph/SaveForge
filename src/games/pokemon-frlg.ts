@@ -23,6 +23,8 @@ export default defineGame<Gen3Save>({
     names: GAMES,
     note: "FireRed and LeafGreen saves are identical inside, so the file can't say which one yours is. Your choice only changes the name shown here; the editor works the same either way.",
   }),
+  sampleGame: 'Pokémon FireRed / LeafGreen',
+  sample: async () => ({ fileName: 'sample-frlg.sav', data: (await import('../core/gen3/sample.ts')).buildSampleSave('frlg') }),
   load: async (data) => new (await import('../core/gen3/save.ts')).Gen3Save(data, 'frlg'),
   loadEditor: async () => (await import('../ui/editors/gen3/index.ts')).mountGen3Editor,
 });
