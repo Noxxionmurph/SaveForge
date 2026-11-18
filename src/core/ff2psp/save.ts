@@ -1,10 +1,11 @@
 // Final Fantasy II (PSP, Anniversary Edition) save model. The decrypted data holds 20 files laid out like Dawn of
 // Souls' (see ../ff2gba/save.ts), with a 0xF40-byte file, character records two bytes shorter (0x7E), Leon's record
 // as a ninth, and the PSP's extra gear; Ff2GbaSave does the rest through PSP_FORMAT. The Soul of Rebirth files after the
-// 20 main ones aren't opened. Checked against a real save.
+// 20 main ones aren't opened. Checked against a real save and in the game (PPSSPP).
 
 import { clamp } from '../bytes.ts';
 import { EMPTY_HAND, Ff2GbaSave, KIND as GBA_KIND, PORTRAITS as GBA_PORTRAITS, type Ff2Format } from '../ff2gba/save.ts';
+import { PSP_KEY_TERMS } from '../ff2gba/keyterms.ts';
 import { ITEMS as GBA_ITEMS, SPELLS as GBA_SPELLS } from '../ff2gba/tables.ts';
 import { FILE_BASE, FILE_COUNT, FILE_SIZE, hasMagic, openFf2Psp, type Opened, type Wrapper } from './container.ts';
 
@@ -40,11 +41,10 @@ export const PSP_FORMAT: Ff2Format = {
   fileOk: (d, i) => hasMagic(d, fileAt(i)) && checksum(d, fileAt(i)) === (d[fileAt(i) + 0x20] | (d[fileAt(i) + 0x21] << 8)),
   writeChecksum: (d, at) => { const v = checksum(d, at); d[at + 0x20] = v & 0xff; d[at + 0x21] = v >> 8; },
   chars: 0x22, charStride: 0x7e, charCount: 9, guest: 0x4a2, steps: 0x494, gil: 0x498, playTime: 0x49c, bagIds: 0x4a4, bagCounts: 0x53a,
-  // Not checked in the game yet.
-  guestPick: null,
-  // 48 places at +0x6FC with the count at +0x74F, but the PSP has terms 16-45 the other versions don't, and their
-  // names aren't known yet.
-  keyTerms: null,
+  // As Dawn of Souls: nobody is 0x0F (what a new game saves), and Leon's typed name waits at +0x750 until he joins.
+  guestPick: { none: 0x0f, leonName: 0x750 },
+  // Dawn of Souls' list, with 48 places and the PSP's 45 terms.
+  keyTerms: { at: 0x6fc, add: 0, count: 0x74f, names: PSP_KEY_TERMS, places: 48 },
   maxGil: MAX_GIL, items: ITEMS, spells: SPELLS, kind: KIND, gearChoices: GEAR_CHOICES, portraits: [...GBA_PORTRAITS, '', 'scott'],
   guestNamesFixed: true,
 };

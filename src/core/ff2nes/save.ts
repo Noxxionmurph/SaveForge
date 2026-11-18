@@ -324,10 +324,13 @@ export class Ff2NesSave implements EditableSave {
       const sb = b.slots[sa.number - 1];
       const prefix = several ? `Slot ${sa.number}: ` : '';
       if (sb.guest !== sa.guest) add(`${prefix}Party`, [`Fourth member: ${guestName(sb.guest)} → ${guestName(sa.guest)}`]);
-      // On the Famicom a new guest's record was filled in afresh, so there's nothing to compare it with.
-      const refilled = this.format.guest.kind === 'refill' && sb.guest !== sa.guest;
+      // On the Famicom a new guest's record was filled in afresh, so there's nothing to compare it with, and an empty
+      // fourth place's record is only waiting to be filled. On the WonderSwan everyone keeps a record, so someone edited
+      // and then swapped out keeps the edits.
+      const refill = this.format.guest.kind === 'refill';
+      const refilled = refill && sb.guest !== sa.guest;
       sa.characters.forEach((ca, i) => {
-        if (!ca.present || (refilled && i === 3)) return;
+        if ((refill && !ca.present) || (refilled && i === 3)) return;
         const cb = sb.characters[i];
         const lines: string[] = [];
         const diff = (label: string, x: string | number, y: string | number) => {

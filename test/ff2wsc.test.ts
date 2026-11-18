@@ -86,6 +86,9 @@ test('the fourth member: slot + 5 names whose record is in the fourth place, 0x0
   slot.setGuest(null);
   assert.equal(s.serialize()[slotBase(0) + 5], 0x0f);
   assert.equal(slot.party.length, 3);
+  // Gordon keeps his record, so his edit is still saved and still listed.
+  const groups = s.describeChanges(new Ff2WscSave(buildFf2WscSample()));
+  assert.deepEqual(groups.find((g) => g.title === 'Gordon')?.lines, ['Strength: 22 → 40']);
 });
 
 test('key terms: a new one goes first, a forgotten one closes up, and the count follows', () => {

@@ -38,6 +38,8 @@ with sync_playwright() as p:
     page.locator('label.field:has-text("Gil") input').fill('500000')
     page.locator('label.field:has-text("Gil") input').press('Tab')
     page.click('.ff-toggle:text-is("Levistone")')
+    page.click('.ff-toggle:text-is("Earth Orb")')
+    assert page.get_attribute('.ff-toggle:text-is("Earth Orb")', 'aria-pressed') == 'true'
     page.click('button.tab:has-text("Weapons and armor")')
     page.locator('label.field:has-text("Ribbon") input').fill('4')
     page.locator('label.field:has-text("Ribbon") input').press('Tab')
@@ -47,7 +49,7 @@ with sync_playwright() as p:
     page.wait_for_selector('dialog.review-dialog[open]')
     review = page.inner_text('dialog.review-dialog')
     for line in ('Name: Brom → Kieron', 'Level: 24 → 40', 'Weapon: Flame Sword → Excalibur', 'Forgot Fire', 'Learned Focus',
-                 'Gil: 18,420 → 500,000', 'Levistone: added', 'Ribbon: 0 → 4'):
+                 'Gil: 18,420 → 500,000', 'Levistone: added', 'Earth Orb: lit', 'Ribbon: 0 → 4'):
         assert line in review, (line, review)
     with page.expect_download() as dl:
         page.click('dialog.review-dialog button.primary')
@@ -59,7 +61,7 @@ z = zipfile.ZipFile(f'{SP}/ff1psp-edited.zip')
 assert sorted(z.namelist()) == ['ULUS10251DATA00/PARAM.SFO', 'ULUS10251DATA00/SAVE.BIN'], z.namelist()
 check = """
 import { readFileSync } from 'node:fs';
-import { Ff1PspSave } from './src/core/ff1psp/save.ts';
+import { Ff1PspSave, ORB_NAMES } from './src/core/ff1psp/save.ts';
 import { encryptSavedata, decryptSavedata } from './src/core/psp/savedata.ts';
 import { sfoFileHash } from './src/core/psp/sfo.ts';
 import { readZip } from './src/core/unzip.ts';
@@ -70,12 +72,13 @@ const bin = entries.find((e) => e.name.endsWith('SAVE.BIN')).data, sfo = entries
 const key = Uint8Array.from(Buffer.from('437BEAA762302FB7C8762C17CFF01460', 'hex'));
 const { hash } = encryptSavedata(decryptSavedata(bin, key), key, bin.subarray(0, 16));
 console.log(JSON.stringify({ name: f.party[0].name, level: f.party[0].level, weapon: f.party[0].gear(0), gil: f.gil,
-  levistone: f.hasKeyItem(11), ribbon: f.count('armor', 52), spells: f.party[3].spells,
+  levistone: f.hasKeyItem(11), orbs: ORB_NAMES.filter((_, i) => f.orbLit(i)), ribbon: f.count('armor', 52), spells: f.party[3].spells,
   hashOk: Buffer.from(hash).equals(Buffer.from(sfoFileHash(sfo, 'SAVE.BIN'))) }));
 """
 out = json.loads(subprocess.run(['node', '--input-type=module', '-e', check, f'{SP}/ff1psp-edited.zip'], cwd=REPO,
                                 capture_output=True, text=True, check=True).stdout)
 assert out['name'] == 'Kieron' and out['level'] == 40 and out['weapon'] == 39 and out['gil'] == 500000, out
 assert out['levistone'] and out['ribbon'] == 4 and out['hashOk'], out
+assert out['orbs'] == ['Earth'], out
 assert 35 in out['spells'] and 33 not in out['spells'], out   # Focus in, Fire out
 print('ERRORS:', '; '.join(errors) or 'none')

@@ -1,7 +1,8 @@
 // A made-up Final Fantasy II (PSP) save folder, built in code, for the "Try a sample save" button and for tests: a zip of
 // ULUS1026300/ with an encrypted SAVEDATA.SAV and a PARAM.SFO whose hashes match it. Nothing here comes from a real game
 // file. Like the Dawn of Souls one (../ff2gba/sample.ts) it fills in only what the editor reads: File 1 holds Firion,
-// Maria, Guy and Leon near the end of the game.
+// Maria, Guy and Leon near the end of the game, the other guests' records (which the game fills in from the start), the
+// name typed for Leon at the start (+0x750) and the story's 15 key terms.
 
 import { buildSfo } from '../ff1psp/sample.ts';
 import { encryptSavedata } from '../psp/savedata.ts';
@@ -37,6 +38,19 @@ const PARTY: Member[] = [
   { id: 8, name: 'Leon', hp: 2310, mp: 160, stats: [56, 34, 50, 18, 12, 20], skills: [1, 5, 1, 9, 1, 1, 1, 1],
     gear: ['Ragnarok', 'Ice Shield', 'Diamond Helm', 'Genji Armor', 'Diamond Gloves'], spells: [['Teleport', 3]] },
 ];
+/** The other guests, in their own records (character ids 3-7). */
+const GUESTS: Member[] = [
+  { id: 3, name: 'Minwu', hp: 1180, mp: 520, stats: [20, 28, 26, 30, 44, 40], skills: [1, 1, 1, 7, 1, 1, 1, 1],
+    gear: ['Mage\'s Staff', 'Hands', '', 'White Robe', ''], spells: [['Cure', 9], ['Life', 5], ['Esuna', 4], ['Barrier', 3]] },
+  { id: 4, name: 'Josef', hp: 1581, mp: 5, stats: [30, 24, 30, 10, 10, 10], skills: [4, 1, 1, 1, 1, 1, 1, 1],
+    gear: ['Hands', 'Hands', '', 'Leather Armor', 'Leather Gloves'], spells: [] },
+  { id: 5, name: 'Gordon', hp: 940, mp: 60, stats: [32, 30, 30, 24, 22, 24], skills: [1, 2, 1, 6, 1, 1, 1, 1],
+    gear: ['Longsword', 'Mythril Shield', 'Bronze Helm', 'Bronze Armor', 'Bronze Gloves'], spells: [['Cure', 2]] },
+  { id: 6, name: 'Leila', hp: 1020, mp: 90, stats: [28, 40, 28, 22, 14, 16], skills: [1, 4, 6, 1, 1, 1, 1, 1],
+    gear: ['Dagger', 'Hands', '', 'Leather Armor', ''], spells: [['Fire', 4], ['Blizzard', 2]] },
+  { id: 7, name: 'Ricard', hp: 1690, mp: 40, stats: [48, 34, 42, 16, 26, 8], skills: [1, 2, 1, 1, 1, 9, 1, 1],
+    gear: ['Mythril Spear', 'Mythril Shield', 'Bronze Helm', 'Bronze Armor', 'Bronze Gloves'], spells: [] },
+];
 /** Leon's record is the ninth, as in the game. */
 const LEON = 8;
 const BAG: [string, number][] = [
@@ -51,8 +65,8 @@ export function buildFf2PspPlain(): Uint8Array {
   const s = FILE_BASE;
   d.set(MAGIC, s);
   const v = new DataView(d.buffer);
-  PARTY.forEach((m, i) => {
-    const r = s + PSP_FORMAT.chars + (i < 3 ? i : LEON) * PSP_FORMAT.charStride;
+  [...PARTY, ...GUESTS].forEach((m, i) => {
+    const r = s + PSP_FORMAT.chars + m.id * PSP_FORMAT.charStride;
     d[r + 2] = m.id;
     [...m.name].forEach((c, k) => v.setUint16(r + 4 + k * 2, fullWidth(c), false));
     v.setUint16(r + 0x14, m.hp - 41 * i, true);
@@ -66,6 +80,10 @@ export function buildFf2PspPlain(): Uint8Array {
     m.skills.forEach((lv, k) => { d[r + 0x4c + k * 2 + 1] = lv; });
   });
   d[s + PSP_FORMAT.guest] = LEON;
+  [...'Leon'].forEach((c, k) => v.setUint16(s + 0x750 + k * 2, fullWidth(c), false));
+  // Key terms, most recent first: the story's 15, learned in order (none of the Arcane Labyrinth's words yet).
+  for (let k = 0; k < 15; k++) d[s + 0x6fc + k] = 15 - k;
+  d[s + 0x74f] = 15;
   v.setUint32(s + PSP_FORMAT.steps, 21_840, true);
   v.setUint32(s + PSP_FORMAT.gil, 486_320, true);
   v.setUint32(s + PSP_FORMAT.playTime, 22 * 3600 + 14 * 60, true);
