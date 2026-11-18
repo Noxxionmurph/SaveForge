@@ -94,6 +94,12 @@ export function ff3NesJobSprite(job: number, member: number, cls2 = ''): HTMLIma
 export function ff3DsJobSprite(job: number, hero: number, cls2 = ''): HTMLImageElement {
   return prSprite('ff3', FF3_DS_JOB_FILES[job] || onionKnight(hero), cls2);
 }
+/** A Final Fantasy III job's picture by its name ("Dark Knight"), for the Pixel Remaster, whose job numbers differ from
+ *  the other versions'. The Onion Knight is the hero's own (0 Luneth ... 3 Ingus). */
+export function ff3JobSpriteByName(job: string, hero: number, cls2 = ''): HTMLImageElement {
+  const file = job.toLowerCase().replace(/[^a-z]+/g, '-');
+  return prSprite('ff3', file === 'onion-knight' ? onionKnight(hero) : file, cls2);
+}
 
 /** Status icons (10x10, Pixel Remaster) for a party member's ailments, by the name the editor shows ("KO", "Poison"). The
  * ones without an icon are left out. Each icon is named after its status (alt and hover text, as the type icons are),

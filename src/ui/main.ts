@@ -21,6 +21,8 @@ let wrapSave = (save: Uint8Array): Uint8Array => save;
 let saveExt: string | undefined;
 let dirty = false;
 let isSampleOpen = false;
+/** The game whose editor is open, for how its edited file is named and put back. */
+let openModule: GameModule | null = null;
 let saveButton: HTMLElement | null = null;
 const APP_NAME = 'SaveForge';
 const REPO = 'https://github.com/Noxxionmurph/SaveForge';
@@ -88,7 +90,7 @@ function tilePicture(path: string): HTMLImageElement {
   return /\/ff[123]\/pr\//.test(path) ? pictureIcon(path, 18, 24, 'tile-icon job-sprite pr') : pictureIcon(path, 68, 56, 'tile-icon');
 }
 
-const CONSOLES = ['gb', 'gbc', 'gba', 'nes', 'psp', 'wsc', 'nds'] as const;
+const CONSOLES = ['gb', 'gbc', 'gba', 'nes', 'psp', 'wsc', 'nds', 'pr'] as const;
 const forcedConsole = CONSOLES.find((c) => c === new URLSearchParams(location.search).get('console'));
 function applyConsole(game?: GameModule): void {
   // An editor whose game has a FRAME setting puts its frame back when it mounts (see windowFrame.ts).
@@ -99,6 +101,7 @@ function applyConsole(game?: GameModule): void {
 }
 
 function exportName(): string {
+  if (openModule?.keepFileName) return fileName;
   const m = fileName.match(/^(.*?)(\.[^./\\]+)?$/);
   return `${m?.[1] || 'save'}-edited${saveExt ?? m?.[2] ?? '.sav'}`;
 }
@@ -148,8 +151,12 @@ function showSaved(file: string, inner?: string): Promise<void> {
       h('p', { class: 'saved-file lcd' }, file),
       h('ol', { class: 'saved-steps' },
         h('li', {}, inner ? 'Find the .zip in your downloads and unzip it.' : 'Find it in your downloads.'),
-        isSampleOpen ? null : h('li', {}, `Rename it to ${fileName} so it replaces your original, or import it under its own name if your emulator lets you.`),
-        h('li', {}, 'Load it in your emulator, or copy it back to your cartridge dumper.')),
+        openModule?.saveSteps
+          ? openModule.saveSteps.map((step) => h('li', {}, step))
+          : [
+            isSampleOpen ? null : h('li', {}, `Rename it to ${fileName} so it replaces your original, or import it under its own name if your emulator lets you.`),
+            h('li', {}, 'Load it in your emulator, or copy it back to your cartridge dumper.'),
+          ]),
       h('p', { class: 'muted' }, 'The file you opened is unchanged.'),
       h('div', { class: 'button-row end' }, h('button', { class: 'primary', onclick: () => dlg.close() }, 'Got it')));
     dlg.addEventListener('close', () => { dlg.remove(); resolve(); });
@@ -205,6 +212,7 @@ const externalLink = (href: string, label: string) =>
 
 async function openGame(game: GameModule, data: Uint8Array, isSample = false): Promise<void> {
   isSampleOpen = isSample;
+  openModule = game;
   let save: EditableSave;
   try {
     save = await game.load(data);

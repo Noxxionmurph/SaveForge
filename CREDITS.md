@@ -31,6 +31,12 @@ savedata encryption follows the open implementations in jpcsp and cielavenir's p
 save key is the one listed in the Apollo Save Tool's database, and the save layout was cross-checked with the CWCheat
 code database. [FireyFly's notes](https://github.com/FireyFly/reversing) on the PSP release's resource files helped read its name-screen font.
 
+Final Fantasy I-III (Pixel Remaster) tables are read from the Steam games' own master data with
+[UnityPy](https://github.com/K0lb3/UnityPy) (`scripts/gen-ffpr-data.py`). The save wrapper's password and salt are the ones
+the MIT-licensed Pixel Remaster save editors use: KiameV's
+[final-fantasy-pr-save-editor](https://github.com/KiameV/final-fantasy-pr-save-editor) and Anub1sR0cks'
+[FFPRSaveEditor](https://github.com/Anub1sR0cks/FFPRSaveEditor). The Rijndael and deflate code here is our own.
+
 The pictures are not part of this code repository. They live in a separate repository,
 [SaveForge-assets](https://github.com/Noxxionmurph/SaveForge-assets), and the site loads them from there, so the editor works
 the same (without the pictures) if they are ever removed. This is who made them.

@@ -10,6 +10,7 @@
 //   ff1-wonderswan.sav   a Final Fantasy (WonderSwan Color) save
 //   ff3-ds.sav     a Final Fantasy III (Nintendo DS) save, and ff3-ds.dsv the same in DeSmuME's wrapper
 //   NPUH10125DATA00.zip  a Final Fantasy III (PSP) save folder
+//   pr/ff1/, pr/ff2/, pr/ff3/  a Final Fantasy I, II and III Pixel Remaster (Steam) slot each, under the games' own slot name
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { buildSampleSave } from '../src/core/gen1/sample.ts';
 import { GEN1_OFFSETS as O, checksum8 } from '../src/core/gen1/save.ts';
@@ -25,6 +26,10 @@ import { buildFf3DsSample } from '../src/core/ff3ds/sample.ts';
 import { buildFf2PspSample } from '../src/core/ff2psp/sample.ts';
 import { buildFf3PspSample } from '../src/core/ff3psp/sample.ts';
 import { buildFf2WscSample } from '../src/core/ff2wsc/sample.ts';
+import { buildSample as buildPrSample } from '../src/core/ffpr/sample.ts';
+import { DATA as FF1_PR } from '../src/core/ffpr/data-ff1.ts';
+import { DATA as FF2_PR } from '../src/core/ffpr/data-ff2.ts';
+import { DATA as FF3_PR } from '../src/core/ffpr/data-ff3.ts';
 
 const out = process.argv[2] ?? 'e2e/out';
 mkdirSync(out, { recursive: true });
@@ -61,4 +66,9 @@ dsv.write(snip, 'latin1');
 dsv.write('|-DESMUME SAVE-|', snip.length + 24, 'latin1');
 writeFileSync(`${out}/ff3-ds.dsv`, Buffer.concat([ff3ds, dsv]));
 writeFileSync(`${out}/NPUH10125DATA00.zip`, buildFf3PspSample());
-console.log(`wrote sample.sav, rb.sav, rb-footer.sav, gold.sav, ruby.sav, emerald.sav, firered.sav, ULUS10251DATA00.zip, dawn-of-souls.sav, dawn-of-souls-2.sav ff1-wonderswan.sav, ff2-famicom.sav, ff3-famicom.sav, ULUS1026300.zip, ff2-wonderswan.sav, ff3-ds.sav, ff3-ds.dsv and NPUH10125DATA00.zip to ${out}`);
+for (const data of [FF1_PR, FF2_PR, FF3_PR]) {
+  const pr = buildPrSample(data);
+  mkdirSync(`${out}/pr/${data.game}`, { recursive: true });
+  writeFileSync(`${out}/pr/${data.game}/${pr.fileName}`, pr.data);
+}
+console.log(`wrote sample.sav, rb.sav, rb-footer.sav, gold.sav, ruby.sav, emerald.sav, firered.sav, ULUS10251DATA00.zip, dawn-of-souls.sav, dawn-of-souls-2.sav ff1-wonderswan.sav, ff2-famicom.sav, ff3-famicom.sav, ULUS1026300.zip, ff2-wonderswan.sav, ff3-ds.sav, ff3-ds.dsv, NPUH10125DATA00.zip and pr/ to ${out}`);

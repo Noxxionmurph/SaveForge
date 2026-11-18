@@ -2,7 +2,7 @@
 
 One site, many games. Drop a save on the landing page, the game is detected from the file's structure
 (size, checksums, layout; never a hash, since saves change on every write), and that game's editor is
-lazy-loaded. Currently supported: Pokémon Red / Blue / Yellow, Gold / Silver / Crystal and Ruby / Sapphire / FireRed / LeafGreen / Emerald (English), and Final Fantasy (NES, English; I and II from Dawn of Souls on GBA, US; II on Famicom, English patch; I and II PSP Anniversary Edition, US; I on WonderSwan Color, Japan; II on WonderSwan Color, English patch; III on Famicom, English patch, Nintendo DS, US, and PSP, US).
+lazy-loaded. Currently supported: Pokémon Red / Blue / Yellow, Gold / Silver / Crystal and Ruby / Sapphire / FireRed / LeafGreen / Emerald (English), and Final Fantasy (NES, English; I and II from Dawn of Souls on GBA, US; II on Famicom, English patch; I and II PSP Anniversary Edition, US; I on WonderSwan Color, Japan; II on WonderSwan Color, English patch; III on Famicom, English patch, Nintendo DS, US, and PSP, US; I, II and III Pixel Remaster on Steam).
 Everything is a self-contained "game module", so adding Gen 4–5, more Final Fantasy versions, Mega Man Battle Network, etc. never touches the shell.
 
 ## Look and feel
@@ -18,8 +18,9 @@ the tokens (and that one frame rule) change, in the `data-console` blocks of `st
 `theme: 'nes'` is the NES: grey and black, red buttons, and the deep blue, white-edged windows NES role-playing games
 draw their menus in, in place of an LCD. `theme: 'psp'` is the black PSP with silver buttons, its screens drawn as the
 PSP remake's blue gradient menu windows. `theme: 'nds'` is the silver DS with slate buttons, its screens drawn as Final
-Fantasy III's slate blue menu windows with a silver edge. Add `?console=gbc`, `?console=gba`, `?console=nes`,
-`?console=psp` or `?console=nds` (or `?console=gb`) to the address to preview a theme on every screen.
+Fantasy III's slate blue menu windows with a silver edge. `theme: 'pr'` is a slate grey PC with blue buttons, its screens
+drawn as the Pixel Remasters' royal blue menu windows. Add `?console=gbc`, `?console=gba`, `?console=nes`,
+`?console=psp`, `?console=nds` or `?console=pr` (or `?console=gb`) to the address to preview a theme on every screen.
 Touches borrowed from the games themselves: HP bars use the game's own length and colour rules (`src/core/gen1/hp.ts`, from
 the disassembly in pret/pokered), the review dialog opens with the PLAYER / BADGES / POKÉDEX / TIME window the game shows when you
 save, the open tab has the menu cursor, the big readouts have a two-line frame like the in-game text boxes (on Gen 2 and Gen 3 pages, the frame the save's OPTION menu has chosen, in the game's own art, redrawn as you step through FRAME: `src/ui/windowFrame.ts`, `scripts/extract-frames.py`), the Options card is
@@ -525,6 +526,30 @@ FM_NAME_SEL in the disc's ff1psp.dpk; `scripts/gen-ff1psp-data.mjs` writes them 
   Dawn of Souls' bits, 0x1E bytes before the end of the key items as there). The load screen and the menu both draw the
   Orbs from them, and the game keeps no other copy.
 
+## Final Fantasy I, II and III (Pixel Remaster, Steam)
+
+`src/core/ffpr/` and one page for all three (`src/ui/editors/ffpr/`). Names, starting stats, level tables, who can equip
+what and the Job menu's order come from the games' own master data (CSV tables in the Unity asset bundles under
+`<game>_Data/StreamingAssets/aa/StandaloneWindows64/`, English text from the message bundle), read by
+`scripts/gen-ffpr-data.py` (UnityPy) into `data-ff1.ts`, `data-ff2.ts` and `data-ff3.ts`.
+
+- **Opening**: one save slot, from `Documents\My Games\FINAL FANTASY PR\Steam\<numbers>\` (`FINAL FANTASY II PR`,
+  `FINAL FANTASY III PR`): the files with long scrambled names, which are the same for everyone. Save gives the file back
+  under exactly that name (`keepFileName` on the module), and the saved dialog says where it goes (`saveSteps`).
+- **Format** (`crypto.ts`): an optional UTF-8 BOM, then Base64 of Rijndael with a 256-bit block and key (CBC, zero padding)
+  over raw deflate of UTF-8 JSON. Key and IV are PBKDF2-SHA1 of the games' fixed password and salt (as found by the
+  open-source Pixel Remaster save editors in CREDITS.md). `deflate.ts` writes the deflate (fixed Huffman codes), so files
+  come out about the size the game makes them. Which game a slot is from is told by what its characters carry (`file.ts`).
+- **JSON** (`json.ts`): the save's inner objects are JSON strings inside JSON strings, several levels deep, and the
+  games' loader is picky, so numbers keep their original text and only documents that changed are written again.
+- **Party** (`save.ts`): name, level and Exp (I, III), HP / Max HP, MP / Max MP (II), Final Fantasy I's spell charges per
+  level, the Status screen's stats (I, II), lasting ailments, and the five equipment slots (marked when the character
+  can't use a piece). The save keeps max HP, MP, stats and charges as what was gained on top of the starting numbers, so
+  the editor adds and subtracts those. Final Fantasy I's class; II's eight weapon skills (1-16) and spells (16 places,
+  each spell 1-16, kept in step in the three lists the save holds them in); III's job (gear the job can't use goes back to
+  the bag), job levels and arrows.
+- **Items**: gil, consumables, weapons and armor, key items, Final Fantasy I's Orbs, II's key terms and III's jobs handed out.
+
 ## Layout
 
 ```
@@ -716,6 +741,10 @@ Every screen explains itself in plain words, so keep it that way when you add a 
   in each file show those two dark on the load screen and in the menu, the game's own save afterwards keeps them so, and
   Orbs the editor lit again in that saved file show lit.
 
+- Final Fantasy I-III (Pixel Remaster): every slot of a pack of editor-made saves opens and writes back the same JSON,
+  and edits change only what they touch. Not editable yet: Final Fantasy I's spells, III's spells and stats (the game
+  works the stats out from the job and level), II's evasion and magic defense skills, and who is in the party. The order
+  of Final Fantasy I's Orbs in the save is assumed (Earth, Fire, Water, Wind) until checked in the game.
 - Final Fantasy (NES) was checked in the real game (US ROM, which matches the disassembly byte for byte, in the cynes
   emulator, 2026-11-04): a save the game wrote opens and saves back byte for byte; an edited copy (name, level 20, HP,
   Strength, a Long Sword and Iron Armor worn, a Black Belt's nunchuck, a Red Wizard with CURE and FIRE, gold, Heal Potions,

@@ -36,6 +36,8 @@ PSP (`data-console="psp"`): `--bg` `#d9dbe0` / `#0d0e11`, `--button` piano black
 
 Nintendo DS (`data-console="nds"`): `--bg` `#d5d9e0` / `#0f1116`, `--button` slate `#3b4560` / `#b4bfdc`, and `--lcd` is Final Fantasy III's menu window, slate blue `#3a4673` / `#34406a` that lightens towards the top, with a silver edge that is bright along the top and left and grey along the bottom and right.
 
+PC (`data-console="pr"`, the Pixel Remasters on Steam): `--bg` `#dce0e7` / `#0e1015`, `--button` blue `#2853c4` / `#9db6ff`, and `--lcd` is the remasters' menu window, royal blue `#2c4db4` / `#2846a6` deepening down to `--lcd-low`, with a thin pale blue edge.
+
 Final Fantasy on GBA (Dawn of Souls) keeps the indigo GBA shell, but its windows are the game's own rather than the pale GBA screen: blue `#3939de` darkening to `#000063`, edged white, light grey, black and steel blue, in light and dark.
 
 Rules:

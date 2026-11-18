@@ -269,6 +269,41 @@
 /* A tall window (a Final Fantasy page's cards) keeps the light band to its top, so the text under it stays on the blue. */
 :root[data-console="nds"] .editor[data-family="final-fantasy"] .card { background-image: linear-gradient(to bottom, color-mix(in srgb, var(--lcd) 82%, #ffffff), var(--lcd) min(40%, 88px), var(--lcd-low)); }
 
+/* PC (slate grey, blue buttons), for games that set theme: 'pr' (?console=pr previews it): the Pixel Remasters on Steam.
+   The screens are the remasters' menu windows: a royal blue that deepens down the window, with a thin pale blue edge. */
+:root[data-console="pr"] {
+  --caught: color-mix(in srgb, var(--cart) 30%, var(--surface)); --caught-ink: var(--text); --caught-dim: var(--muted); --caught-edge: var(--cart-shade);
+  --bg: #dce0e7; --surface: #eef0f4; --surface-2: #f7f8fa; --line: #b8bfcb; --line-strong: #7e8798;
+  --text: #141821; --muted: #465063;
+  --button: #2853c4; --button-edge: #183585; --button-ink: #ffffff;
+  --lcd: #2c4db4; --lcd-ink: #ffffff; --lcd-dim: #ccd7ff; --lcd-edge: #0f1b52; --lcd-low: #142268;
+  --cart: #4b5363; --cart-shade: #343a47; --pin: #ccd1da; --slot-bar: #1d222b;
+  --focus: #0b5cad; --danger: #a4161a;
+}
+@media (prefers-color-scheme: dark) {
+  :root[data-console="pr"]:not([data-theme="light"]) {
+    --bg: #0e1015; --surface: #181b22; --surface-2: #1f232b; --line: #2e333d; --line-strong: #525a69;
+    --text: #eceef3; --muted: #a7adba;
+    --button: #9db6ff; --button-edge: #6a84d0; --button-ink: #0b1026;
+    --lcd: #2846a6; --lcd-ink: #ffffff; --lcd-dim: #c3cffb; --lcd-edge: #060c2c; --lcd-low: #101c58;
+    --cart: #5a6274; --cart-shade: #3e4553; --pin: #ccd1da; --slot-bar: #525a69;
+    --focus: #8bb8ff; --danger: #ff9a9a;
+  }
+}
+:root[data-console="pr"][data-theme="dark"] {
+  --bg: #0e1015; --surface: #181b22; --surface-2: #1f232b; --line: #2e333d; --line-strong: #525a69;
+  --text: #eceef3; --muted: #a7adba;
+  --button: #9db6ff; --button-edge: #6a84d0; --button-ink: #0b1026;
+  --lcd: #2846a6; --lcd-ink: #ffffff; --lcd-dim: #c3cffb; --lcd-edge: #060c2c; --lcd-low: #101c58;
+  --cart: #5a6274; --cart-shade: #3e4553; --pin: #ccd1da; --slot-bar: #525a69;
+  --focus: #8bb8ff; --danger: #ff9a9a;
+}
+/* The deepening blue and the pale edge. */
+:root[data-console="pr"] .lcd, :root[data-console="pr"] .editor[data-family="final-fantasy"] .card {
+  background-image: linear-gradient(to bottom, var(--lcd), var(--lcd-low));
+  box-shadow: inset 0 0 0 1px #b9c8ff;
+}
+
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body {
@@ -549,6 +584,8 @@ input[type="checkbox"] { width: 20px; min-height: 20px; height: 20px; accent-col
   letter-spacing: 0.01em; text-wrap: balance;
 }
 .file-line { display: flex; flex-wrap: wrap; gap: 0 16px; }
+/* A Pixel Remaster slot's name is one long scrambled word: let it break anywhere rather than run off the screen. */
+.file-line > span { min-width: 0; overflow-wrap: anywhere; }
 .version-pick { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
 .version-note { max-width: 36em; }
 .chip-btn { border-radius: 999px; min-height: 38px; padding: 4px 18px; }
@@ -1237,6 +1274,15 @@ input[type="number"]::-webkit-inner-spin-button, input[type="number"]::-webkit-o
 .ff-worn { display: flex; align-items: center; gap: 6px; font-size: 0.875rem; font-weight: 500; }
 .ff-magic-row { display: grid; grid-template-columns: 2.25em minmax(0, 1fr); gap: 6px 10px; align-items: center; }
 .ff-magic-row + .ff-magic-row { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line); }
+/* Pixel Remaster pages: Final Fantasy I's spell charges as "left / most" per spell level, and Final Fantasy II's spells as a
+   level box with a Forget button beside it. */
+.pr-charges { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 8.5rem), 1fr)); gap: 10px 12px; }
+.pr-charge-pair { display: flex; align-items: center; gap: 6px; }
+.pr-charge-pair input { flex: 1; min-width: 0; }
+.pr-spells { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 11rem), 1fr)); gap: 10px 12px; margin-bottom: 12px; }
+.pr-spell { display: grid; grid-template-columns: minmax(4em, 1fr) auto; align-items: end; gap: 8px; }
+.pr-spell > .field { min-width: 0; }
+.pr-spell > .field input { width: 100%; }
 .ff-magic-lv { font: 700 1rem var(--font-display); }
 .ff-spells { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
 .ff-mp { grid-column: 2; display: flex; align-items: center; gap: 6px; max-width: 12em; }
